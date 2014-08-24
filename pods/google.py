@@ -7,12 +7,12 @@ import gdata.spreadsheet.service # Requires python-gdata on Ubuntu
 import urlparse
 import os
 
-# Set the email address of an account to access google doc information.
-email = 'nips2014python@gmail.com'
-# Set the password of an account to access google doc information.
-password = 'apple_google'
+from config import *
 
 use_data_frame=True # whether or not to use Pandas data frames (legacy issue)
+
+email = config.get('google', 'user')
+password = config.get('google', 'password')
 
 # legacy code, should be moved to cmtutils
 def split_names(input):
