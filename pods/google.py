@@ -9,37 +9,8 @@ import os
 
 from config import *
 
-use_data_frame=True # whether or not to use Pandas data frames (legacy issue)
-
-email = config.get('google', 'user')
-password = config.get('google', 'password')
-
-# legacy code, should be moved to cmtutils
-def split_names(input):
-    """If we have a spreadsheet that stores the name only, this file splits the name into first name, middle initials and last name, which is the format that CMT expects."""
-    input = input.strip()
-    split_name = False
-    for name in name_splits:
-        if input == name.replace('|', ' '):
-            names = name.split('|')
-            split_name = True
-            break
-
-    if not split_name:
-        names = input.split(' ')
-
-    firstname = names[0].strip()
-    lastname = names[-1].strip()
-
-    if len(names)>2:
-        middlenames = ' '.join(names[1:-1])
-    else:
-        middlenames = ''
-
-
-    return firstname, middlenames, lastname
-
-
+email = config.get('google docs', 'user')
+password = config.get('google docs', 'password')
 
 class sheet():
     """
@@ -384,14 +355,6 @@ class sheet():
             # These should move down to inheriting class of drive_store
             if field.lower() == 'index':
                 index_dict[row] = value.strip()
-            # this is legacy code that should be removed at some point    
-            elif field == 'ScholarID':
-                entries_dict[row][field] = re.sub('&.*', '', re.sub('.*user=', '', value.strip()))
-            elif field == 'Email':
-                entries_dict[row][field] = value.strip().lower()
-                
-            elif field == 'Name':
-                entries_dict[row]['FirstName'], entries_dict[row]['MiddleNames'], entries_dict[row]['LastName']  = split_names(value)
             else:
                 if not value.strip() in nan_values:
                     val = value.strip()
@@ -419,20 +382,19 @@ class sheet():
             if len(index_dict)>0:
                 index.append(index_dict[key])
                 
-        if use_data_frame:
-            if len(index)>0:
-                entries = pd.DataFrame(entries, index=index)
-            else:
-                entries = pd.DataFrame(entries)
-            if len(column_fields)>0:
-                for field in column_fields.values():
-                    if field not in list(entries.columns) + ['index']:
-                        entries[field] = ''
-                column_order = []
-                for key in sorted(column_fields, key=int):
-                    column_order.append(column_fields[key])
-                if 'index' in column_order:
-                    column_order.remove('index')
-                entries = entries[column_order]
+        if len(index)>0:
+            entries = pd.DataFrame(entries, index=index)
+        else:
+            entries = pd.DataFrame(entries)
+        if len(column_fields)>0:
+            for field in column_fields.values():
+                if field not in list(entries.columns) + ['index']:
+                    entries[field] = ''
+            column_order = []
+            for key in sorted(column_fields, key=int):
+                column_order.append(column_fields[key])
+            if 'index' in column_order:
+                column_order.remove('index')
+            entries = entries[column_order]
                 
         return entries

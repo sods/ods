@@ -1,6 +1,7 @@
 import smtplib
 import getpass
 
+
 class gmail():
     def __init__(self, username, name=None):
         """Open an SMTP TLS session for gmail."""
