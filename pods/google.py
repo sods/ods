@@ -9,8 +9,6 @@ import os
 
 from config import *
 
-use_data_frame=True # whether or not to use Pandas data frames (legacy issue)
-
 email = config.get('google docs', 'user')
 password = config.get('google docs', 'password')
 
@@ -40,6 +38,10 @@ def split_names(input):
     return firstname, middlenames, lastname
 
 
+=======
+email = config.get('google docs', 'user')
+password = config.get('google docs', 'password')
+>>>>>>> f0b990792d5db1ee66cc7fab8739eaad6e7bb1fb
 
 class sheet():
     """
@@ -384,14 +386,6 @@ class sheet():
             # These should move down to inheriting class of drive_store
             if field.lower() == 'index':
                 index_dict[row] = value.strip()
-            # this is legacy code that should be removed at some point    
-            elif field == 'ScholarID':
-                entries_dict[row][field] = re.sub('&.*', '', re.sub('.*user=', '', value.strip()))
-            elif field == 'Email':
-                entries_dict[row][field] = value.strip().lower()
-                
-            elif field == 'Name':
-                entries_dict[row]['FirstName'], entries_dict[row]['MiddleNames'], entries_dict[row]['LastName']  = split_names(value)
             else:
                 if not value.strip() in nan_values:
                     val = value.strip()
@@ -419,20 +413,19 @@ class sheet():
             if len(index_dict)>0:
                 index.append(index_dict[key])
                 
-        if use_data_frame:
-            if len(index)>0:
-                entries = pd.DataFrame(entries, index=index)
-            else:
-                entries = pd.DataFrame(entries)
-            if len(column_fields)>0:
-                for field in column_fields.values():
-                    if field not in list(entries.columns) + ['index']:
-                        entries[field] = ''
-                column_order = []
-                for key in sorted(column_fields, key=int):
-                    column_order.append(column_fields[key])
-                if 'index' in column_order:
-                    column_order.remove('index')
-                entries = entries[column_order]
+        if len(index)>0:
+            entries = pd.DataFrame(entries, index=index)
+        else:
+            entries = pd.DataFrame(entries)
+        if len(column_fields)>0:
+            for field in column_fields.values():
+                if field not in list(entries.columns) + ['index']:
+                    entries[field] = ''
+            column_order = []
+            for key in sorted(column_fields, key=int):
+                column_order.append(column_fields[key])
+            if 'index' in column_order:
+                column_order.remove('index')
+            entries = entries[column_order]
                 
         return entries
