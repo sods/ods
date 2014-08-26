@@ -11,8 +11,8 @@ from config import *
 
 use_data_frame=True # whether or not to use Pandas data frames (legacy issue)
 
-email = config.get('google', 'user')
-password = config.get('google', 'password')
+email = config.get('google docs', 'user')
+password = config.get('google docs', 'password')
 
 # legacy code, should be moved to cmtutils
 def split_names(input):
