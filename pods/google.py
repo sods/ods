@@ -12,37 +12,6 @@ from config import *
 email = config.get('google docs', 'user')
 password = config.get('google docs', 'password')
 
-# legacy code, should be moved to cmtutils
-def split_names(input):
-    """If we have a spreadsheet that stores the name only, this file splits the name into first name, middle initials and last name, which is the format that CMT expects."""
-    input = input.strip()
-    split_name = False
-    for name in name_splits:
-        if input == name.replace('|', ' '):
-            names = name.split('|')
-            split_name = True
-            break
-
-    if not split_name:
-        names = input.split(' ')
-
-    firstname = names[0].strip()
-    lastname = names[-1].strip()
-
-    if len(names)>2:
-        middlenames = ' '.join(names[1:-1])
-    else:
-        middlenames = ''
-
-
-    return firstname, middlenames, lastname
-
-
-=======
-email = config.get('google docs', 'user')
-password = config.get('google docs', 'password')
->>>>>>> f0b990792d5db1ee66cc7fab8739eaad6e7bb1fb
-
 class sheet():
     """
     Class for interchanging information between google spreadsheets and pandas data frames. The class manages a spreadsheet.
