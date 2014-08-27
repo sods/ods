@@ -137,6 +137,7 @@ class sheet():
             columns = ss.columns
         if (len(set(ss.columns) - set(data_frame.columns))>0 or
             len(set(data_frame.columns) - set(ss.columns))>0):
+            # TODO: Have a lazy option that doesn't mind this mismatch and accounts for it.
             raise ValueError('There is a mismatch between columns in online spreadsheet and the data frame we are using to update.')
         add_row = []
         remove_row = []
@@ -193,7 +194,7 @@ class sheet():
             if current_index in remove_row:
                 v = int(cells.entry[counter].cell.row)-header_rows
                 row_to_delete.append(v)
-                prp
+                raise ValueError("Not willing to delete row currently! Not comprehensively tested")
                 counter+=len(row)
                 continue
             else:
