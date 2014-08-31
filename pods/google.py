@@ -59,7 +59,7 @@ class sheet():
             self.gd_client=gd_client
 
         # Obtain list feed of specific worksheet. 
-        self.feed = self.gd_client.GetWorksheetsFeed(key=self._key)
+        self.feed = self._get_worksheet_feed()
         self.id_dict = self.worksheet_ids()
 
         # Get list of ids from the spreadsheet
@@ -108,10 +108,66 @@ class sheet():
         self.write_headers(data_frame, header_rows)
         self.write_body(data_frame, header_rows)
     def augment(self, data_frame, columns, header_rows=1, comment=None):
-        """Augment is a special wrapper function for update that calls it with overwrite set to False. Use this command if you only want to make changes when the cell in the spreadsheet is empty."""
+        """
+        Augment is a special wrapper function for update that calls it
+        with overwrite set to False. Use this command if you only want
+        to make changes when the cell in the spreadsheet is empty.
+        """
         self.update(data_frame, columns, header_rows, comment, overwrite=False)
+
+
+    def _get_feed(self, type, query=None, tries=0, max_tries=10):
+        """
+        Check for exceptions when calling for a group of cells from
+        the google docs API. Retry a maximum number of times (default 10).
+        """
+        try:
+            if type == 'cell':
+                if query is None:
+                    feed = self.gd_client.GetCellsFeed(self._key, wksht_id=self.worksheet_id)
+                else:
+                    feed = self.gd_client.GetCellsFeed(self._key, wksht_id=self.worksheet_id, query=query)
+            elif type == 'list':
+                feed = self.gd_client.GetListFeed(self._key, self.worksheet_id)
+            elif type == 'worksheet':
+                feed = self.gd_client.GetWorksheetsFeed(self._key)
+        except gdata.service.RequestError, inst:
+            if tries<10:
+                status = inst[0]['status']
+                print "Error status: " + str(status) + '<br><br>' + inst[0]['reason'] + '<br><br>' + inst[0]['body']
+                if status>499:
+                    print "Try", tries, "of", max_tries, "waiting 2 seconds and retrying."
+                    import time
+                    time.sleep(2)
+                    feed = self._get_feed(type=type, query=query, tries=tries+1)
+                else:
+                    raise 
+            else:
+                print "Max attempts at contacting Google exceeded."
+                raise
+        return feed
+
+    def _get_cell_feed(self, query=None, tries=0, max_tries=10):
+        """
+        Wrapper for _get_feed() when a cell feed is required.
+        """
+        return self._get_feed(type='cell', query=query, tries=tries, max_tries=max_tries)
+
+    def _get_list_feed(self, tries=0, max_tries=10):
+        """
+        Wrapper for _get_feed() when a list feed is required.
+        """
+        return self._get_feed(type='list', query=None, tries=tries, max_tries=max_tries)
+
+    def _get_worksheet_feed(self, tries=0, max_tries=10):
+        """
+        Wrapper for _get_feed() when a cell worksheet feed is required.
+        """
+        return self._get_feed(type='worksheet', query=None, tries=tries, max_tries=max_tries)
+        
     def update(self, data_frame, columns=None, header_rows=1, comment=None, overwrite=True):
-        """Update a google document with a given data frame. The
+        """
+        Update a google document with a given data frame. The
         update function assumes that the columns of the data_frame and
         the google document match, and that an index in either the
         google document or the local data_frame identifies one row
@@ -133,7 +189,11 @@ class sheet():
         .. Note:: Returns the data frame that was found in the spreadsheet.
 
         """
+        if not data_frame.index.is_unique:
+            raise ValueError("Index for data_frame is not unique")
         ss = self.read(header_rows=header_rows)
+        if not ss.index.is_unique:
+            raise ValueError("Index in google doc is not unique")
         if columns is None:
             columns = ss.columns
         if (len(set(ss.columns) - set(data_frame.columns))>0 or
@@ -174,7 +234,8 @@ class sheet():
         query.max_col = str(len(ss.columns)+1+self.column_indent)
         query.min_row = str(row_number)
         query.max_row = str(row_number + self.row_batch_size)
-        cells = self.gd_client.GetCellsFeed(self._key, wksht_id=self.worksheet_id, query=query)
+        cells = self._get_cell_feed(query=query)
+            
         batchRequest = gdata.spreadsheet.SpreadsheetsCellsFeed()
         counter = 0
         row_to_delete = []
@@ -186,7 +247,7 @@ class sheet():
                 # pull down new batch of cells.
                 query.min_row = str(row_number)
                 query.max_row = str(row_number + self.row_batch_size)
-                cells = self.gd_client.GetCellsFeed(self._key, wksht_id=self.worksheet_id, query=query)
+                cells = self._get_cell_feed(query=query)
                 batchRequest = gdata.spreadsheet.SpreadsheetsCellsFeed()
                 counter = 0
             current_index = cells.entry[counter].cell.inputValue 
@@ -195,7 +256,7 @@ class sheet():
             if current_index in remove_row:
                 v = int(cells.entry[counter].cell.row)-header_rows
                 row_to_delete.append(v)
-                raise ValueError("Not willing to delete row currently! Not comprehensively tested")
+                raise ValueError("Not willing to delete row indexed by " + current_index + " from " + cells.entry[counter].cell.row + " currently! Not comprehensively tested. Best guess is that row to delete is " + str(v))
                 counter+=len(row)
                 continue
             else:
@@ -226,14 +287,16 @@ class sheet():
         """
         pass
     def _delete_row(self, row_number):
-        """Delete a row of the spreadsheet.
+        """
+        Delete a row of the spreadsheet.
         :param row_number: the row number to be deleted.
         :type row_number: int"""
-        list_feed = self.gd_client.GetListFeed(self._key, self.worksheet_id)
+        list_feed = self._get_list_feed(self._key, self.worksheet_id)
         self.gd_client.DeleteRow(list_feed.entry[row_number])
 
     def _add_row(self, index, data_series):
-        """Add a row to the spreadsheet.
+        """
+        Add a row to the spreadsheet.
         :param index: index of the row to be added.
         :type index: str or int (any valid index for a pandas.DataFrame)
         :param data_series: the entries of the row to be added.
@@ -243,7 +306,7 @@ class sheet():
         for column, entry in data_series.iteritems():
             if not pd.isnull(entry):
                 dict[column] = str(entry)
-            self.gd_client.InsertRow(dict, self._key, self.worksheet_id)
+        self.gd_client.InsertRow(dict, self._key, self.worksheet_id)
 
 
     def write_comment(self, comment, row=1, column=1):
@@ -254,7 +317,7 @@ class sheet():
         query.max_col = str(column)
         query.min_row = str(row)
         query.max_row = str(row)
-        cells = self.gd_client.GetCellsFeed(self._key, wksht_id=self.worksheet_id, query=query)
+        cells = self._get_cell_feed(query=query)
         batchRequest = gdata.spreadsheet.SpreadsheetsCellsFeed()
         cells.entry[0].cell.inputValue = comment
         batchRequest.AddUpdate(cells.entry[0])
@@ -272,7 +335,7 @@ class sheet():
         query.max_col = str(len(data_frame.columns)+1+self.column_indent)
         query.min_row = str(row_number)
         query.max_row = str(row_number + self.row_batch_size)
-        cells = self.gd_client.GetCellsFeed(self._key, wksht_id=self.worksheet_id, query=query)
+        cells = self._get_cell_feed(query=query)
         batchRequest = gdata.spreadsheet.SpreadsheetsCellsFeed()
         counter = 0
         for index, row in data_frame.iterrows():
@@ -283,7 +346,7 @@ class sheet():
                 # pull down new batch of cells.
                 query.min_row = str(row_number)
                 query.max_row = str(row_number + self.row_batch_size)
-                cells = self.gd_client.GetCellsFeed(self._key, wksht_id=self.worksheet_id, query=query)
+                cells = self._get_cell_feed(query=query)
                 batchRequest = gdata.spreadsheet.SpreadsheetsCellsFeed()
                 counter = 0
             cells.entry[counter].cell.inputValue = str(index)
@@ -306,7 +369,7 @@ class sheet():
         query.min_col = str(self.column_indent+1) 
         query.max_col = str(len(data_frame.columns)+self.column_indent+1) 
 
-        cells = self.gd_client.GetCellsFeed(self._key, wksht_id=self.worksheet_id, query=query)
+        cells = self._get_cell_feed(query=query)
         
         batchRequest = gdata.spreadsheet.SpreadsheetsCellsFeed()
         index_name = data_frame.index.name 
@@ -325,7 +388,7 @@ class sheet():
         # todo: need to check if something is written below the 'table' as this will be read (for example a rogue entry in the row below the last row of the data.
         entries_dict = {}
         index_dict = {}
-        cells =  self.gd_client.GetCellsFeed(self._key, self.worksheet_id)
+        cells =  self._get_cell_feed()
         read_column_fields = False
         if column_fields is None:
             read_column_fields = True
