@@ -86,16 +86,87 @@ class sheet():
         return dict([(entry.title.text, _id(entry)) for entry in self.feed.entry])
 
     def share(self, users, share_type='writer', send_notifications=False):
-        # share a document with the given gmail user.
+        """
+        Share a document with a given list of users.
+        """
+        # share a document with the given list of users.
         for user in users:
             acl_entry = gdata.docs.data.AclEntry(
                 scope=gdata.acl.data.AclScope(value=user, type='user'),
                 role=gdata.acl.data.AclRole(value=share_type),
                 )
             acl2 = self.docs_client.AddAclEntry(self.document, acl_entry, send_notifications=send_notifications)
+    
+    def _get_acl_entry(self, user):
+        """
+        Return the acl entry associated with a given user name.
+        """
+        acl_feed = self._get_acl_feed()
+        for acl_entry in acl_feed.entry:
+            if acl_entry.scope.value == user:
+                return acl_entry
+        raise ValueError("User: " + user + " not in the acl feed for this resource.")
+
+
+    def share_delete(self, user):
+        """
+        Remove sharing from a given user.
+        """
+        acl_entry = self._get_acl_entry(user)
+        return self.docs_client.DeleteAclEntry(acl_entry)
+            
+    def share_modify(self, user, share_type='reader', send_notifications=False):
+        """
+        :param user: email of the user to update.
+        :type user: string
+        :param share_type: type of sharing for the given user, type options are 'reader', 'writer', 'owner'
+        :type user: string
+        :param send_notifications: 
+        """
+        if share_type not in ['writer', 'reader', 'owner']:
+            raise ValueError("Share type should be 'writer', 'reader' or 'owner'")
+            
+        acl_entry = self._get_acl_entry(user)# update ACL entry
         
+        #acl_entry.role.value = share_type
+        # According to Ali Afshar you need to remove the etag (https://groups.google.com/forum/#!msg/google-documents-list-api/eFSmo14nDLA/Oo4SjePHZd8J), can't work out how though!
+        #etag_element = acl_entry.find('etag')
+        #acl_entry.remove(etagelement)
+        #self.docs_client.UpdateAclEntry(acl_entry, sent_notifications=send_notifications)
+        # Hack: delete and re-add.
+        self.share_delete(acl_entry)
+        self.share([user], share_type, send_notifications)
+
+    def share_list(self):
+        """
+        Provide a list of all users who can access the document in the form of 
+        """
+        entries = []
+        acl_feed = self._get_acl_feed()
+        for acl_entry in acl_feed.entry:
+            entries.append((acl_entry.scope.value, acl_entry.role.value))
+        return entries
+
+    def revision_history(self):
+        """
+        Get the revision history of the document from Google Docs.
+        """
+        for entry in self.docs_client.GetResources(limit=55).entry:
+            revisions = self.docs_client.GetRevisions(entry)
+            for revision in revisions.entry:
+                print revision.publish, revision.GetPublishLink()
+    
     def write(self, data_frame, header_rows=None, comment=None):
-        """Write a data frame to a google document. This function will overwrite existing cells, but will not clear them first."""
+        """
+        Write a pandas data frame to a google document. This function will overwrite existing cells, but will not clear them first.
+
+        :param data_frame: the data frame to write.
+        :type data_frame: pandas.DataFrame
+        :param header_rows: number of header rows in the document.
+        :type header_rows: int
+        :param comment: a comment to make at the top of the document (requres header_rows>1
+        :type comment: str
+        """
         if comment is not None:
             if header_rows is None:
                 header_rows=2
@@ -131,6 +202,8 @@ class sheet():
                 feed = self.gd_client.GetListFeed(self._key, self.worksheet_id)
             elif type == 'worksheet':
                 feed = self.gd_client.GetWorksheetsFeed(self._key)
+            elif type == 'acl':
+                feed = self.docs_client.GetAcl(self.document)
         except gdata.service.RequestError, inst:
             if tries<10:
                 status = inst[0]['status']
@@ -164,7 +237,12 @@ class sheet():
         Wrapper for _get_feed() when a cell worksheet feed is required.
         """
         return self._get_feed(type='worksheet', query=None, tries=tries, max_tries=max_tries)
-        
+    
+    def _get_acl_feed(self, tries=0, max_tries=10):
+        """
+        Wrapper for _get_feed() when an acl feed is required.
+        """
+        return self._get_feed(type='acl', query=None, tries=tries, max_tries=max_tries)
     def update(self, data_frame, columns=None, header_rows=1, comment=None, overwrite=True):
         """
         Update a google document with a given data frame. The
