@@ -44,7 +44,7 @@ class sheet():
             
             self._key = spreadsheet_key
             # Need a try, catch around here and a repeat. It can throw an RequestError 500 line 318 of gdata/client.py
-            self.document = self.docs_client.GetResourceById(spreadsheet_key)
+            self.document = self._get_resource_feed()
             # document exists already
 
         self.worksheet_name = worksheet_name
@@ -76,8 +76,10 @@ class sheet():
         try:
             from IPython.display import HTML
             HTML('<center><iframe src=' + ds.url + '/pubhtml?widget=true&amp;headers=false width=' + str(width) + ' height='+ str(height) +'></iframe></center>')
-        except:
+        except ImportError:
             print ds.url
+        else:
+            raise
 
     def worksheet_ids(self):
         def _id(entry):
@@ -204,6 +206,8 @@ class sheet():
                 feed = self.gd_client.GetWorksheetsFeed(self._key)
             elif type == 'acl':
                 feed = self.docs_client.GetAcl(self.document)
+            elif type == 'resource':
+                feed = self.docs_client.GetResourceById(self._key)
         except gdata.service.RequestError, inst:
             if tries<10:
                 status = inst[0]['status']
@@ -226,6 +230,12 @@ class sheet():
         """
         # problem: if there are only 1000 lines in the spreadsheet and you request more you get this error: 400 Invalid query parameter value for max-row.
         return self._get_feed(type='cell', query=query, tries=tries, max_tries=max_tries)
+
+    def _get_resource_feed(self, tries=0, max_tries=10):
+        """
+        Wrapper for _get_feed() when a resource is required.
+        """
+        return self._get_feed(type='resource', tries=tries, max_tries=max_tries)
 
     def _get_list_feed(self, tries=0, max_tries=10):
         """
