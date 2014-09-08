@@ -227,6 +227,7 @@ class sheet():
         """
         Wrapper for _get_feed() when a cell feed is required.
         """
+        # problem: if there are only 1000 lines in the spreadsheet and you request more you get this error: 400 Invalid query parameter value for max-row.
         return self._get_feed(type='cell', query=query, tries=tries, max_tries=max_tries)
 
     def _get_resource_feed(self, tries=0, max_tries=10):
@@ -392,7 +393,12 @@ class sheet():
         dict['index'] = index
         for column, entry in data_series.iteritems():
             if not pd.isnull(entry):
-                dict[column] = str(entry)
+                val = []
+                try:
+                    val = unicode(entry)
+                except UnicodeDecodeError:
+                    val = str(entry)
+                dict[column] = val
         self.gd_client.InsertRow(dict, self._key, self.worksheet_id)
 
 
@@ -441,7 +447,12 @@ class sheet():
             counter+=1
             for entry in row:
                 if not pd.isnull(entry):
-                    cells.entry[counter].cell.inputValue = str(entry)
+                    val = []
+                    try:
+                        val = unicode(entry)
+                    except UnicodeDecodeError:
+                        val = str(entry)
+                    cells.entry[counter].cell.inputValue = val
                 batchRequest.AddUpdate(cells.entry[counter])
                 counter+=1
         updated = self.gd_client.ExecuteBatch(batchRequest, cells.GetBatchLink().href)
@@ -469,8 +480,19 @@ class sheet():
 
         return self.gd_client.ExecuteBatch(batchRequest, cells.GetBatchLink().href)
 
-    def read(self, column_fields=None, header_rows=1, nan_values=[]):
-        """Read in information from a Google document storing entries. Fields present are defined in 'column_fields'"""
+    def read(self, column_fields=None, header_rows=1, nan_values=[], read_values=False):
+        """
+        Read in information from a Google document storing entries. Fields present are defined in 'column_fields'
+        
+        :param column_fields: list of names to give to the columns (in case they aren't present in the spreadsheet). Default None (for None, the column headers are read from the spreadsheet.
+        :type column_fields: list
+        :param header_rows: number of rows to use as header (default is 1).
+        :type header_rows: int
+        :param nan_values: list containing entry types that are to be considered to be missing data (default is empty list).
+        :type nan_values: list
+        :param read_values: whether to read values rather than the formulae in the spreadsheet (default is False).
+        :type read_values: bool
+        """
 
         # todo: need to check if something is written below the 'table' as this will be read (for example a rogue entry in the row below the last row of the data.
         entries_dict = {}
@@ -483,7 +505,12 @@ class sheet():
         for myentry in cells.entry:
             col = myentry.cell.col
             row = myentry.cell.row
-            value = myentry.cell.inputValue
+            if read_values:
+                # Compute the evaluated cell entry
+                value = myentry.cell.value
+            else:
+                # return a formula if it's present
+                value = myentry.cell.inputValue
             if int(row)<header_rows:
                 continue
             if int(row)==header_rows:
