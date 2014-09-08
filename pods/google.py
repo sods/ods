@@ -43,7 +43,6 @@ class sheet():
         else:
             
             self._key = spreadsheet_key
-            # Need a try, catch around here and a repeat. It can throw an RequestError 500 line 318 of gdata/client.py
             self.document = self._get_resource_feed()
             # document exists already
 
