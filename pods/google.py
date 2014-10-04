@@ -353,7 +353,12 @@ class sheet():
                 if (current_index, current_column) in update_cell:
                     val = data_frame[current_column][index]
                     if not pd.isnull(val):
-                        cells.entry[counter].cell.inputValue = str(val)
+                        v = []
+                        try:
+                            v = unicode(val)
+                        except UnicodeDecodeError:
+                            v = str(val)
+                        cells.entry[counter].cell.inputValue = v
                     else:
                         cells.entry[counter].cell.inputValue = ''
                     batchRequest.AddUpdate(cells.entry[counter])
