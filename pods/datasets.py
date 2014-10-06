@@ -201,11 +201,6 @@ def cmu_urls_files(subj_motions, messages = True):
             resource['files'].append(file_download)
     return resource
 
-def sample_class(f):
-    p = 1. / (1. + np.exp(-f))
-    c = np.random.binomial(1, p)
-    c = np.where(c, 1, -1)
-    return c
 
 
 
@@ -924,6 +919,13 @@ def toy_rbf_1d_50(seed=default_seed):
 
 
 def toy_linear_1d_classification(seed=default_seed):
+    """Simple classification data in one dimension for illustrating models."""
+    def sample_class(f):
+        p = 1. / (1. + np.exp(-f))
+        c = np.random.binomial(1, p)
+        c = np.where(c, 1, -1)
+        return c
+
     np.random.seed(seed=seed)
     x1 = np.random.normal(-3, 5, 20)
     x2 = np.random.normal(3, 5, 20)
@@ -1070,6 +1072,18 @@ def olympic_sprints(data_set='rogers_girolami_data'):
           4:'400m Men',
           5:'400m Women'}
         }, data_set)
+
+def movie_body_count(data_set='movie_body_count'):
+    """Data set of movies and body count for movies scraped from www.MovieBodyCounts.com created by Simon Garnier and Randy Olson for exploring differences between Python and R."""
+    if not data_available(data_set):
+        download_data(data_set)
+
+    from pandas import read_csv
+    dir_path = os.path.join(data_path, data_set)
+    filename = os.path.join(dir_path, 'film-death-counts-Python.csv')
+    Y = read_csv(filename)
+    return data_details_return({'Y': Y, 'info' : "Data set of movies and body count for movies scraped from www.MovieBodyCounts.com created by Simon Garnier and Randy Olson for exploring differences between Python and R.",
+                                }, data_set)
 
 # def movielens_small(partNo=1,seed=default_seed):
 #     np.random.seed(seed=seed)

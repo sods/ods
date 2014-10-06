@@ -338,6 +338,20 @@
             "ftp://aftp.cmdl.noaa.gov/products/trends/co2/"
         ]
     },
+    "movie_body_count": {
+        "citation": "Simon Garnier and Randy Olson, Blog Post: R vs Python Round 2, February 2nd 2014 (http://www.theswarmlab.com/r-vs-python-round-2-22/)",
+        "details": "Data scraped from www.MovieBodyCounts.com and www.imdb.com using scripts provided on a github repository (in both Python and R) at https://github.com/morpionZ/R-vs-Python/tree/master/Deadliest%20movies%20scrape/code. This script pulls down the scraped data.",
+        "files": [
+            [
+                "film-death-counts-Python.csv"
+            ]
+        ],
+        "license": null,
+        "size": 536272,
+        "urls": [
+            "https://github.com/sjmgarnier/R-vs-Python/raw/master/Deadliest%20movies%20scrape/code/"
+        ]
+    },
     "olivetti_faces": {
         "citation": "Ferdinando Samaria and Andy Harter, Parameterisation of a Stochastic Model for Human Face Identification. Proceedings of 2nd IEEE Workshop on Applications of Computer Vision, Sarasota FL, December 1994",
         "details": "Olivetti Research Labs Face data base, acquired between December 1992 and December 1994 in the Olivetti Research Lab, Cambridge (which later became AT&T Laboratories, Cambridge). When using these images please give credit to AT&T Laboratories, Cambridge. ",

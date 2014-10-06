@@ -485,28 +485,32 @@ class sheet():
 
         return self.gd_client.ExecuteBatch(batchRequest, cells.GetBatchLink().href)
 
-    def read(self, column_fields=None, header_rows=1, nan_values=[], read_values=False):
+    def read(self, names=None, header=1, na_values=[], read_values=False, dtype={}, usecols=None):
         """
-        Read in information from a Google document storing entries. Fields present are defined in 'column_fields'
+        Read in information from a Google document storing entries. Fields present are defined in 'names'
         
-        :param column_fields: list of names to give to the columns (in case they aren't present in the spreadsheet). Default None (for None, the column headers are read from the spreadsheet.
-        :type column_fields: list
-        :param header_rows: number of rows to use as header (default is 1).
-        :type header_rows: int
-        :param nan_values: list containing entry types that are to be considered to be missing data (default is empty list).
-        :type nan_values: list
+        :param names: list of names to give to the columns (in case they aren't present in the spreadsheet). Default None (for None, the column headers are read from the spreadsheet.
+        :type names: list
+        :param header: number of rows to use as header (default is 1).
+        :type header: int
+        :param na_values: additional list containing entry types that are to be considered to be missing data (default is empty list).
+        :type na_values: list
         :param read_values: whether to read values rather than the formulae in the spreadsheet (default is False).
         :type read_values: bool
+        :param dtype: Type name or dict of column -> type Data type for data or columns. E.g. {'a': np.float64, 'b': np.int32}
+        :type dtype: dictonary
+        :param usecols: return a subset of the columns.
+        :type usecols: list
         """
 
         # todo: need to check if something is written below the 'table' as this will be read (for example a rogue entry in the row below the last row of the data.
         entries_dict = {}
         index_dict = {}
         cells =  self._get_cell_feed()
-        read_column_fields = False
-        if column_fields is None:
-            read_column_fields = True
-            column_fields = {}
+        read_names = False
+        if names is None:
+            read_names = True
+            names = {}
         for myentry in cells.entry:
             col = myentry.cell.col
             row = myentry.cell.row
@@ -516,46 +520,52 @@ class sheet():
             else:
                 # return a formula if it's present
                 value = myentry.cell.inputValue
-            if int(row)<header_rows:
+            if int(row)<header:
                 continue
-            if int(row)==header_rows:
-                if read_column_fields:
+            if int(row)==header:
+                if read_names:
                     # Read the column titles for the fields.
                     fieldname = value.strip()
-                    if fieldname in column_fields.values():
+                    if fieldname in names.values():
                         raise ValueError("Field name duplicated in header")
                     else:
-                        column_fields[col] = fieldname
+                        names[col] = fieldname
                 continue
 
             if not row in entries_dict:
                 entries_dict[row] = {}
 
-            if col in column_fields:
-                field = column_fields[col]
+            if col in names:
+                field = names[col]
             else:
                 field = col
             
-            # These should move down to inheriting class of drive_store
             if field.lower() == 'index':
-                index_dict[row] = value.strip()
-            else:
-                if not value.strip() in nan_values:
+                val = value.strip()
+                if 'index' in dtype:
+                    index_dict[row] = dtype[field](val)
+                else:
+                    index_dict[row] = val
+            elif usecols is None or field in usecols:
+                if not value.strip() in na_values:
                     val = value.strip()
-                    try:
-                        a = float(val)
-                    except ValueError:
-                        entries_dict[row][field] = val
+                    if field in dtype:
+                        entries_dict[row][field] = dtype[field](val)
                     else:
                         try:
-                            a = int(a)
+                            a = float(val)
                         except ValueError:
-                            entries_dict[row][field] = a
+                            entries_dict[row][field] = val
                         else:
-                            if a == int(a):
-                                entries_dict[row][field] = int(a)
-                            else:
+                            try:
+                                a = int(a)
+                            except ValueError:
                                 entries_dict[row][field] = a
+                            else:
+                                if a == int(a):
+                                    entries_dict[row][field] = int(a)
+                                else:
+                                    entries_dict[row][field] = a
 
 
                 
@@ -570,13 +580,16 @@ class sheet():
             entries = pd.DataFrame(entries, index=index)
         else:
             entries = pd.DataFrame(entries)
-        if len(column_fields)>0:
-            for field in column_fields.values():
+        if len(names)>0:
+            for field in names.values():
                 if field not in list(entries.columns) + ['index']:
-                    entries[field] = ''
+                    if usecols is None or field in usecols:
+                        entries[field] = ''
+            
             column_order = []
-            for key in sorted(column_fields, key=int):
-                column_order.append(column_fields[key])
+            for key in sorted(names, key=int):
+                if usecols is None or names[key] in usecols:
+                    column_order.append(names[key])
             if 'index' in column_order:
                 column_order.remove('index')
             entries = entries[column_order]
