@@ -1,6 +1,8 @@
 import sys
 import os
 
+from config import *
+
 data_path = os.path.expandvars(config.get('datasets', 'dir'))
 
 def display_url(target):
@@ -10,7 +12,7 @@ def display_url(target):
     target = prefix + target
     display(HTML(u'<a href="{t}" target=_blank>{t}</a>'.format(t=target)))
 
-def download_url(url, store_directory, save_name = None, messages = True, suffix='', data_pa):
+def download_url(url, store_directory, save_name = None, messages = True, suffix=''):
     """Download a file from a url and save it to disk."""
     import urllib2
     i = url.rfind('/')
