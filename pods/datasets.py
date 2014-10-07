@@ -29,8 +29,7 @@ except ImportError:
 import sys, urllib2
 
 # Global variables
-data_path = os.path.expandvars(config.get('datasets', 'dir'))
-#data_path = os.path.join(os.path.dirname(__file__), 'datasets')
+data_path = os.path.expanduser(os.path.expandvars(config.get('datasets', 'dir')))
 default_seed = 10000
 overide_manual_authorize=False
 ods_url = 'http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/'
@@ -130,11 +129,14 @@ def download_data(dataset_name=None):
     if dr.has_key('suffices'):
         for url, files, suffices in zip(dr['urls'], dr['files'], dr['suffices']):
             for file, suffix in zip(files, suffices):
-                download_url(os.path.join(url,file), dataset_name, dataset_name, suffix=suffix)
+                download_url(url=os.path.join(url,file), 
+                             store_directory=dataset_name, 
+                             suffix=suffix)
     else:
         for url, files in zip(dr['urls'], dr['files']):
             for file in files:
-                download_url(os.path.join(url,file), dataset_name, dataset_name)
+                download_url(url=os.path.join(url,file), 
+                             store_directory=dataset_name)
     return True
 
 def data_details_return(data, data_set):
@@ -1073,6 +1075,17 @@ def olympic_sprints(data_set='rogers_girolami_data'):
           5:'400m Women'}
         }, data_set)
 
+def movie_collaborative_filter(data_set='movie_collaborative_filter', date='2014-10-06'):
+    """Data set of movie ratings as generated live in class by students."""
+    download_data(data_set)
+    from pandas import read_csv
+    dir_path = os.path.join(data_path, data_set)
+    filename = os.path.join(dir_path, 'film-death-counts-Python.csv')
+    Y = read_csv(filename)
+    return data_details_return({'Y': Y, 'info' : "Data set of movie ratings as summarized from Google doc spreadheets of students in class.",
+                                }, data_set)
+
+    
 def movie_body_count(data_set='movie_body_count'):
     """Data set of movies and body count for movies scraped from www.MovieBodyCounts.com created by Simon Garnier and Randy Olson for exploring differences between Python and R."""
     if not data_available(data_set):
@@ -1085,37 +1098,27 @@ def movie_body_count(data_set='movie_body_count'):
     return data_details_return({'Y': Y, 'info' : "Data set of movies and body count for movies scraped from www.MovieBodyCounts.com created by Simon Garnier and Randy Olson for exploring differences between Python and R.",
                                 }, data_set)
 
-# def movielens_small(partNo=1,seed=default_seed):
-#     np.random.seed(seed=seed)
-
-#     fileName = os.path.join(data_path, 'movielens', 'small', 'u' + str(partNo) + '.base')
-#     fid = open(fileName)
-#     uTrain = np.fromfile(fid, sep='\t', dtype=np.int16).reshape((-1, 4))
-#     fid.close()
-#     maxVals = np.amax(uTrain, axis=0)
-#     numUsers = maxVals[0]
-#     numFilms = maxVals[1]
-#     numRatings = uTrain.shape[0]
-
-#     Y = scipy.sparse.lil_matrix((numFilms, numUsers), dtype=np.int8)
-#     for i in range(numUsers):
-#         ind = pb.mlab.find(uTrain[:, 0]==i+1)
-#         Y[uTrain[ind, 1]-1, i] = uTrain[ind, 2]
-
-#     fileName = os.path.join(data_path, 'movielens', 'small', 'u' + str(partNo) + '.test')
-#     fid = open(fileName)
-#     uTest = np.fromfile(fid, sep='\t', dtype=np.int16).reshape((-1, 4))
-#     fid.close()
-#     numTestRatings = uTest.shape[0]
-
-#     Ytest = scipy.sparse.lil_matrix((numFilms, numUsers), dtype=np.int8)
-#     for i in range(numUsers):
-#         ind = pb.mlab.find(uTest[:, 0]==i+1)
-#         Ytest[uTest[ind, 1]-1, i] = uTest[ind, 2]
-
-#     lbls = np.empty((1,1))
-#     lblstest = np.empty((1,1))
-#     return {'Y':Y, 'lbls':lbls, 'Ytest':Ytest, 'lblstest':lblstest}
+def movielens100k(data_set='movielens100k'):
+    """Data set of movie ratings collected by the University of Minnesota and 'cleaned up' for use."""
+    if not data_available(data_set):
+        import zipfile
+        download_data(data_set)
+        dir_path = os.path.join(data_path, data_set)
+        zip = zipfile.ZipFile(os.path.join(dir_path, 'ml-100k.zip'), 'r')
+        for name in zip.namelist():
+            zip.extract(name, dir_path)
+    import pandas as pd
+    movie_path = os.path.join(data_path, 'movielens100k', 'ml-100k')
+    items = pd.read_csv(os.path.join(movie_path, 'u.item'), index_col = 'index', header=None, sep='|',names=['index', 'date', 'empty', 'title', 'imdb_url', 'unknown', 'Action', 'Adventure', 'Animation', 'Children''s', 'Comedy', 'Crime', 'Documentary', 'Drama', 'Fantasy', 'Film-Noir', 'Horror', 'Musical', 'Mystery', 'Romance', 'Sci-Fi', 'Thriller', 'War', 'Western'])
+    users = pd.read_csv(os.path.join(movie_path, 'u.user'), index_col = 'index', header=None, sep='|', names=['index', 'age', 'sex', 'job', 'id'])
+    parts = ['u1.base', 'u1.test', 'u2.base', 'u2.test','u3.base', 'u3.test','u4.base', 'u4.test','u5.base', 'u5.test','ua.base', 'ua.test','ub.base', 'ub.test']
+    ratings = []
+    for part in parts:
+        rate_part = pd.read_csv(os.path.join(movie_path, part), index_col = 'index', header=None, sep='\t', names=['user', 'item', 'rating', 'index'])
+        rate_part['split'] = part
+        ratings.append(rate_part)
+    Y = pd.concat(ratings)
+    return data_details_return({'Y':Y, 'film_info':items, 'user_info':users, 'info': 'The Movielens 100k data'}, data_set)
 
 
 def crescent_data(num_data=200, seed=default_seed):

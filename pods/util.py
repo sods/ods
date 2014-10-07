@@ -3,7 +3,7 @@ import os
 
 from config import *
 
-data_path = os.path.expandvars(config.get('datasets', 'dir'))
+data_path = os.path.expanduser(os.path.expandvars(config.get('datasets', 'dir')))
 
 def display_url(target):
     """Displaying URL in an IPython notebook to allow the user to click and check on information. With thanks to Fernando Perez for putting together the implementation!"""
@@ -12,15 +12,18 @@ def display_url(target):
     target = prefix + target
     display(HTML(u'<a href="{t}" target=_blank>{t}</a>'.format(t=target)))
 
-def download_url(url, store_directory, save_name = None, messages = True, suffix=''):
+def download_url(url, store_directory, save_name=None, messages=True, suffix=''):
     """Download a file from a url and save it to disk."""
     import urllib2
     i = url.rfind('/')
     file = url[i+1:]
     print file
     dir_name = os.path.join(data_path, store_directory)
-    save_name = os.path.join(dir_name, file)
-    print "Downloading ", url, "->", os.path.join(store_directory, file)
+    if save_name is None:
+        save_name = os.path.join(dir_name, file)
+    else:
+        save_name = os.path.join(dir_name, save_name)
+    print "Downloading ", url, "->", save_name
     if not os.path.exists(dir_name):
         os.makedirs(dir_name)
     try:

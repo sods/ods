@@ -338,6 +338,21 @@
             "ftp://aftp.cmdl.noaa.gov/products/trends/co2/"
         ]
     },
+    "movielens100k": {
+        "citation": "Herlocker, J., Konstan, J., Borchers, A., Riedl, J.. An Algorithmic Framework for Performing Collaborative Filtering. Proceedings of the 1999 Conference on Research and Development in Information Retrieval. Aug. 1999.",
+        "details": "MovieLens data sets were collected by the GroupLens Research Project at the University of Minnesota.\n\nThis data set consists of:\n* 100,000 ratings (1-5) from 943 users on 1682 movies. \n* Each user has rated at least 20 movies. \n        * Simple demographic info for the users (age, gender, occupation, zip)\n\nThe data was collected through the MovieLens web site (movielens.umn.edu) during the seven-month period from September 19th, 1997 through April 22nd, 1998. This data has been cleaned up - users who had less than 20 ratings or did not have complete demographic information were removed from this data set.",
+        "files": [
+            [
+                "ml-100k.zip", 
+		"ml-100k-README.txt"
+            ]
+        ],
+        "license": "Neither the University of Minnesota nor any of the researchers involved can guarantee the correctness of the data, its suitability for any particular purpose, or the validity of results based on the use of the data set.  The data set may be used for any research purposes under the following conditions:\n\n     * The user may not state or imply any endorsement from the\n       University of Minnesota or the GroupLens Research Group.\n\n     * The user must acknowledge the use of the data set in\n       publications resulting from the use of the data set, and must\n       send us an electronic or paper copy of those publications.\n\n     * The user may not redistribute the data without separate\n       permission.\n\n     * The user may not use this information for any commercial or\n       revenue-bearing purposes without first obtaining permission\n       from a faculty member of the GroupLens Research Project at the\n       University of Minnesota.\n\nIf you have any further questions or comments, please contact GroupLens <grouplens-info@cs.umn.edu>.",
+        "size": 536272,
+        "urls": [
+            "http://files.grouplens.org/datasets/movielens/"
+        ]
+    },
     "movie_body_count": {
         "citation": "Simon Garnier and Randy Olson, Blog Post: R vs Python Round 2, February 2nd 2014 (http://www.theswarmlab.com/r-vs-python-round-2-22/)",
         "details": "Data scraped from www.MovieBodyCounts.com and www.imdb.com using scripts provided on a github repository (in both Python and R) at https://github.com/morpionZ/R-vs-Python/tree/master/Deadliest%20movies%20scrape/code. This script pulls down the scraped data.",
