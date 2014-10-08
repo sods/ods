@@ -20,30 +20,52 @@ try:
 except ImportError:
     gdata_available=False
 
-class_dir = os.path.expanduser(os.path.expandvars(config.get('class info', 'dir')))
+default_class_dir = os.path.expanduser(os.path.expandvars(config.get('class info', 'dir')))
 
 if gdata_available:
     class distributor():
         """
-        Class for interchanging information between google spreadsheets and pandas data frames. The class manages a spreadsheet.
-
-        :param spreadsheet_key: the google key of the spreadsheet to open (default is None which creates a new spreadsheet).
-        :param worksheet_name: the worksheet in the spreadsheet to work with (default 'Sheet1')
-        :param title: the title of the spreadsheet (used if the spreadsheet is created for the first time)
+        Class for distributing google spreadsheets across the group for obtaining information.        
+        :param spreadsheet_title: the title of the spreadsheet (used if the spreadsheet is created for the first time)
         :param column_indent: the column indent to use in the spreadsheet.
         :type column_indent: int
         :param gd_client: the google spreadsheet service client to use (default is NOne which performs a programmatic login)
-        :param docs_client: the google docs login client (default is none which causes a new client login)
-
+        :param participant_list: the list of participants to who you want to distribute the documents.
+        :type participant_list: either a string (for a filename) or a dictionary specifying a google doc and associated sheet number.
         """
-        def __init__(self, spreadsheet_title='Google Spreadsheet', keys_file=None, class_file=None, user_sep=','):
+        def __init__(self, spreadsheet_title='Google Spreadsheet', keys_file=None, participant_list=None, user_sep=',', class_dir=None, suffix=None):
+
+            # suffix to apply to 'handles' if they are non-unique
+            if suffix is None:
+                self.suffix = '1'
+            else:
+                self.suffix = suffix
+
+            # directory where information about the class is stored.
+            if class_dir is None:
+                class_dir = default_class_dir
+            else:
+                class_dir = os.path.expanduser(os.path.expandvars(class_dir))
             self.spreadsheet_title = spreadsheet_title
             if keys_file is None:
                 keys_file = 'spreadsheet_keys.pickle'
-            if class_file is None:
-                class_file = 'class_list.csv'
-            self.class_file=os.path.join(class_dir, class_file)
-            self.users = pd.read_csv(self.class_file, sep=user_sep)
+            if participant_list is None:
+                participant_list = 'class_list.csv'
+                
+            if type(participant_list) is dict:
+                if 'spreadsheet_key' in participant_list and 'worksheet_name' in participant_list:
+                    self.participant_sheet = gl.sheet(spreadsheet_key=participant_list['spreadsheet_key'],
+                                                      worksheet_name=participant_list['worksheet_name'])
+                    self.users = self.participant_sheet.read()
+                    self.users.rename(columns={'Gmail Address': 'Email'}, inplace=True)
+                else:
+                    raise ValueError, "Expect dictionaries to encode a google doc when pased as a particiant list."
+            elif type(participant_list) is str:
+                self.participant_list=os.path.join(class_dir, participant_list)
+                self.users = pd.read_csv(self.participant_list, sep=user_sep)
+            
+            else:
+                raise ValueError, "Could not determine type of participant list."
 
             # load spreadsheet keys if they exist.
             if keys_file is None:
@@ -56,14 +78,23 @@ if gdata_available:
             else:
                 self.sheet_keys = {}
 
-
-        def _get_name(self, user):
+        def _get_suffix(self):
+            return self.suffix
+        def _get_handle(self, user):
             """Get the name of a user with a given email."""
             ind = user==self.users.Email
             if ind.sum()==1:
                 ind_val = self.users[ind].index[0]
                 user_series = self.users.loc[ind_val]
-                if 'name' in user_series:
+                if 'Handle' in user_series:
+                    return user_series.Handle
+                elif 'handle' in user_series:
+                    return user_series.handle
+                elif 'Nickname' in user_series:
+                    return user_series.Nickname
+                elif 'nickname' in user_series:
+                    return user_series.nickname
+                elif 'name' in user_series:
                     return user_series.name
                 elif 'Name' in user_series:
                     return user_series.Name
@@ -73,6 +104,23 @@ if gdata_available:
             else:
                 return None
 
+        def _delete_sheet(self, user):
+            """Delete a user's sheet."""
+            if self._sheet_exists(user):
+                #sheet_key = self.sheet_keys[user]
+                #sheet = gl.sheet(spreadsheet_key=self.sheet_keys[user])
+                #sheet.share_delete()
+                del self.sheet_keys[user]
+                pickle.dump(self.sheet_keys, open(self.keys_file, "wb" ))
+
+        def _sheet_exists(self, user):
+            """Check if a sheet exists already."""
+            if user in self.sheet_keys:
+                return True
+            else:
+                return False
+            
+
         def _get_sheet(self, user):
             """Get or create a sheet corresponding to a user."""
             # check if we've already got a spreadsheet for this user, otherwise create one.
@@ -80,7 +128,7 @@ if gdata_available:
             if user in self.sheet_keys:
                 sheet = gl.sheet(spreadsheet_key=self.sheet_keys[user])
             else:
-                name = self._get_name(user)
+                name = self._get_handle(user)
                 title = self.spreadsheet_title
                 if name is not None:
                     title += ' ' + name
@@ -88,6 +136,7 @@ if gdata_available:
                 self.sheet_keys[user] = sheet._key
                 pickle.dump(self.sheet_keys, open(self.keys_file, "wb" ))
             return sheet
+
 
         def write_body(self, data_frame, header=2, function=None):
             """Write body of data to the users' directories."""
@@ -124,7 +173,11 @@ if gdata_available:
             # share a document with the given list of users.
             for user in self.users.Email:
                 sheet = self._get_sheet(user)
-                sheet.share([user], share_type, send_notifications)
+                if user not in sheet.share_list():
+                    sheet.share([user], share_type, send_notifications)
+                else:
+                    sheet.share_modify([user], share_type, send_notifications)
+
 
         def share_delete(self):
             """
@@ -132,7 +185,8 @@ if gdata_available:
             """
             for user in self.users.Email:
                 sheet = self._get_sheet(user)
-                sheet.share_delete(user)
+                if user in sheet.share_list():
+                    sheet.share_delete(user)
 
         def share_modify(self, share_type='reader', send_notifications=False):
             """
@@ -149,7 +203,7 @@ if gdata_available:
                 sheet.share_modify(user, share_type, send_notifications)
 
 
-        def write(self, data_frame, header=None, comment=None, function=None):
+        def write(self, data_frame, header=None, comment=None, function=None, overwrite=False):
             """
             Write a pandas data frame to a google document. This function will overwrite existing cells, but will not clear them first.
 
@@ -165,9 +219,10 @@ if gdata_available:
                     udata = function(data_frame)
                 else:
                     udata = data_frame
-                sheet = self._get_sheet(user)
                 # Write the film data to the user's spreadsheet.
-                sheet.write(udata, header=header, comment=comment)
+                if not self._sheet_exists(user) or overwrite:
+                    sheet = self._get_sheet(user)
+                    sheet.write(udata, header=header, comment=comment)
 
         def update(self, data_frame, columns=None, header=1, comment=None, overwrite=True):
             """
@@ -224,6 +279,9 @@ if gdata_available:
             data = {}
             for user in self.users.Email:
                 sheet = self._get_sheet(user)
-                data[user] = sheet.read(names, header, na_values, read_values, dtype, usecols)
+                handle = self._get_handle(user)
+                while handle in data:
+                    handle += self._get_suffix()
+                data[handle] = sheet.read(names, header, na_values, read_values, dtype, usecols)
             return data
 
