@@ -46,6 +46,7 @@ if gdata_available:
                 class_dir = default_class_dir
             else:
                 class_dir = os.path.expanduser(os.path.expandvars(class_dir))
+            self.class_dir = class_dir
             self.spreadsheet_title = spreadsheet_title
             if keys_file is None:
                 keys_file = 'spreadsheet_keys.pickle'
@@ -61,7 +62,7 @@ if gdata_available:
                 else:
                     raise ValueError, "Expect dictionaries to encode a google doc when pased as a particiant list."
             elif type(participant_list) is str:
-                self.participant_list=os.path.join(class_dir, participant_list)
+                self.participant_list=os.path.join(self.class_dir, participant_list)
                 self.users = pd.read_csv(self.participant_list, sep=user_sep)
             
             else:
@@ -69,9 +70,9 @@ if gdata_available:
 
             # load spreadsheet keys if they exist.
             if keys_file is None:
-                self.keys_file=os.path.join(class_dir, 'spreadsheet_keys.pickle')
+                self.keys_file=os.path.join(self.class_dir, 'spreadsheet_keys.pickle')
             else:
-                self.keys_file=os.path.join(class_dir, keys_file)
+                self.keys_file=os.path.join(self.class_dir, keys_file)
                 
             if os.path.exists(self.keys_file):
                 self.sheet_keys = pickle.load(open(self.keys_file, "rb"))
