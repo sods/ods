@@ -176,7 +176,8 @@ if gdata_available:
                 sheet = self._get_sheet(user)
                 for share in sheet.share_list():
                     if user in share:
-                        sheet.share_modify(user, share_type, send_notifications=False)
+                        # TODO: change sharing here?
+                        #sheet.share_modify(user, share_type, send_notifications=False)
                         return
                 sheet.share([user], share_type, send_notifications)
 
