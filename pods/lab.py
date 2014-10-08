@@ -174,10 +174,11 @@ if gdata_available:
             # share a document with the given list of users.
             for user in self.users.Email:
                 sheet = self._get_sheet(user)
-                if user not in sheet.share_list():
-                    sheet.share([user], share_type, send_notifications)
-                else:
-                    sheet.share_modify([user], share_type, send_notifications)
+                for share in sheet.share_list():
+                    if user in share:
+                        sheet.share_modify([user], share_type, send_notifications)
+                        return
+                sheet.share([user], share_type, send_notifications)
 
 
         def share_delete(self):
