@@ -20,9 +20,10 @@ try:
 except ImportError:
     gdata_available=False
 
-default_class_dir = os.path.expanduser(os.path.expandvars(config.get('class info', 'dir')))
 
 if gdata_available:
+    default_class_dir = os.path.expanduser(os.path.expandvars(config.get('class info', 'dir')))
+
     class distributor():
         """
         Class for distributing google spreadsheets across the group for obtaining information.        
