@@ -5,12 +5,6 @@ from config import *
 
 data_path = os.path.expanduser(os.path.expandvars(config.get('datasets', 'dir')))
 
-def display_url(target):
-    """Displaying URL in an IPython notebook to allow the user to click and check on information. With thanks to Fernando Perez for putting together the implementation!"""
-    from IPython.display import display, HTML
-    prefix = u"http://" if not target.startswith("http") else u""
-    target = prefix + target
-    display(HTML(u'<a href="{t}" target=_blank>{t}</a>'.format(t=target)))
 
 def download_url(url, store_directory, save_name=None, messages=True, suffix=''):
     """Download a file from a url and save it to disk."""
