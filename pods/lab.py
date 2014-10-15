@@ -28,14 +28,19 @@ if gdata_available:
         """
         Class for distributing google spreadsheets across the group for obtaining information.        
         :param spreadsheet_title: the title of the spreadsheet (used if the spreadsheet is created for the first time)
+        :param worksheet_name: the name of the worksheet to create (used if the worksheet is created for the first time)
         :param column_indent: the column indent to use in the spreadsheet.
         :type column_indent: int
         :param gd_client: the google spreadsheet service client to use (default is NOne which performs a programmatic login)
         :param participant_list: the list of participants to who you want to distribute the documents.
         :type participant_list: either a string (for a filename) or a dictionary specifying a google doc and associated sheet number.
         """
-        def __init__(self, spreadsheet_title='Google Spreadsheet', keys_file=None, participant_list=None, user_sep=',', class_dir=None, suffix=None):
+        def __init__(self, spreadsheet_title='Google Spreadsheet', keys_file=None, participant_list=None, user_sep=',', class_dir=None, suffix=None, worksheet_name=None, gd_client=None, docs_client=None):
 
+            self.gd_client = gd_client
+            self.docs_client = docs_client
+
+            self.worksheet_name = worksheet_name
             # suffix to apply to 'handles' if they are non-unique
             if suffix is None:
                 self.suffix = '1'
@@ -55,14 +60,22 @@ if gdata_available:
                 participant_list = 'class_list.csv'
                 
             if type(participant_list) is dict:
+                # participant list is stored in a google doc
                 if 'spreadsheet_key' in participant_list and 'worksheet_name' in participant_list:
                     self.participant_sheet = gl.sheet(spreadsheet_key=participant_list['spreadsheet_key'],
-                                                      worksheet_name=participant_list['worksheet_name'])
+                                                      worksheet_name=participant_list['worksheet_name'], 
+                                                      gd_client=self.gd_client, 
+                                                      docs_client=self.docs_client)
+                    # if gl.sheet had to login, store the details.
+                    self.gd_client = self.participant_sheet.gd_client
+                    self.docs_client = self.participant_sheet.docs_client
                     self.users = self.participant_sheet.read()
                     self.users.rename(columns={'Gmail Address': 'Email'}, inplace=True)
                 else:
-                    raise ValueError, "Expect dictionaries to encode a google doc when pased as a particiant list."
+                    raise ValueError, "If a the participant list is a dictionary, then I expect it to encode a google doc for the particiant list."
+
             elif type(participant_list) is str:
+                # participant list is stored in a csv file.
                 self.participant_list=os.path.join(self.class_dir, participant_list)
                 self.users = pd.read_csv(self.participant_list, sep=user_sep)
             
@@ -128,13 +141,23 @@ if gdata_available:
             # check if we've already got a spreadsheet for this user, otherwise create one.
 
             if user in self.sheet_keys:
-                sheet = gl.sheet(spreadsheet_key=self.sheet_keys[user])
+                sheet = gl.sheet(spreadsheet_key=self.sheet_keys[user], 
+                                 gd_client=self.gd_client, 
+                                 docs_client=self.docs_client)
+                # if gl.sheet had to login, store the details.
+                self.gd_client = sheet.gd_client
+                self.docs_client = sheet.docs_client
             else:
                 name = self._get_handle(user)
                 title = self.spreadsheet_title
                 if name is not None:
                     title += ' ' + name
-                sheet = gl.sheet(title=title)
+                sheet = gl.sheet(title=title, 
+                                 gd_client=self.gd_client, 
+                                 docs_client=self.docs_client)
+                # if gl.sheet had to login, store the details.
+                self.gd_client = sheet.gd_client
+                self.docs_client = sheet.docs_client
                 self.sheet_keys[user] = sheet._key
                 pickle.dump(self.sheet_keys, open(self.keys_file, "wb" ))
             return sheet
