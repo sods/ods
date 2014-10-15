@@ -30,7 +30,7 @@ if gdata_available:
         :param spreadsheet_title: the title of the spreadsheet (used if the spreadsheet is created for the first time)
         :param column_indent: the column indent to use in the spreadsheet.
         :type column_indent: int
-        :param gd_client: the google spreadsheet service client to use (default is NOne which performs a programmatic login)
+        :param gd_client: the google spreadsheet service client to use (default is None which performs a programmatic login)
         :param participant_list: the list of participants to who you want to distribute the documents.
         :type participant_list: either a string (for a filename) or a dictionary specifying a google doc and associated sheet number.
         """
@@ -148,7 +148,7 @@ if gdata_available:
                 else:
                     udata = data_frame
                 sheet = self._get_sheet(user)
-                # Write the film data to the user's spreadsheet.
+                # Write the data to the user's spreadsheet.
                 sheet.write_body(udata, header=header)
 
         def write_comment(self, comment, row=1, column=1):
