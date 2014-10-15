@@ -8,10 +8,12 @@ import os
 from config import *
 import numpy as np
 
+import pods.notebook as nb
+
 gdata_available=True
 try:
     import gdata.docs.client
-    import gdata.spreadsheet.service # Requires python-gdata on Ubuntu
+    import gdata.spreadsheet.service 
 except ImportError:
     gdata_available=False
 
@@ -21,7 +23,7 @@ if gdata_available:
         Class for interchanging information between google spreadsheets and pandas data frames. The class manages a spreadsheet.
 
         :param spreadsheet_key: the google key of the spreadsheet to open (default is None which creates a new spreadsheet).
-        :param worksheet_name: the worksheet in the spreadsheet to work with (default 'Sheet1')
+        :param worksheet_name: the worksheet in the spreadsheet to work with (default None which causes Sheet1 to be the name)
         :param title: the title of the spreadsheet (used if the spreadsheet is created for the first time)
         :param column_indent: the column indent to use in the spreadsheet.
         :type column_indent: int
@@ -29,29 +31,12 @@ if gdata_available:
         :param docs_client: the google docs login client (default is none which causes a new client login)
 
         """
-        def __init__(self, spreadsheet_key=None, worksheet_name='Sheet1', title='Google Spreadsheet', column_indent=0, gd_client=None, docs_client=None):
+        def __init__(self, spreadsheet_key=None, worksheet_name=None, title='Google Spreadsheet', column_indent=0, gd_client=None, docs_client=None):
+
             self.email = config.get('google docs', 'user')
             self.password = config.get('google docs', 'password')
-            source = 'NIPS Review System'
-            if docs_client is None:
-                self.docs_client = gdata.docs.client.DocsClient()
-                self.docs_client.client_login(self.email, self.password, source)
-            else:
-                self.docs_client = docs_client
-            if spreadsheet_key is None:
-                # need to create the document
-                #self.gd_client = gdata.docs.client.DocsClient()
-                document = gdata.docs.data.Resource(type='spreadsheet', title=title)
-                worksheet_name = 'Sheet1'
-                self.document = self.docs_client.create_resource(document)
-                self._key = self.document.get_id().split("%3A")[1]
-            else:
 
-                self._key = spreadsheet_key
-                self.document = self._get_resource_feed()
-                # document exists already
-
-            self.worksheet_name = worksheet_name
+            source = 'ODS Gdata Bot'                
 
             if gd_client is None:
                 self.gd_client = gdata.spreadsheet.service.SpreadsheetsService()
@@ -62,16 +47,84 @@ if gdata_available:
             else:
                 self.gd_client=gd_client
 
-            # Obtain list feed of specific worksheet. 
-            self.feed = self._get_worksheet_feed()
-            self.id_dict = self.worksheet_ids()
+            if docs_client is None:
+                self.docs_client = gdata.docs.client.DocsClient()
+                self.docs_client.client_login(self.email, self.password, source)
+            else:
+                self.docs_client = docs_client
+
+            if spreadsheet_key is None:
+                # need to create the document
+                document = gdata.docs.data.Resource(type='spreadsheet', title=title)
+                self.document = self.docs_client.create_resource(document)
+                self._key = self.document.get_id().split("%3A")[1]
+                self.init_sheet()
+                if worksheet_name is not None:
+                    self.set_sheet_name(worksheet_name)
+            else:
+                # document exists already
+                self._key = spreadsheet_key
+                self.document = self._get_resource_feed()
+                self.set_sheet(worksheet_name=worksheet_name)
+
+
+
 
             # Get list of ids from the spreadsheet
-
             self.worksheet_id = self.id_dict[self.worksheet_name]
 
             self.column_indent = column_indent
             self.url = 'https://docs.google.com/spreadsheets/d/' + self._key + '/'
+
+        def delete_sheet(self, worksheet_name):
+            """Delete the worksheet with the given name."""
+            if worksheet_name == self.worksheet_name:
+                raise ValueError, "Can't delete the sheet I'm currently pointing to, use set_sheet to change sheet first."
+            for entry in self.feed.entry:
+                if worksheet_name==entry.title:
+                    self.gd_client.DeleteWorksheet(entry)
+            raise ValueError, "Can't find worksheet " + worksheet_name + " to change the name."
+            
+
+        def change_sheet_name(self, title):
+            """Change the title of the current worksheet to title."""
+            for entry in self.feed.entry:
+                if self.worksheet_name==entry.title:
+                    entry.title=atom.Title(text=title)
+                    self.gd_client.UpdateWorksheet(entry)
+                    self.worksheet_name = title
+                    return
+            raise ValueError, "Can't find worksheet " + self.worksheet_name + " to change the name."
+                
+        def add_sheet(self, worksheet_name, rows=100, columns=10):
+            """Add a worksheet. To add and set to the current sheet use set_sheet()."""
+            self.gd_client.AddWorksheet(title=worksheet_name, row_count=rows, col_count=columns, key=self._key)
+
+        def set_sheet(self, worksheet_name):
+            """Set the current worksheet to the given name. If the name doesn't exist then create the sheet using sheet.add_sheet()"""
+            self.init_sheets()
+            # if the worksheet is set to None default to first sheet, warn if it's name is not "Sheet1".
+            if worksheet_name is None:
+                self.worksheet_name = self.feed.entry[0].title.text
+                if len(self.feed.entry)>1 and self.worksheet_name != 'Sheet1':
+                    print "Warning, multiple worksheets in this spreadsheet and no title specified. Assuming you are requesting sheet", self.worksheet_name
+            else:
+                if worksheet_name not in self.id_dict:
+                    # create new worksheet here.
+                    self.add_sheet(worksheet_name=worksheet_name)
+                    self.worksheet_name = worksheet_name
+
+
+        def init_sheets(self):
+            """Update object with the worksheet feed and the list of worksheet_ids, can be run once there is a spreadsheet key and a resource feed in place."""
+            self.feed = self._get_worksheet_feed()
+            self.id_dict = self.worksheet_ids()
+
+        def _repr_html_(self):
+            url = self.url + '/pubhtml?widget=true&amp;headers=false' 
+            nb.iframe_url(url, width=500, height=300)
+        
+
         def show(self, width=400, height=200):
             """If the IPython notebook is available, and the google
             spreadsheet is published, then the spreadsheet is displayed
@@ -79,7 +132,8 @@ if gdata_available:
 
             try:
                 from IPython.display import HTML
-                HTML('<center><iframe src=' + ds.url + '/pubhtml?widget=true&amp;headers=false width=' + str(width) + ' height='+ str(height) +'></iframe></center>')
+                url = self.url + '/pubhtml?widget=true&amp;headers=false' 
+                nb.iframe_url(url, width=width, height=height)
             except ImportError:
                 print ds.url
             else:
@@ -204,27 +258,34 @@ if gdata_available:
                         feed = self.gd_client.GetCellsFeed(self._key, wksht_id=self.worksheet_id)
                     else:
                         feed = self.gd_client.GetCellsFeed(self._key, wksht_id=self.worksheet_id, query=query)
+
                 elif type == 'list':
                     feed = self.gd_client.GetListFeed(self._key, self.worksheet_id)
                 elif type == 'worksheet':
                     feed = self.gd_client.GetWorksheetsFeed(self._key)
+
                 elif type == 'acl':
                     feed = self.docs_client.GetAcl(self.document)
+
                 elif type == 'resource':
                     feed = self.docs_client.GetResourceById(self._key)
+
+            # Sometimes the server doesn't respond. Retry the request.
             except gdata.service.RequestError, inst:
                 if tries<10:
                     status = inst[0]['status']
                     print "Error status: " + str(status) + '<br><br>' + inst[0]['reason'] + '<br><br>' + inst[0]['body']
                     if status>499:
                         print "Try", tries, "of", max_tries, "waiting 2 seconds and retrying."
+                        import sys
+                        sys.stdout.flush()
                         import time
                         time.sleep(2)
                         feed = self._get_feed(type=type, query=query, tries=tries+1)
                     else:
                         raise 
                 else:
-                    print "Max attempts at contacting Google exceeded."
+                    print "Maximum tries at contacting Google servers exceeded."
                     raise
             return feed
 
