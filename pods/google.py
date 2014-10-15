@@ -59,8 +59,12 @@ if gdata_available:
                 document = gdata.docs.data.Resource(type='spreadsheet', title=title)
                 self.document = self.docs_client.create_resource(document)
                 self._key = self.document.get_id().split("%3A")[1]
+                # try to ensure that we can set title properly. Not sure why resource is not initially returned.
+                self.document = self._get_resource_feed()
+                self.feed = self._get_worksheet_feed()
                 if worksheet_name is not None:
-                    self.set_sheet_name(worksheet_name)
+                    self.worksheet_name='Sheet1'
+                    self.change_sheet_name(worksheet_name)
 
             else:
                 # document exists already
@@ -491,7 +495,7 @@ if gdata_available:
 
         def set_title(self, title):
             """Change the title of the google spreadsheet."""
-            self.document.title = atom.data.Title(title=title)
+            self.document.title = atom.data.Title(text=title)
             self.docs_client.update_resource(self.document)
 
         def get_title(self):
