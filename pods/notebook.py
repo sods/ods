@@ -21,6 +21,7 @@ def iframe_url(target, width=500, height=400, scrolling=True, border=0, framebor
 
 def display_iframe_url(target, **kwargs):
     """Display the contents of a URL in an IPython notebook."""
+    from IPython.display import display, HTML
     txt = iframe_url(target, **kwargs)
     display(HTML(txt))
 
