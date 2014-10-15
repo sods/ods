@@ -59,34 +59,23 @@ if gdata_available:
                 document = gdata.docs.data.Resource(type='spreadsheet', title=title)
                 self.document = self.docs_client.create_resource(document)
                 self._key = self.document.get_id().split("%3A")[1]
-                self.init_sheet()
                 if worksheet_name is not None:
                     self.set_sheet_name(worksheet_name)
+
             else:
                 # document exists already
                 self._key = spreadsheet_key
                 self.document = self._get_resource_feed()
-                self.set_sheet(worksheet_name=worksheet_name)
-
-
-
-
-            # Get list of ids from the spreadsheet
-            self.worksheet_id = self.id_dict[self.worksheet_name]
+                
+            self.set_sheet(worksheet_name=worksheet_name)
 
             self.column_indent = column_indent
             self.url = 'https://docs.google.com/spreadsheets/d/' + self._key + '/'
 
-        def delete_sheet(self, worksheet_name):
-            """Delete the worksheet with the given name."""
-            if worksheet_name == self.worksheet_name:
-                raise ValueError, "Can't delete the sheet I'm currently pointing to, use set_sheet to change sheet first."
-            for entry in self.feed.entry:
-                if worksheet_name==entry.title.text:
-                    self.gd_client.DeleteWorksheet(entry)
-                    return
-            raise ValueError, "Can't find worksheet " + worksheet_name + " to change the name."
-            
+
+#############################################################################
+# Place methods here that are really associated with individual worksheets. #
+#############################################################################
 
         def change_sheet_name(self, title):
             """Change the title of the current worksheet to title."""
@@ -98,125 +87,29 @@ if gdata_available:
                     return
             raise ValueError, "Can't find worksheet " + self.worksheet_name + " to change the name."
                 
-        def add_sheet(self, worksheet_name, rows=100, columns=10):
-            """Add a worksheet. To add and set to the current sheet use set_sheet()."""
-            self.gd_client.AddWorksheet(title=worksheet_name, row_count=rows, col_count=columns, key=self._key)
 
         def set_sheet(self, worksheet_name):
             """Set the current worksheet to the given name. If the name doesn't exist then create the sheet using sheet.add_sheet()"""
-            self.init_sheets()
+            self.update_sheet_list()
             # if the worksheet is set to None default to first sheet, warn if it's name is not "Sheet1".
             if worksheet_name is None:
                 self.worksheet_name = self.feed.entry[0].title.text
                 if len(self.feed.entry)>1 and self.worksheet_name != 'Sheet1':
-                    print "Warning, multiple worksheets in this spreadsheet and no title specified. Assuming you are requesting sheet", self.worksheet_name
+                    print "Warning, multiple worksheets in this spreadsheet and no title specified. Assuming you are requesting the sheet called '{sheetname}'. To surpress this warning, please specify the sheet name.".format(sheetname=self.worksheet_name)
             else:
                 if worksheet_name not in self.id_dict:
                     # create new worksheet here.
                     self.add_sheet(worksheet_name=worksheet_name)
                     self.worksheet_name = worksheet_name
+                else:
+                    self.worksheet_name = worksheet_name
+            # Get list of ids from the spreadsheet
+            self.worksheet_id = self.id_dict[self.worksheet_name]
 
-
-        def init_sheets(self):
-            """Update object with the worksheet feed and the list of worksheet_ids, can be run once there is a spreadsheet key and a resource feed in place."""
-            self.feed = self._get_worksheet_feed()
-            self.id_dict = self.worksheet_ids()
-
-        def _repr_html_(self):
-            url = self.url + '/pubhtml?widget=true&amp;headers=false' 
-            return nb.iframe_url(url, width=500, height=300)
-            
-
-        def show(self, width=400, height=200):
-            """If the IPython notebook is available, and the google
-            spreadsheet is published, then the spreadsheet is displayed
-            centrally in a box."""
-
-            try:
-                from IPython.display import HTML
-                url = self.url + '/pubhtml?widget=true&amp;headers=false' 
-                nb.iframe_url(url, width=width, height=height)
-            except ImportError:
-                print ds.url
-            else:
-                raise
-
-        def worksheet_ids(self):
-            def _id(entry):
-                split = urlparse.urlsplit(entry.id.text)
-                return os.path.basename(split.path)
-            return dict([(entry.title.text, _id(entry)) for entry in self.feed.entry])
-
-        def share(self, users, share_type='writer', send_notifications=False):
-            """
-            Share a document with a given list of users.
-            """
-            # share a document with the given list of users.
-            for user in users:
-                acl_entry = gdata.docs.data.AclEntry(
-                    scope=gdata.acl.data.AclScope(value=user, type='user'),
-                    role=gdata.acl.data.AclRole(value=share_type),
-                    )
-                acl2 = self.docs_client.AddAclEntry(self.document, acl_entry, send_notifications=send_notifications)
-
-        def _get_acl_entry(self, user):
-            """
-            Return the acl entry associated with a given user name.
-            """
-            acl_feed = self._get_acl_feed()
-            for acl_entry in acl_feed.entry:
-                if acl_entry.scope.value == user:
-                    return acl_entry
-            raise ValueError("User: " + user + " not in the acl feed for this resource.")
-
-
-        def share_delete(self, user):
-            """
-            Remove sharing from a given user.
-            """
-            acl_entry = self._get_acl_entry(user)
-            return self.docs_client.DeleteAclEntry(acl_entry)
-
-        def share_modify(self, user, share_type='reader', send_notifications=False):
-            """
-            :param user: email of the user to update.
-            :type user: string
-            :param share_type: type of sharing for the given user, type options are 'reader', 'writer', 'owner'
-            :type user: string
-            :param send_notifications: 
-            """
-            if share_type not in ['writer', 'reader', 'owner']:
-                raise ValueError("Share type should be 'writer', 'reader' or 'owner'")
-
-            acl_entry = self._get_acl_entry(user)# update ACL entry
-
-            #acl_entry.role.value = share_type
-            # According to Ali Afshar you need to remove the etag (https://groups.google.com/forum/#!msg/google-documents-list-api/eFSmo14nDLA/Oo4SjePHZd8J), can't work out how though!
-            #etag_element = acl_entry.find('etag')
-            #acl_entry.remove(etagelement)
-            #self.docs_client.UpdateAclEntry(acl_entry, sent_notifications=send_notifications)
-            # Hack: delete and re-add.
-            self.share_delete(acl_entry)
-            self.share([user], share_type, send_notifications)
-
-        def share_list(self):
-            """
-            Provide a list of all users who can access the document in the form of 
-            """
-            entries = []
-            acl_feed = self._get_acl_feed()
-            for acl_entry in acl_feed.entry:
-                entries.append((acl_entry.scope.value, acl_entry.role.value))
-            return entries
-
-        def revision_history(self):
-            """
-            Get the revision history of the document from Google Docs.
-            """
-            for entry in self.docs_client.GetResources(limit=55).entry:
-                revisions = self.docs_client.GetRevisions(entry)
-                for revision in revisions.entry:
-                    print revision.publish, revision.GetPublishLink()
+        def add_sheet(self, worksheet_name, rows=100, columns=10):
+            """Add a worksheet. To add and set to the current sheet use set_sheet()."""
+            self.gd_client.AddWorksheet(title=worksheet_name, row_count=rows, col_count=columns, key=self._key)
+            self.update_sheet_list()
 
         def write(self, data_frame, header=None, comment=None):
             """
@@ -240,6 +133,7 @@ if gdata_available:
                     header=1
             self.write_headers(data_frame, header)
             self.write_body(data_frame, header)
+
         def augment(self, data_frame, columns, header=1, comment=None):
             """
             Augment is a special wrapper function for update that calls it
@@ -248,79 +142,6 @@ if gdata_available:
             """
             self.update(data_frame, columns, header, comment, overwrite=False)
 
-
-        def _get_feed(self, type, query=None, tries=0, max_tries=10):
-            """
-            Check for exceptions when calling for a group of cells from
-            the google docs API. Retry a maximum number of times (default 10).
-            """
-            try:
-                if type == 'cell':
-                    if query is None:
-                        feed = self.gd_client.GetCellsFeed(self._key, wksht_id=self.worksheet_id)
-                    else:
-                        feed = self.gd_client.GetCellsFeed(self._key, wksht_id=self.worksheet_id, query=query)
-
-                elif type == 'list':
-                    feed = self.gd_client.GetListFeed(self._key, self.worksheet_id)
-                elif type == 'worksheet':
-                    feed = self.gd_client.GetWorksheetsFeed(self._key)
-
-                elif type == 'acl':
-                    feed = self.docs_client.GetAcl(self.document)
-
-                elif type == 'resource':
-                    feed = self.docs_client.GetResourceById(self._key)
-
-            # Sometimes the server doesn't respond. Retry the request.
-            except gdata.service.RequestError, inst:
-                if tries<10:
-                    status = inst[0]['status']
-                    print "Error status: " + str(status) + '<br><br>' + inst[0]['reason'] + '<br><br>' + inst[0]['body']
-                    if status>499:
-                        print "Try", tries, "of", max_tries, "waiting 2 seconds and retrying."
-                        import sys
-                        sys.stdout.flush()
-                        import time
-                        time.sleep(2)
-                        feed = self._get_feed(type=type, query=query, tries=tries+1)
-                    else:
-                        raise 
-                else:
-                    print "Maximum tries at contacting Google servers exceeded."
-                    raise
-            return feed
-
-        def _get_cell_feed(self, query=None, tries=0, max_tries=10):
-            """
-            Wrapper for _get_feed() when a cell feed is required.
-            """
-            # problem: if there are only 1000 lines in the spreadsheet and you request more you get this error: 400 Invalid query parameter value for max-row.
-            return self._get_feed(type='cell', query=query, tries=tries, max_tries=max_tries)
-
-        def _get_resource_feed(self, tries=0, max_tries=10):
-            """
-            Wrapper for _get_feed() when a resource is required.
-            """
-            return self._get_feed(type='resource', tries=tries, max_tries=max_tries)
-
-        def _get_list_feed(self, tries=0, max_tries=10):
-            """
-            Wrapper for _get_feed() when a list feed is required.
-            """
-            return self._get_feed(type='list', query=None, tries=tries, max_tries=max_tries)
-
-        def _get_worksheet_feed(self, tries=0, max_tries=10):
-            """
-            Wrapper for _get_feed() when a cell worksheet feed is required.
-            """
-            return self._get_feed(type='worksheet', query=None, tries=tries, max_tries=max_tries)
-
-        def _get_acl_feed(self, tries=0, max_tries=10):
-            """
-            Wrapper for _get_feed() when an acl feed is required.
-            """
-            return self._get_feed(type='acl', query=None, tries=tries, max_tries=max_tries)
         def update(self, data_frame, columns=None, header=1, comment=None, overwrite=True):
             """
             Update a google document with a given data frame. The
@@ -663,3 +484,205 @@ if gdata_available:
                 entries = entries[column_order]
 
             return entries
+
+#######################################################################
+# Place methods here that are really associated with the spreadsheet. #
+#######################################################################
+
+        def set_title(self, title):
+            """Change the title of the google spreadsheet."""
+            self.document.title = atom.data.Title(title=title)
+            self.docs_client.update_resource(self.document)
+
+        def get_title(self):
+            """Get the title of the google spreadsheet."""
+            return self.document.title.text
+
+        def delete_sheet(self, worksheet_name):
+            """Delete the worksheet with the given name."""
+            if worksheet_name == self.worksheet_name:
+                raise ValueError, "Can't delete the sheet I'm currently pointing to, use set_sheet to change sheet first."
+            for entry in self.feed.entry:
+                if worksheet_name==entry.title.text:
+                    self.gd_client.DeleteWorksheet(entry)
+                    return
+            raise ValueError, "Can't find worksheet " + worksheet_name + " to change the name."
+
+        def update_sheet_list(self):
+            """Update object with the worksheet feed and the list of worksheet_ids, can only be run once there is a spreadsheet key and a resource feed in place. Needs to be rerun if a worksheet is added."""
+            self.feed = self._get_worksheet_feed()
+            self.id_dict = self.worksheet_ids()
+
+        def _repr_html_(self):
+            if self.document.published.tag=='published':
+                url = self.url + '/pubhtml?widget=true&amp;headers=false' 
+                return nb.iframe_url(url, width=500, height=300)
+            else:
+                return None
+            
+
+        def show(self, width=400, height=200):
+            """If the IPython notebook is available, and the google
+            spreadsheet is published, then the spreadsheet is displayed
+            centrally in a box."""
+
+            try:
+                from IPython.display import HTML
+                url = self.url + '/pubhtml?widget=true&amp;headers=false' 
+                nb.iframe_url(url, width=width, height=height)
+            except ImportError:
+                print ds.url
+            else:
+                raise
+
+        def worksheet_ids(self):
+            def _id(entry):
+                split = urlparse.urlsplit(entry.id.text)
+                return os.path.basename(split.path)
+            return dict([(entry.title.text, _id(entry)) for entry in self.feed.entry])
+
+        def share(self, users, share_type='writer', send_notifications=False):
+            """
+            Share a document with a given list of users.
+            """
+            # share a document with the given list of users.
+            for user in users:
+                acl_entry = gdata.docs.data.AclEntry(
+                    scope=gdata.acl.data.AclScope(value=user, type='user'),
+                    role=gdata.acl.data.AclRole(value=share_type),
+                    )
+                acl2 = self.docs_client.AddAclEntry(self.document, acl_entry, send_notifications=send_notifications)
+
+        def _get_acl_entry(self, user):
+            """
+            Return the acl entry associated with a given user name.
+            """
+            acl_feed = self._get_acl_feed()
+            for acl_entry in acl_feed.entry:
+                if acl_entry.scope.value == user:
+                    return acl_entry
+            raise ValueError("User: " + user + " not in the acl feed for this resource.")
+
+
+        def share_delete(self, user):
+            """
+            Remove sharing from a given user.
+            """
+            acl_entry = self._get_acl_entry(user)
+            return self.docs_client.DeleteAclEntry(acl_entry)
+
+        def share_modify(self, user, share_type='reader', send_notifications=False):
+            """
+            :param user: email of the user to update.
+            :type user: string
+            :param share_type: type of sharing for the given user, type options are 'reader', 'writer', 'owner'
+            :type user: string
+            :param send_notifications: 
+            """
+            if share_type not in ['writer', 'reader', 'owner']:
+                raise ValueError("Share type should be 'writer', 'reader' or 'owner'")
+
+            acl_entry = self._get_acl_entry(user)# update ACL entry
+
+            #acl_entry.role.value = share_type
+            # According to Ali Afshar you need to remove the etag (https://groups.google.com/forum/#!msg/google-documents-list-api/eFSmo14nDLA/Oo4SjePHZd8J), can't work out how though!
+            #etag_element = acl_entry.find('etag')
+            #acl_entry.remove(etagelement)
+            #self.docs_client.UpdateAclEntry(acl_entry, sent_notifications=send_notifications)
+            # Hack: delete and re-add.
+            self.share_delete(acl_entry)
+            self.share([user], share_type, send_notifications)
+
+        def share_list(self):
+            """
+            Provide a list of all users who can access the document in the form of 
+            """
+            entries = []
+            acl_feed = self._get_acl_feed()
+            for acl_entry in acl_feed.entry:
+                entries.append((acl_entry.scope.value, acl_entry.role.value))
+            return entries
+
+        def revision_history(self):
+            """
+            Get the revision history of the document from Google Docs.
+            """
+            for entry in self.docs_client.GetResources(limit=55).entry:
+                revisions = self.docs_client.GetRevisions(entry)
+                for revision in revisions.entry:
+                    print revision.publish, revision.GetPublishLink()
+
+
+
+        def _get_feed(self, type, query=None, tries=0, max_tries=10):
+            """
+            Check for exceptions when calling for a group of cells from
+            the google docs API. Retry a maximum number of times (default 10).
+            """
+            try:
+                if type == 'cell':
+                    if query is None:
+                        feed = self.gd_client.GetCellsFeed(self._key, wksht_id=self.worksheet_id)
+                    else:
+                        feed = self.gd_client.GetCellsFeed(self._key, wksht_id=self.worksheet_id, query=query)
+
+                elif type == 'list':
+                    feed = self.gd_client.GetListFeed(self._key, self.worksheet_id)
+                elif type == 'worksheet':
+                    feed = self.gd_client.GetWorksheetsFeed(self._key)
+
+                elif type == 'acl':
+                    feed = self.docs_client.GetAcl(self.document)
+
+                elif type == 'resource':
+                    feed = self.docs_client.GetResourceById(self._key)
+
+            # Sometimes the server doesn't respond. Retry the request.
+            except gdata.service.RequestError, inst:
+                if tries<10:
+                    status = inst[0]['status']
+                    print "Error status: " + str(status) + '<br><br>' + inst[0]['reason'] + '<br><br>' + inst[0]['body']
+                    if status>499:
+                        print "Try", tries, "of", max_tries, "waiting 2 seconds and retrying."
+                        import sys
+                        sys.stdout.flush()
+                        import time
+                        time.sleep(2)
+                        feed = self._get_feed(type=type, query=query, tries=tries+1)
+                    else:
+                        raise 
+                else:
+                    print "Maximum tries at contacting Google servers exceeded."
+                    raise
+            return feed
+
+        def _get_cell_feed(self, query=None, tries=0, max_tries=10):
+            """
+            Wrapper for _get_feed() when a cell feed is required.
+            """
+            # problem: if there are only 1000 lines in the spreadsheet and you request more you get this error: 400 Invalid query parameter value for max-row.
+            return self._get_feed(type='cell', query=query, tries=tries, max_tries=max_tries)
+
+        def _get_resource_feed(self, tries=0, max_tries=10):
+            """
+            Wrapper for _get_feed() when a resource is required.
+            """
+            return self._get_feed(type='resource', tries=tries, max_tries=max_tries)
+
+        def _get_list_feed(self, tries=0, max_tries=10):
+            """
+            Wrapper for _get_feed() when a list feed is required.
+            """
+            return self._get_feed(type='list', query=None, tries=tries, max_tries=max_tries)
+
+        def _get_worksheet_feed(self, tries=0, max_tries=10):
+            """
+            Wrapper for _get_feed() when a cell worksheet feed is required.
+            """
+            return self._get_feed(type='worksheet', query=None, tries=tries, max_tries=max_tries)
+
+        def _get_acl_feed(self, tries=0, max_tries=10):
+            """
+            Wrapper for _get_feed() when an acl feed is required.
+            """
+            return self._get_feed(type='acl', query=None, tries=tries, max_tries=max_tries)
