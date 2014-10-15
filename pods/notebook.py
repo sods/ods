@@ -27,7 +27,7 @@ def display_iframe_url(target, **kwargs):
 def display_google_book(id, page, width=700, height=500, **kwargs):
     """Display an embedded version of a Google book."""
     url = 'http://books.google.co.uk/books?id={id}&pg=PA{page}&output=embed'.format(id=id, page=page)
-    display_iframe_url(url, width=width, height=height, **args)
+    display_iframe_url(url, width=width, height=height, **kwargs)
 
 def code_toggle(start_show=False, message=None):
     """Toggling on and off code in a notebook. 
