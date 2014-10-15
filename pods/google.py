@@ -122,8 +122,8 @@ if gdata_available:
 
         def _repr_html_(self):
             url = self.url + '/pubhtml?widget=true&amp;headers=false' 
-            nb.iframe_url(url, width=500, height=300)
-        
+            return nb.iframe_url(url, width=500, height=300)
+            
 
         def show(self, width=400, height=200):
             """If the IPython notebook is available, and the google
