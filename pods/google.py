@@ -7,6 +7,7 @@ import urlparse
 import os
 from config import *
 import numpy as np
+import atom
 
 import pods.notebook as nb
 
@@ -81,15 +82,16 @@ if gdata_available:
             if worksheet_name == self.worksheet_name:
                 raise ValueError, "Can't delete the sheet I'm currently pointing to, use set_sheet to change sheet first."
             for entry in self.feed.entry:
-                if worksheet_name==entry.title:
+                if worksheet_name==entry.title.text:
                     self.gd_client.DeleteWorksheet(entry)
+                    return
             raise ValueError, "Can't find worksheet " + worksheet_name + " to change the name."
             
 
         def change_sheet_name(self, title):
             """Change the title of the current worksheet to title."""
             for entry in self.feed.entry:
-                if self.worksheet_name==entry.title:
+                if self.worksheet_name==entry.title.text:
                     entry.title=atom.Title(text=title)
                     self.gd_client.UpdateWorksheet(entry)
                     self.worksheet_name = title
