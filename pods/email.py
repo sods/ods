@@ -1,22 +1,34 @@
 import smtplib
 import getpass
 
+from config import *
+
+gmail_sender= config.get('Gmail', 'user')
+gmail_name = config.get('Gmail', 'name')
 
 class gmail():
-    def __init__(self, username, name=None):
+    def __init__(self, username=None, name=None):
         """Open an SMTP TLS session for gmail."""
         self.session = smtplib.SMTP('smtp.gmail.com', 587)
         self.session.ehlo()
         self.session.starttls()
-        self.name = name
-        self.username = username
+        if name is None:
+            self.name = gmail_name
+        else:
+            self.name = name
+        if username is None:
+            self.username = gmail_sender
+        else:
+            self.username = username
         self.password = None
         self.get_password()
-        self.session.login(username,self.password)
+        self.session.login(self.username,self.password)
 
     def get_password(self):
         if self.password is None:
-            print "Check console for password input:"
+            print "Check console for password input!"
+            import sys
+            sys.stdout.flush()
             self.password = getpass.getpass("Enter your password for gmail:")
         
 

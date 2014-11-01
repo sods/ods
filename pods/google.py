@@ -30,14 +30,18 @@ if gdata_available:
         :type column_indent: int
         :param gd_client: the google spreadsheet service client to use (default is NOne which performs a programmatic login)
         :param docs_client: the google docs login client (default is none which causes a new client login)
-
+        :param published: whether the google doc underlying the system has been published or not (default: False).
+        :type published: bool
         """
-        def __init__(self, spreadsheet_key=None, worksheet_name=None, title='Google Spreadsheet', column_indent=0, gd_client=None, docs_client=None):
+        def __init__(self, spreadsheet_key=None, worksheet_name=None, title='Google Spreadsheet', column_indent=0, gd_client=None, docs_client=None, published=False):
 
             self.email = config.get('google docs', 'user')
             self.password = config.get('google docs', 'password')
 
             source = 'ODS Gdata Bot'                
+
+            
+            self.published = published
 
             if gd_client is None:
                 self.gd_client = gdata.spreadsheet.service.SpreadsheetsService()
@@ -71,7 +75,7 @@ if gdata_available:
                 self._key = spreadsheet_key
                 self.document = self._get_resource_feed()
                 
-            self.set_sheet(worksheet_name=worksheet_name)
+            self.set_sheet_focus(worksheet_name=worksheet_name)
 
             self.column_indent = column_indent
             self.url = 'https://docs.google.com/spreadsheets/d/' + self._key + '/'
@@ -92,7 +96,7 @@ if gdata_available:
             raise ValueError, "Can't find worksheet " + self.worksheet_name + " to change the name."
                 
 
-        def set_sheet(self, worksheet_name):
+        def set_sheet_focus(self, worksheet_name):
             """Set the current worksheet to the given name. If the name doesn't exist then create the sheet using sheet.add_sheet()"""
             self.update_sheet_list()
             # if the worksheet is set to None default to first sheet, warn if it's name is not "Sheet1".
@@ -111,7 +115,7 @@ if gdata_available:
             self.worksheet_id = self.id_dict[self.worksheet_name]
 
         def add_sheet(self, worksheet_name, rows=100, columns=10):
-            """Add a worksheet. To add and set to the current sheet use set_sheet()."""
+            """Add a worksheet. To add and set to the current sheet use set_sheet_focus()."""
             self.gd_client.AddWorksheet(title=worksheet_name, row_count=rows, col_count=columns, key=self._key)
             self.update_sheet_list()
 
@@ -378,7 +382,7 @@ if gdata_available:
 
             return self.gd_client.ExecuteBatch(batchRequest, cells.GetBatchLink().href)
 
-        def read(self, names=None, header=1, na_values=[], read_values=False, dtype={}, usecols=None):
+        def read(self, names=None, header=1, na_values=[], read_values=False, dtype={}, usecols=None, index_field=None):
             """
             Read in information from a Google document storing entries. Fields present are defined in 'names'
 
@@ -420,7 +424,11 @@ if gdata_available:
                         # Read the column titles for the fields.
                         fieldname = value.strip()
                         if fieldname in names.values():
-                            raise ValueError("Field name duplicated in header")
+                            print "ValueError, Field name duplicated in header in sheet in ", self.worksheet_name, " in Google spreadsheet ", self.url
+                            ans = raw_input('Try and fix the error on the sheet and then return here. Error fixed (Y/N)?')
+                            if ans[0]=='Y' or ans[0] == 'y':
+                                return self.read(names, header, na_values, read_values, dtype, usecols, index_field)
+                            raise ValueError, "Field name duplicated in header in sheet in " + self.worksheet_name + " in Google spreadsheet " + self.url
                         else:
                             names[col] = fieldname
                     continue
@@ -433,9 +441,10 @@ if gdata_available:
                 else:
                     field = col
 
-                if field.lower() == 'index':
+                if ((index_field is None and field.lower() == 'index') 
+                    or field==index_field):
                     val = value.strip()
-                    if 'index' in dtype:
+                    if field in dtype:
                         index_dict[row] = dtype[field](val)
                     else:
                         index_dict[row] = val
@@ -467,11 +476,23 @@ if gdata_available:
             for key in sorted(entries_dict.keys(), key=int):
                 entries.append(entries_dict[key])
                 if len(index_dict)>0:
-                    index.append(index_dict[key])
+                    try:
+                        index.append(index_dict[key])
+                    except KeyError:
+                        print "KeyError, unidentified key in ", self.worksheet_name, " in Google spreadsheet ", self.url
+                        ans = raw_input('Try and fix the error on the sheet and then return here. Error fixed (Y/N)?')
+                        if ans[0]=='Y' or ans[0] == 'y':
+                            return self.read(names, header, na_values, read_values, dtype, usecols, index_field)
+                        else:
+                            raise KeyError, "Unidentified key in " + self.worksheet_name + " in Google spreadsheet " + self.url
+
+                else:
+                    index.append(int(key)-header)
 
             if len(index)>0:
                 entries = pd.DataFrame(entries, index=index)
             else:
+                # this seems to cause problems, but it shouldn't come here now. If no index column is included index defaults to row number - header.
                 entries = pd.DataFrame(entries)
             if len(names)>0:
                 for field in names.values():
@@ -505,7 +526,7 @@ if gdata_available:
         def delete_sheet(self, worksheet_name):
             """Delete the worksheet with the given name."""
             if worksheet_name == self.worksheet_name:
-                raise ValueError, "Can't delete the sheet I'm currently pointing to, use set_sheet to change sheet first."
+                raise ValueError, "Can't delete the sheet I'm currently pointing to, use set_sheet_focus to change sheet first."
             for entry in self.feed.entry:
                 if worksheet_name==entry.title.text:
                     self.gd_client.DeleteWorksheet(entry)
@@ -518,11 +539,12 @@ if gdata_available:
             self.id_dict = self.worksheet_ids()
 
         def _repr_html_(self):
-            if self.document.published.tag=='published':
+            if self.published: #self.document.published.tag=='published':
                 url = self.url + '/pubhtml?widget=true&amp;headers=false' 
                 return nb.iframe_url(url, width=500, height=300)
             else:
-                return None
+                return self.read()._repr_html_()
+                #return None
             
 
         def show(self, width=400, height=200):
@@ -657,6 +679,8 @@ if gdata_available:
                         raise 
                 else:
                     print "Maximum tries at contacting Google servers exceeded."
+                    import sys
+                    sys.stdout.flush()
                     raise
             return feed
 
