@@ -130,12 +130,14 @@ def download_data(dataset_name=None):
         for url, files, suffices in zip(dr['urls'], dr['files'], dr['suffices']):
             for file, suffix in zip(files, suffices):
                 download_url(url=os.path.join(url,file), 
+                             dir_name = data_path,
                              store_directory=dataset_name, 
                              suffix=suffix)
     else:
         for url, files in zip(dr['urls'], dr['files']):
             for file in files:
                 download_url(url=os.path.join(url,file), 
+                             dir_name = data_path,
                              store_directory=dataset_name)
     return True
 

@@ -3,20 +3,18 @@ import os
 
 from config import *
 
-data_path = os.path.expanduser(os.path.expandvars(config.get('datasets', 'dir')))
 
-
-def download_url(url, store_directory, save_name=None, messages=True, suffix=''):
+def download_url(url, dir_name='.', save_name=None, store_directory=None, messages=True, suffix=''):
     """Download a file from a url and save it to disk."""
     import urllib2
     i = url.rfind('/')
     file = url[i+1:]
     print file
-    dir_name = os.path.join(data_path, store_directory)
+    if store_directory is not None:
+        dir_name = os.path.join(dir_name, store_directory)
     if save_name is None:
-        save_name = os.path.join(dir_name, file)
-    else:
-        save_name = os.path.join(dir_name, save_name)
+        save_name = file
+    save_name = os.path.join(dir_name, save_name)
     print "Downloading ", url, "->", save_name
     if not os.path.exists(dir_name):
         os.makedirs(dir_name)
