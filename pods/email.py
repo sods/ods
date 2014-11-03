@@ -33,7 +33,8 @@ class gmail():
         
 
     def send(self, recipient, subject, body, cc=[], reply_to=None, html=True):
-        # The below code never changes, though obviously those variables need values.
+        # The below code never changes, though obviously those
+        # variables need values.
         if self.name is not None:
             sender = self.name + '<' + self.username + '>'
         else:

@@ -72,7 +72,7 @@ if gdata_available:
                     self.users = self.participant_sheet.read()
                     self.users.rename(columns={'Gmail Address': 'Email'}, inplace=True)
                 else:
-                    raise ValueError, "If a the participant list is a dictionary, then I expect it to encode a google doc for the particiant list."
+                    raise ValueError, "If a the participant list is a dictionary, then it should encode a google doc for the particiant list with fields 'spreadsheet_key' and 'worksheet_name'."
 
             elif type(participant_list) is str:
                 # participant list is stored in a csv file.
