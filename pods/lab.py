@@ -90,6 +90,13 @@ if gdata_available:
                 
             if os.path.exists(self.keys_file):
                 self.sheet_keys = pickle.load(open(self.keys_file, "rb"))
+                # remove any spreadsheet keys that aren't in users list.
+                remove_keys = []
+                for key in self.sheet_keys:
+                    if not np.any(self.users.Email==key):
+                        remove_keys.append(key)
+                for key in remove_keys:
+                    del self.sheet_keys[key]
             else:
                 self.sheet_keys = {}
 
@@ -142,6 +149,7 @@ if gdata_available:
 
             if user in self.sheet_keys:
                 sheet = gl.sheet(spreadsheet_key=self.sheet_keys[user], 
+                                 worksheet_name=self.worksheet_name,
                                  gd_client=self.gd_client, 
                                  docs_client=self.docs_client)
                 # if gl.sheet had to login, store the details.
@@ -312,3 +320,17 @@ if gdata_available:
                 data[handle] = sheet.read(names, header, na_values, read_values, dtype, usecols)
             return data
 
+def download(name, course, github='SheffieldML/notebook/master/lab_classes/'):
+    """Download a lab class from the relevant course
+    :param course: the course short name to download the class from.
+    :type course: string
+    :param reference: reference to the course for downloading the class.
+    :type reference: string
+    :param github: github repo for downloading the course from.
+    :type string: github repo for downloading the lab."""
+
+    github_stub = 'https://raw.githubusercontent.com/'
+    if not name.endswith('.ipynb'):
+        name += '.ipynb'
+    from pods.util import download_url
+    download_url(os.path.join(github_stub, github, course, name), store_directory=course)

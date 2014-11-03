@@ -93,7 +93,7 @@ if gdata_available:
                     self.gd_client.UpdateWorksheet(entry)
                     self.worksheet_name = title
                     return
-            raise ValueError, "Can't find worksheet " + self.worksheet_name + " to change the name."
+            raise ValueError, "Can't find worksheet " + self.worksheet_name + " to change the name in Google spreadsheet " + self.url
                 
 
         def set_sheet_focus(self, worksheet_name):
@@ -134,7 +134,7 @@ if gdata_available:
                 if header is None:
                     header=2
                 elif header==1:
-                    raise ValueError('Comment will be overwritten by column headers')
+                    raise ValueError, 'Comment will be overwritten by column headers'
                 self.write_comment(comment)
             else:
                 if header is None:
@@ -175,16 +175,16 @@ if gdata_available:
 
             """
             if not data_frame.index.is_unique:
-                raise ValueError("Index for data_frame is not unique")
+                raise ValueError, "Index for data_frame is not unique in Google spreadsheet " + self.url
             ss = self.read(header=header)
             if not ss.index.is_unique:
-                raise ValueError("Index in google doc is not unique")
+                raise ValueError, "Index in google doc is not unique in Google spreadsheet " + self.url
             if columns is None:
                 columns = ss.columns
             if (len(set(ss.columns) - set(data_frame.columns))>0 or
                 len(set(data_frame.columns) - set(ss.columns))>0):
                 # TODO: Have a lazy option that doesn't mind this mismatch and accounts for it.
-                raise ValueError('There is a mismatch between columns in online spreadsheet and the data frame we are using to update.')
+                raise ValueError, 'There is a mismatch between columns in online spreadsheet and the data frame we are using to update in Google spreadsheet ' + self.url
             add_row = []
             remove_row = []
             update_cell = []
@@ -239,9 +239,12 @@ if gdata_available:
                 row_number = int(cells.entry[counter].cell.row) + 1
 
                 if current_index in remove_row:
-                    v = int(cells.entry[counter].cell.row)-header
+                    v = int(cells.entry[counter].cell.row)-header-1
                     row_to_delete.append(v)
-                    raise ValueError("Not willing to delete row indexed by " + current_index + " from " + cells.entry[counter].cell.row + " currently! Not comprehensively tested. Best guess is that row to delete is " + str(v))
+                    print "Warning deleting row indexed by '" + current_index + "' from " + cells.entry[counter].cell.row + " currently! Not comprehensively tested. Best guess is that row to delete is " + str(v) + " in Google spreadsheet " + self.url
+                    ans = raw_input("Delete row (Y/N)?")
+                    if len(ans)==0 or (not ans[0]=='Y' and not ans[0] == 'y'):
+                        raise ValueError, "Not willing to delete row."
                     counter+=len(row)
                     continue
                 else:
@@ -263,12 +266,12 @@ if gdata_available:
             updated = self.gd_client.ExecuteBatch(batchRequest, cells.GetBatchLink().href)
             # Delete the rows to be removed.
             for row in sorted(row_to_delete, reverse=True):
+                print "Delete row ", row
                 self._delete_row(row)
             # Insert the rows to be added
             for index in add_row:
                 self._add_row(index, data_frame.loc[index])
 
-            return ss
         def delete_entry(self, index):
             """Delete a row by index from the online spreadsheet.
 
@@ -516,8 +519,9 @@ if gdata_available:
 
         def set_title(self, title):
             """Change the title of the google spreadsheet."""
-            self.document.title = atom.data.Title(text=title)
-            self.docs_client.update_resource(self.document)
+            pass
+            #self.document.title = atom.data.Title(text=title)
+            #self.docs_client.update_resource(self.document)
 
         def get_title(self):
             """Get the title of the google spreadsheet."""
@@ -531,7 +535,7 @@ if gdata_available:
                 if worksheet_name==entry.title.text:
                     self.gd_client.DeleteWorksheet(entry)
                     return
-            raise ValueError, "Can't find worksheet " + worksheet_name + " to change the name."
+            raise ValueError, "Can't find worksheet " + worksheet_name + " to change the name " + " in Google spreadsheet " + self.url
 
         def update_sheet_list(self):
             """Update object with the worksheet feed and the list of worksheet_ids, can only be run once there is a spreadsheet key and a resource feed in place. Needs to be rerun if a worksheet is added."""
@@ -551,16 +555,16 @@ if gdata_available:
             """If the IPython notebook is available, and the google
             spreadsheet is published, then the spreadsheet is displayed
             centrally in a box."""
-
-            try:
-                from IPython.display import HTML
-                url = self.url + '/pubhtml?widget=true&amp;headers=false' 
-                nb.iframe_url(url, width=width, height=height)
-            except ImportError:
-                print ds.url
-            else:
-                raise
-
+            if self.published:
+                try:
+                    from IPython.display import HTML
+                    url = self.url + '/pubhtml?widget=true&amp;headers=false' 
+                    nb.iframe_url(url, width=width, height=height)
+                except ImportError:
+                    print ds.url
+                else:
+                    raise
+            
         def worksheet_ids(self):
             def _id(entry):
                 split = urlparse.urlsplit(entry.id.text)
@@ -578,6 +582,7 @@ if gdata_available:
                     role=gdata.acl.data.AclRole(value=share_type),
                     )
                 acl2 = self.docs_client.AddAclEntry(self.document, acl_entry, send_notifications=send_notifications)
+                    
 
         def _get_acl_entry(self, user):
             """
@@ -587,7 +592,7 @@ if gdata_available:
             for acl_entry in acl_feed.entry:
                 if acl_entry.scope.value == user:
                     return acl_entry
-            raise ValueError("User: " + user + " not in the acl feed for this resource.")
+            raise ValueError, "User: " + str(user) + " not in the acl feed for this resource" + " in Google spreadsheet " + self.url
 
 
         def share_delete(self, user):
@@ -595,7 +600,7 @@ if gdata_available:
             Remove sharing from a given user.
             """
             acl_entry = self._get_acl_entry(user)
-            return self.docs_client.DeleteAclEntry(acl_entry)
+            self.docs_client.DeleteAclEntry(acl_entry)
 
         def share_modify(self, user, share_type='reader', send_notifications=False):
             """
@@ -606,9 +611,9 @@ if gdata_available:
             :param send_notifications: 
             """
             if share_type not in ['writer', 'reader', 'owner']:
-                raise ValueError("Share type should be 'writer', 'reader' or 'owner'")
+                raise ValueError, "Share type should be 'writer', 'reader' or 'owner'"
 
-            acl_entry = self._get_acl_entry(user)# update ACL entry
+            #acl_entry = self._get_acl_entry(user)# update ACL entry
 
             #acl_entry.role.value = share_type
             # According to Ali Afshar you need to remove the etag (https://groups.google.com/forum/#!msg/google-documents-list-api/eFSmo14nDLA/Oo4SjePHZd8J), can't work out how though!
@@ -616,7 +621,7 @@ if gdata_available:
             #acl_entry.remove(etagelement)
             #self.docs_client.UpdateAclEntry(acl_entry, sent_notifications=send_notifications)
             # Hack: delete and re-add.
-            self.share_delete(acl_entry)
+            self.share_delete(user)
             self.share([user], share_type, send_notifications)
 
         def share_list(self):
