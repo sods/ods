@@ -746,7 +746,7 @@ def robot_wireless(data_set='robot_wireless'):
     return data_details_return({'X': X, 'Y': Y, 'Xtest': Xtest, 'Ytest': Ytest, 'addresses' : addresses, 'times' : times}, data_set)
 
 def silhouette(data_set='ankur_pose_data'):
-    # Ankur Agarwal and Bill Trigg's silhoutte data.
+    """Ankur Agarwal and Bill Trigg's silhoutte data."""
     if not data_available(data_set):
         download_data(data_set)
     mat_data = scipy.io.loadmat(os.path.join(data_path, data_set, 'ankurDataPoseSilhouette.mat'))
@@ -761,6 +761,7 @@ def silhouette(data_set='ankur_pose_data'):
     return data_details_return({'X': X, 'Y': Y, 'Xtest': Xtest, 'Ytest': Ytest}, data_set)
 
 def decampos_digits(data_set='decampos_characters', which_digits=[0,1,2,3,4,5,6,7,8,9]):
+    """Digits data set from Teo de Campos"""
     if not data_available(data_set):
         download_data(data_set)
     path = os.path.join(data_path, data_set)
@@ -819,6 +820,7 @@ def mauna_loa(data_set='mauna_loa', num_train=545, refresh_data=False):
 
 
 def osu_run1(data_set='osu_run1', sample_every=4):
+    """Ohio State University's Run1 motion capture data set."""
     path = os.path.join(data_path, data_set)
     if not data_available(data_set):
         import zipfile
