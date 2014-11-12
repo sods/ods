@@ -7,7 +7,6 @@ import urlparse
 import os
 from config import *
 import numpy as np
-import atom
 
 import pods.notebook as nb
 
@@ -19,6 +18,8 @@ except ImportError:
     gdata_available=False
 
 if gdata_available:
+    import atom
+
     class sheet():
         """
         Class for interchanging information between google spreadsheets and pandas data frames. The class manages a spreadsheet.
