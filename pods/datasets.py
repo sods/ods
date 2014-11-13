@@ -1183,7 +1183,13 @@ def creep_data(data_set='creep_rupture'):
     features.extend(range(2, 31))
     X = all_data[:, features].copy()
     return data_details_return({'X': X, 'y': y}, data_set)
-
+def ceres(data_set='ceres'):
+    """Twenty two observations of the Dwarf planet Ceres as observed by Giueseppe Piazzi and published in the September edition of Monatlicher Correspondenz in 1801. These were the measurements used by Gauss to fit a model of the planets orbit through which the planet was recovered three months later."""
+    if not data_available(data_set):
+        download_data(data_set)
+    import pandas as pd
+    data = pd.read_csv(os.path.join(data_path, data_set, 'ceresData.txt'), index_col = 'Tag', header=None, sep='\t',names=['Tag', 'Mittlere Sonnenzeit', 'Gerade Aufstig in Zeit', 'Gerade Aufstiegung in Graden', 'Nordlich Abweich', 'Geocentrische Laenger', 'Geocentrische Breite', 'Ort der Sonne + 20" Aberration', 'Logar. d. Distanz'], parse_dates=True, dayfirst=False)
+    return data_details_return({'data': data}, data_set)
 def cifar10_patches(data_set='cifar-10'):
     """The Candian Institute for Advanced Research 10 image data set. Code for loading in this data is taken from this Boris Babenko's blog post, original code available here: http://bbabenko.tumblr.com/post/86756017649/learning-low-level-vision-feautres-in-10-lines-of-code"""
     import cPickle as pickle
