@@ -1,0 +1,4 @@
+include pods/defaults.cfg
+include pods/machine.cfg
+include pods/data_resources.json
+include pods/football_teams.json
