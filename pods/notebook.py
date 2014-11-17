@@ -3,14 +3,29 @@
 
 
 def display_url(target):
-    """Displaying URL in an IPython notebook to allow the user to click and check on information. With thanks to Fernando Perez for putting together the implementation!"""
+    """Displaying URL in an IPython notebook to allow the user to click and check on information. With thanks to Fernando Perez for putting together the implementation!
+    :param target: the url to display.
+    :type target: string."""
     from IPython.display import display, HTML
     prefix = u"http://" if not target.startswith("http") else u""
     target = prefix + target
     display(HTML(u'<a href="{t}" target=_blank>{t}</a>'.format(t=target)))
 
 def iframe_url(target, width=500, height=400, scrolling=True, border=0, frameborder=0):
-    """Produce an iframe for displaying an item in html"""
+    """Produce an iframe for displaying an item in HTML window.
+    :param target: the target url.
+    :type target: string
+    :param width: the width of the iframe (default 500).
+    :type width: int
+    :param height: the height of the iframe (default 400).
+    :type height: int
+    :param scrolling: whether or not to allow scrolling (default True).
+    :type scrolling: bool
+    :param border: width of the border.
+    :type border: int
+    :param frameborder: width of the frameborder.
+    :type frameborder: int"""
+    
     prefix = u"http://" if not target.startswith("http") else u""
     target = prefix + target
     if scrolling:
@@ -20,13 +35,23 @@ def iframe_url(target, width=500, height=400, scrolling=True, border=0, framebor
     return u'<iframe frameborder="{frameborder}" scrolling="{scrolling}" style="border:{border}px" src="{url}", width={width} height={height}></iframe>'.format(frameborder=frameborder, scrolling=scroll_val, border=border, url=target, width=width, height=height)
 
 def display_iframe_url(target, **kwargs):
-    """Display the contents of a URL in an IPython notebook."""
+    """Display the contents of a URL in an IPython notebook.
+    
+    :param target: the target url.
+    :type target: string
+
+    .. seealso:: `iframe_url()` for additional arguments."""
+
     from IPython.display import display, HTML
     txt = iframe_url(target, **kwargs)
     display(HTML(txt))
 
 def display_google_book(id, page, width=700, height=500, **kwargs):
-    """Display an embedded version of a Google book."""
+    """Display an embedded version of a Google book.
+    :param id: the id of the google book to display.
+    :type id: string
+    :param page: the start page for the book.
+    :type id: string or int."""
     url = 'http://books.google.co.uk/books?id={id}&pg=PA{page}&output=embed'.format(id=id, page=page)
     display_iframe_url(url, width=width, height=height, **kwargs)
 
