@@ -273,13 +273,6 @@ if gdata_available:
             for index in add_row:
                 self._add_row(index, data_frame.loc[index])
 
-        def delete_entry(self, index):
-            """Delete a row by index from the online spreadsheet.
-
-            :param index: the index of the entry to be deleted.
-            : type index: str or int (any valid index for a pandas.DataFrame).
-            """
-            pass
         def _delete_row(self, row_number):
             """
             Delete a row of the spreadsheet.
@@ -548,7 +541,8 @@ if gdata_available:
                 url = self.url + '/pubhtml?widget=true&amp;headers=false' 
                 return nb.iframe_url(url, width=500, height=300)
             else:
-                return self.read()._repr_html_()
+                output = '<p><b>Google Sheet</b> at <a href="{url}" target="_blank">this url.</a>\n</p>'.format(url=self.url)
+                return output + self.read()._repr_html_()
                 #return None
             
 
@@ -675,7 +669,7 @@ if gdata_available:
                     status = inst[0]['status']
                     print "Error status: " + str(status) + '<br><br>' + inst[0]['reason'] + '<br><br>' + inst[0]['body']
                     if status>499:
-                        print "Try", tries, "of", max_tries, "waiting 2 seconds and retrying."
+                        print "Try", tries+1, "of", max_tries, "waiting 2 seconds and retrying."
                         import sys
                         sys.stdout.flush()
                         import time
