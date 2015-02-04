@@ -8,7 +8,7 @@ import os
 from config import *
 import numpy as np
 
-import pods.notebook as nb
+import notebook as nb
 
 gdata_available=True
 try:
