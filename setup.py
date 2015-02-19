@@ -2,6 +2,7 @@ from distutils.core import setup
 setup(
   name = 'pods',
   packages = ['pods'], # this must be the same as the name above
+  package_data={"pods" : ["defaults.cfg", "data_resources.json", "football_teams.json"]},
   version = 'v0.0.0-alpha',
   description = 'Python software for Open Data Science',
   author = 'The Open Data Science Initiative',
