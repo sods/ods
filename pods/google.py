@@ -104,7 +104,7 @@ if gdata_available:
             if worksheet_name is None:
                 self.worksheet_name = self.feed.entry[0].title.text
                 if len(self.feed.entry)>1 and self.worksheet_name != 'Sheet1':
-                    print "Warning, multiple worksheets in this spreadsheet and no title specified. Assuming you are requesting the sheet called '{sheetname}'. To surpress this warning, please specify the sheet name.".format(sheetname=self.worksheet_name)
+                    print("Warning, multiple worksheets in this spreadsheet and no title specified. Assuming you are requesting the sheet called '{sheetname}'. To surpress this warning, please specify the sheet name.".format(sheetname=self.worksheet_name))
             else:
                 if worksheet_name not in self.id_dict:
                     # create new worksheet here.
@@ -242,7 +242,7 @@ if gdata_available:
                 if current_index in remove_row:
                     v = int(cells.entry[counter].cell.row)-header-1
                     row_to_delete.append(v)
-                    print "Warning deleting row indexed by '" + current_index + "' from " + cells.entry[counter].cell.row + " currently! Not comprehensively tested. Best guess is that row to delete is " + str(v) + " in Google spreadsheet " + self.url
+                    print("Warning deleting row indexed by '" + current_index + "' from " + cells.entry[counter].cell.row + " currently! Not comprehensively tested. Best guess is that row to delete is " + str(v) + " in Google spreadsheet " + self.url)
                     ans = raw_input("Delete row (Y/N)?")
                     if len(ans)==0 or (not ans[0]=='Y' and not ans[0] == 'y'):
                         raise ValueError, "Not willing to delete row."
@@ -267,7 +267,7 @@ if gdata_available:
             updated = self.gd_client.ExecuteBatch(batchRequest, cells.GetBatchLink().href)
             # Delete the rows to be removed.
             for row in sorted(row_to_delete, reverse=True):
-                print "Delete row ", row
+                print("Delete row ", row)
                 self._delete_row(row)
             # Insert the rows to be added
             for index in add_row:
@@ -421,7 +421,7 @@ if gdata_available:
                         # Read the column titles for the fields.
                         fieldname = value.strip()
                         if fieldname in names.values():
-                            print "ValueError, Field name duplicated in header in sheet in ", self.worksheet_name, " in Google spreadsheet ", self.url
+                            print("ValueError, Field name duplicated in header in spreadsheet name:", self.worksheet_name, "in Google sheet ", self.url)
                             ans = raw_input('Try and fix the error on the sheet and then return here. Error fixed (Y/N)?')
                             if ans[0]=='Y' or ans[0] == 'y':
                                 return self.read(names, header, na_values, read_values, dtype, usecols, index_field)
@@ -476,7 +476,7 @@ if gdata_available:
                     try:
                         index.append(index_dict[key])
                     except KeyError:
-                        print "KeyError, unidentified key in ", self.worksheet_name, " in Google spreadsheet ", self.url
+                        print("KeyError, unidentified key in ", self.worksheet_name, " in Google spreadsheet ", self.url)
                         ans = raw_input('Try and fix the error on the sheet and then return here. Error fixed (Y/N)?')
                         if ans[0]=='Y' or ans[0] == 'y':
                             return self.read(names, header, na_values, read_values, dtype, usecols, index_field)
@@ -556,7 +556,7 @@ if gdata_available:
                     url = self.url + '/pubhtml?widget=true&amp;headers=false' 
                     nb.iframe_url(url, width=width, height=height)
                 except ImportError:
-                    print ds.url
+                    print(ds.url)
                 else:
                     raise
             
@@ -636,7 +636,7 @@ if gdata_available:
             for entry in self.docs_client.GetResources(limit=55).entry:
                 revisions = self.docs_client.GetRevisions(entry)
                 for revision in revisions.entry:
-                    print revision.publish, revision.GetPublishLink()
+                    print(revision.publish, revision.GetPublishLink())
 
 
 
@@ -667,9 +667,9 @@ if gdata_available:
             except gdata.service.RequestError, inst:
                 if tries<10:
                     status = inst[0]['status']
-                    print "Error status: " + str(status) + '<br><br>' + inst[0]['reason'] + '<br><br>' + inst[0]['body']
+                    print("Error status: " + str(status) + '<br><br>' + inst[0]['reason'] + '<br><br>' + inst[0]['body'])
                     if status>499:
-                        print "Try", tries+1, "of", max_tries, "waiting 2 seconds and retrying."
+                        print("Try", tries+1, "of", max_tries, "waiting 2 seconds and retrying.")
                         import sys
                         sys.stdout.flush()
                         import time
@@ -678,7 +678,7 @@ if gdata_available:
                     else:
                         raise 
                 else:
-                    print "Maximum tries at contacting Google servers exceeded."
+                    print("Maximum tries at contacting Google servers exceeded.")
                     import sys
                     sys.stdout.flush()
                     raise
