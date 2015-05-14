@@ -7,19 +7,23 @@ import os
 check_mark = '<span style="color:red;">**&#10004;**</span>'
 check_mark = '<span style="color:red;">**Correct**</span>'
 
-short_name = config.get('assesser', 'assessment_short_name')
-long_name = config.get('assesser', 'assessment_long_name')
-year = config.get('assesser', 'assessment_year')
+# Max: I commented these lines, as they do not allow to import pods
+# when not having those lines in the config!
+# I am not quite sure what to do else...
 
-data_directory = os.path.expandvars(config.get('assesser', 'data_directory'))
+#short_name = config.get('assesser', 'assessment_short_name')
+#long_name = config.get('assesser', 'assessment_long_name')
+#year = config.get('assesser', 'assessment_year')
 
-instructor_email = config.get('assesser', 'instructor_email')
-instructor_name = config.get('assesser', 'instructor_name')
-assesser_group_email = config.get('assesser', 'assesser_group_email')
+#data_directory = os.path.expandvars(config.get('assesser', 'data_directory'))
 
-participant_key = config.get('assesser', 'participant_list_key')
-participant_sheet = config.get('assesser', 'participant_list_sheet')
-marksheets_filename = config.get('assesser', 'class_marksheets_pickle')
+#instructor_email = config.get('assesser', 'instructor_email')
+#instructor_name = config.get('assesser', 'instructor_name')
+#assesser_group_email = config.get('assesser', 'assesser_group_email')
+
+#participant_key = config.get('assesser', 'participant_list_key')
+#participant_sheet = config.get('assesser', 'participant_list_sheet')
+#marksheets_filename = config.get('assesser', 'class_marksheets_pickle')
 
 class assessment():
     """Class for storing assesment information. This class stores the
