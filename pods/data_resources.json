@@ -627,5 +627,19 @@
         "urls": [
             "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/xw_pen/"
         ]
+    },
+    "leukemia": {
+        "citation": "Henderson, R., Shimakura, S., and Gorst, D. (2002).  Modeling spatial variation in leukemia survival data. Journal of the American Statistical Association, 97:965–972",
+        "details": "Dataset of leukemia survivals, data consists of:\n 'time', 'censoring', 'xcoord', 'ycoord', 'age', 'sex', 'white blood cell count', 'townsend deprivation index', 'district'",
+        "files": [
+            [
+                "leuk.dat"
+            ]
+        ],
+        "license": null,
+        "size": 51276,
+        "urls": [
+            "http://www.math.ntnu.no/%7Ehrue/r-inla.org/examples/leukemia/"
+        ]
     }
 }
