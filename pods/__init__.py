@@ -1,7 +1,7 @@
-import google
-import assesser
-import lab
-import datasets
-import mocap
-import email_
-import notebook
+from . import google
+from . import assesser
+from . import lab
+from . import datasets
+from . import mocap
+from . import email_
+from . import notebook

@@ -12,7 +12,7 @@ import json
 import re
 
 from .util import download_url
-from config import *
+from .config import *
 
 ipython_available=True
 try:
@@ -26,7 +26,11 @@ try:
 except ImportError:
     pandas_available=False
 
-import sys, urllib2
+import sys
+try:
+    import urllib2
+except:
+    import urllib as urllib2
 
 # Global variables
 data_path = os.path.expanduser(os.path.expandvars(config.get('datasets', 'dir')))
@@ -449,18 +453,18 @@ def google_trends(query_terms=['big data', 'machine learning', 'data science'], 
     file = 'data.csv'
     file_name = os.path.join(dir_path,file)
     if not os.path.exists(file_name) or refresh_data:
-        print "Accessing Google trends to acquire the data. Note that repeated accesses will result in a block due to a google terms of service violation. Failure at this point may be due to such blocks."
+        print("Accessing Google trends to acquire the data. Note that repeated accesses will result in a block due to a google terms of service violation. Failure at this point may be due to such blocks.")
         # quote the query terms.
         quoted_terms = []
         for term in query_terms:
             quoted_terms.append(urllib2.quote(term))
-        print "Query terms: ", ', '.join(query_terms)
+        print("Query terms: ", ', '.join(query_terms))
 
-        print "Fetching query:"
+        print("Fetching query:")
         query = 'http://www.google.com/trends/fetchComponent?q=%s&cid=TIMESERIES_GRAPH_0&export=3' % ",".join(quoted_terms)
 
         data = urllib2.urlopen(query).read()
-        print "Done."
+        print("Done.")
         # In the notebook they did some data cleaning: remove Javascript header+footer, and translate new Date(....,..,..) into YYYY-MM-DD.
         header = """// Data table response\ngoogle.visualization.Query.setResponse("""
         data = data[len(header):-2]
@@ -474,8 +478,8 @@ def google_trends(query_terms=['big data', 'machine learning', 'data science'], 
 
         df.to_csv(file_name)
     else:
-        print "Reading cached data for google trends. To refresh the cache set 'refresh_data=True' when calling this function."
-        print "Query terms: ", ', '.join(query_terms)
+        print("Reading cached data for google trends. To refresh the cache set 'refresh_data=True' when calling this function.")
+        print("Query terms: ", ', '.join(query_terms))
 
         df = pd.read_csv(file_name, parse_dates=[0])
 
@@ -527,7 +531,7 @@ def hapmap3(data_set='hapmap3'):
         import bz2
         import cPickle as pickle
     except ImportError as i:
-        raise i, "Need pandas for hapmap dataset, make sure to install pandas (http://pandas.pydata.org/) before loading the hapmap dataset"
+        raise i("Need pandas for hapmap dataset, make sure to install pandas (http://pandas.pydata.org/) before loading the hapmap dataset")
 
     dir_path = os.path.join(data_path,'hapmap3')
     hapmap_file_name = 'hapmap3_r2_b36_fwd.consensus.qc.poly'
@@ -545,10 +549,10 @@ def hapmap3(data_set='hapmap3'):
     if not reduce(lambda a,b: a and b, map(os.path.exists, preprocessed_data_paths)):
         if not overide_manual_authorize and not prompt_user("Preprocessing requires ~25GB "
                             "of memory and can take a (very) long time, continue? [Y/n]"):
-            print "Preprocessing required for further usage."
+            print("Preprocessing required for further usage.")
             return
         status = "Preprocessing data, please be patient..."
-        print status
+        print(status)
         def write_status(message, progress, status):
             stdout.write(" "*len(status)); stdout.write("\r"); stdout.flush()
             status = r"[{perc: <{ll}}] {message: <13s}".format(message=message, ll=20,
@@ -616,13 +620,13 @@ def hapmap3(data_set='hapmap3'):
         inandf = DataFrame(index=metadf.index, data=inan, columns=mapnp[:,1])
         inandf.to_pickle(preprocessed_data_paths[2])
         status=write_status('done :)', 100, status)
-        print ''
+        print('')
     else:
-        print "loading snps..."
+        print("loading snps...")
         snpsdf = read_pickle(preprocessed_data_paths[0])
-        print "loading metainfo..."
+        print("loading metainfo...")
         metadf = read_pickle(preprocessed_data_paths[1])
-        print "loading nan entries..."
+        print("loading nan entries...")
         inandf = read_pickle(preprocessed_data_paths[2])
     snps = snpsdf.values
     populations = metadf.population.values.astype('S3')
@@ -814,11 +818,11 @@ def mauna_loa(data_set='mauna_loa', num_train=545, refresh_data=False):
     """CO2 concentrations from the Mauna Loa observatory."""
     path = os.path.join(data_path, data_set)
     if data_available(data_set) and not refresh_data:
-        print 'Using cached version of the data set, to use latest version set refresh_data to True'
+        print('Using cached version of the data set, to use latest version set refresh_data to True')
     else:
         download_data(data_set)
     data = np.loadtxt(os.path.join(data_path, data_set, 'co2_mm_mlo.txt'))
-    print 'Most recent data observation from month ', data[-1, 1], ' in year ', data[-1, 0]
+    print('Most recent data observation from month ', data[-1, 1], ' in year ', data[-1, 0])
     allX = data[data[:, 3]!=-99.99, 2:3]
     allY = data[data[:, 3]!=-99.99, 3:4]
     X = allX[:num_train, 0:1]
