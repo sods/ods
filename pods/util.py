@@ -1,26 +1,29 @@
 import sys
 import os
 
-from config import *
+from .config import *
 
 
 def download_url(url, dir_name='.', save_name=None, store_directory=None, messages=True, suffix=''):
     """Download a file from a url and save it to disk."""
-    import urllib2
+    try:
+        import urllib2
+    except:
+        import urllib as urllib2
     i = url.rfind('/')
     file = url[i+1:]
-    print file
+    print(file)
     if store_directory is not None:
         dir_name = os.path.join(dir_name, store_directory)
     if save_name is None:
         save_name = file
     save_name = os.path.join(dir_name, save_name)
-    print "Downloading ", url, "->", save_name
+    print("Downloading ", url, "->", save_name)
     if not os.path.exists(dir_name):
         os.makedirs(dir_name)
     try:
         response = urllib2.urlopen(url+suffix)
-    except urllib2.URLError, e:
+    except urllib2.URLError(e):
         if not hasattr(e, "code"):
             raise
         response = e
@@ -58,5 +61,5 @@ def download_url(url, dir_name='.', save_name=None, store_directory=None, messag
             sys.stdout.write(status)
             sys.stdout.flush()
         sys.stdout.write(" "*(len(status)) + "\r")
-        print status
+        print(status)
         # if we wanted to get more sophisticated maybe we should check the response code here again even for successes.

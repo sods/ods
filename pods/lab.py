@@ -3,12 +3,14 @@
 
 
 import pandas as pd
-import urlparse
+try:
+    import urlparse
+except ImportError:
+    import urllib as urlparse
 import os
-from config import *
+from .config import *
 import pickle
 import pandas as pd
-import pickle
 import os
 import numpy as np
 
@@ -72,7 +74,7 @@ if gdata_available:
                     self.users = self.participant_sheet.read()
                     self.users.rename(columns={'Gmail Address': 'Email'}, inplace=True)
                 else:
-                    raise ValueError, "If a the participant list is a dictionary, then it should encode a google doc for the particiant list with fields 'spreadsheet_key' and 'worksheet_name'."
+                    raise ValueError("If a the participant list is a dictionary, then it should encode a google doc for the particiant list with fields 'spreadsheet_key' and 'worksheet_name'.")
 
             elif type(participant_list) is str:
                 # participant list is stored in a csv file.
@@ -80,7 +82,7 @@ if gdata_available:
                 self.users = pd.read_csv(self.participant_list, sep=user_sep)
             
             else:
-                raise ValueError, "Could not determine type of participant list."
+                raise ValueError("Could not determine type of participant list.")
 
             # load spreadsheet keys if they exist.
             if keys_file is None:

@@ -4,7 +4,10 @@
 import os
 import numpy as np
 import math
-import urllib2
+try:
+    import urllib2
+except:
+    import urllib as urllib2
 
 class vertex:
     def __init__(self, name, id, parents=[], children=[], meta = {}):
@@ -181,7 +184,7 @@ class skeleton(tree):
         return connection
 
     def to_xyz(self, channels):
-        raise NotImplementedError, "this needs to be implemented to use the skeleton class"
+        raise NotImplementedError("this needs to be implemented to use the skeleton class")
 
 
     def finalize(self):
