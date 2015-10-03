@@ -22,7 +22,7 @@ except ImportError:
     ipython_available=False
 
 pandas_available=True
-try: 
+try:
     import pandas as pd
 except ImportError:
     pandas_available=False
@@ -131,14 +131,14 @@ def download_data(dataset_name=None):
     if 'suffices' in dr:
         for url, files, suffices in zip(dr['urls'], dr['files'], dr['suffices']):
             for file, suffix in zip(files, suffices):
-                download_url(url=os.path.join(url,file), 
+                download_url(url=os.path.join(url,file),
                              dir_name = data_path,
-                             store_directory=dataset_name, 
+                             store_directory=dataset_name,
                              suffix=suffix)
     else:
         for url, files in zip(dr['urls'], dr['files']):
             for file in files:
-                download_url(url=os.path.join(url,file), 
+                download_url(url=os.path.join(url,file),
                              dir_name = data_path,
                              store_directory=dataset_name)
     return True
@@ -232,7 +232,7 @@ def boxjenkins_airline(data_set='boxjenkins_airline', num_train=96):
     X = data[:num_train, 0:1]
     Xtest = data[num_train:, 0:1]
     Ytest = data[num_train:, 1:2]
-        
+
     return data_details_return({'X': X, 'Y': Y, 'Xtest': Xtest, 'Ytest': Ytest, 'info': "Montly airline passenger data from Box & Jenkins 1976."}, data_set)
 
 def brendan_faces(data_set='brendan_faces'):
@@ -428,7 +428,7 @@ def google_trends(query_terms=['big data', 'machine learning', 'data science'], 
     """
     Data downloaded from Google trends for given query terms. Warning,
     if you use this function multiple times in a row you get blocked
-    due to terms of service violations. 
+    due to terms of service violations.
 
     The function will cache the result of any query in an attempt to
     avoid this. If you wish to refresh an old query set refresh_data
@@ -673,6 +673,15 @@ def oil(data_set='three_phase_oil_flow'):
     return data_details_return({'X': X, 'Y': Y, 'Xtest': Xtest, 'Ytest': Ytest, 'Xtest' : Xtest, 'Xvalid': Xvalid, 'Yvalid': Yvalid}, data_set)
     #else:
     # throw an error
+
+def leukemia(data_set='leukemia'):
+    if not data_available(data_set):
+        download_data(data_set)
+    all_data = np.genfromtxt(os.path.join(data_path, data_set, 'leuk.dat'))
+    X = all_data[1:, 1:]
+    censoring = all_data[1:, 1]
+    Y = all_data[1:, 0]
+    return data_details_return({'X' : X, 'censoring': censoring, 'Y': Y}, data_set)
 
 def oil_100(seed=default_seed, data_set = 'three_phase_oil_flow'):
     np.random.seed(seed=seed)
@@ -1091,7 +1100,7 @@ def movie_collaborative_filter(data_set='movie_collaborative_filter', date='2014
     return data_details_return({'Y': Y, 'info' : "Data set of movie ratings as summarized from Google doc spreadheets of students in class.",
                                 }, data_set)
 
-    
+
 def movie_body_count(data_set='movie_body_count'):
     """Data set of movies and body count for movies scraped from www.MovieBodyCounts.com created by Simon Garnier and Randy Olson for exploring differences between Python and R."""
     if not data_available(data_set):
@@ -1113,7 +1122,7 @@ def movie_body_count_r_classify(data_set='movie_body_count'):
     Y = data['MPAA_Rating']=='R' # set label to be positive for R rated films.
 
     # Create series of movie genres with the relevant index
-    s = data['Genre'].str.split('|').apply(pd.Series, 1).stack() 
+    s = data['Genre'].str.split('|').apply(pd.Series, 1).stack()
     s.index = s.index.droplevel(-1) # to line up with df's index
 
     # Extract from the series the unique list of genres.
