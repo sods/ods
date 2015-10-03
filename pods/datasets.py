@@ -12,7 +12,8 @@ import json
 import re
 
 from .util import download_url
-from config import *
+from .config import *
+from functools import reduce
 
 ipython_available=True
 try:
@@ -26,7 +27,8 @@ try:
 except ImportError:
     pandas_available=False
 
-import sys, urllib2
+import sys
+import urllib.request, urllib.error, urllib.parse
 
 # Global variables
 data_path = os.path.expanduser(os.path.expandvars(config.get('datasets', 'dir')))
@@ -59,7 +61,7 @@ def prompt_user(prompt):
 
     try:
         print(prompt)
-        choice = raw_input().lower()
+        choice = input().lower()
         # would like to test for which exceptions here
     except:
         print('Stdin is not implemented.')
@@ -126,7 +128,7 @@ def download_data(dataset_name=None):
     if not authorize_download(dataset_name):
         raise Exception("Permission to download data set denied.")
 
-    if dr.has_key('suffices'):
+    if 'suffices' in dr:
         for url, files, suffices in zip(dr['urls'], dr['files'], dr['suffices']):
             for file, suffix in zip(files, suffices):
                 download_url(url=os.path.join(url,file), 
@@ -285,7 +287,7 @@ def football_data(season='1314', data_set='football_data'):
         return league_dict[string]
 
     def football2num(string):
-        if football_dict.has_key(string):
+        if string in football_dict:
             return football_dict[string]
         else:
             football_dict[string] = len(football_dict)+1
@@ -449,33 +451,33 @@ def google_trends(query_terms=['big data', 'machine learning', 'data science'], 
     file = 'data.csv'
     file_name = os.path.join(dir_path,file)
     if not os.path.exists(file_name) or refresh_data:
-        print "Accessing Google trends to acquire the data. Note that repeated accesses will result in a block due to a google terms of service violation. Failure at this point may be due to such blocks."
+        print("Accessing Google trends to acquire the data. Note that repeated accesses will result in a block due to a google terms of service violation. Failure at this point may be due to such blocks.")
         # quote the query terms.
         quoted_terms = []
         for term in query_terms:
-            quoted_terms.append(urllib2.quote(term))
-        print "Query terms: ", ', '.join(query_terms)
+            quoted_terms.append(urllib.parse.quote(term))
+        print(("Query terms: ", ', '.join(query_terms)))
 
-        print "Fetching query:"
+        print("Fetching query:")
         query = 'http://www.google.com/trends/fetchComponent?q=%s&cid=TIMESERIES_GRAPH_0&export=3' % ",".join(quoted_terms)
 
-        data = urllib2.urlopen(query).read()
-        print "Done."
+        data = urllib.request.urlopen(query).read()
+        print("Done.")
         # In the notebook they did some data cleaning: remove Javascript header+footer, and translate new Date(....,..,..) into YYYY-MM-DD.
         header = """// Data table response\ngoogle.visualization.Query.setResponse("""
         data = data[len(header):-2]
         data = re.sub('new Date\((\d+),(\d+),(\d+)\)', (lambda m: '"%s-%02d-%02d"' % (m.group(1).strip(), 1+int(m.group(2)), int(m.group(3)))), data)
         timeseries = json.loads(data)
         columns = [k['label'] for k in timeseries['table']['cols']]
-        rows = map(lambda x: [k['v'] for k in x['c']], timeseries['table']['rows'])
+        rows = [[k['v'] for k in x['c']] for x in timeseries['table']['rows']]
         df = pd.DataFrame(rows, columns=columns)
         if not os.path.isdir(dir_path):
             os.makedirs(dir_path)
 
         df.to_csv(file_name)
     else:
-        print "Reading cached data for google trends. To refresh the cache set 'refresh_data=True' when calling this function."
-        print "Query terms: ", ', '.join(query_terms)
+        print("Reading cached data for google trends. To refresh the cache set 'refresh_data=True' when calling this function.")
+        print(("Query terms: ", ', '.join(query_terms)))
 
         df = pd.read_csv(file_name, parse_dates=[0])
 
@@ -525,14 +527,14 @@ def hapmap3(data_set='hapmap3'):
         from pandas import read_pickle, DataFrame
         from sys import stdout
         import bz2
-        import cPickle as pickle
+        import pickle as pickle
     except ImportError as i:
-        raise i, "Need pandas for hapmap dataset, make sure to install pandas (http://pandas.pydata.org/) before loading the hapmap dataset"
+        raise i("Need pandas for hapmap dataset, make sure to install pandas (http://pandas.pydata.org/) before loading the hapmap dataset")
 
     dir_path = os.path.join(data_path,'hapmap3')
     hapmap_file_name = 'hapmap3_r2_b36_fwd.consensus.qc.poly'
     unpacked_files = [os.path.join(dir_path, hapmap_file_name+ending) for ending in ['.ped', '.map']]
-    unpacked_files_exist = reduce(lambda a, b:a and b, map(os.path.exists, unpacked_files))
+    unpacked_files_exist = reduce(lambda a, b:a and b, list(map(os.path.exists, unpacked_files)))
 
     if not unpacked_files_exist and not data_available(data_set):
         download_data(data_set)
@@ -542,13 +544,13 @@ def hapmap3(data_set='hapmap3'):
                                 '.info.pickle',
                                 '.nan.pickle']]
 
-    if not reduce(lambda a,b: a and b, map(os.path.exists, preprocessed_data_paths)):
+    if not reduce(lambda a,b: a and b, list(map(os.path.exists, preprocessed_data_paths))):
         if not overide_manual_authorize and not prompt_user("Preprocessing requires ~25GB "
                             "of memory and can take a (very) long time, continue? [Y/n]"):
-            print "Preprocessing required for further usage."
+            print("Preprocessing required for further usage.")
             return
         status = "Preprocessing data, please be patient..."
-        print status
+        print(status)
         def write_status(message, progress, status):
             stdout.write(" "*len(status)); stdout.write("\r"); stdout.flush()
             status = r"[{perc: <{ll}}] {message: <13s}".format(message=message, ll=20,
@@ -586,7 +588,7 @@ def hapmap3(data_set='hapmap3'):
         snpstr = snpstrnp[:,6:].astype('S1').reshape(snpstrnp.shape[0], -1, 2)
         inan = snpstr[:,:,0] == '0'
         status=write_status('filtering reference alleles...', 55, status)
-        ref = np.array(map(lambda x: np.unique(x)[-2:], snpstr.swapaxes(0,1)[:,:,:]))
+        ref = np.array([np.unique(x)[-2:] for x in snpstr.swapaxes(0,1)[:,:,:]])
         status=write_status('encoding snps...', 70, status)
         # Encode the information for each gene in {-1,0,1}:
         status=write_status('encoding snps...', 73, status)
@@ -616,13 +618,13 @@ def hapmap3(data_set='hapmap3'):
         inandf = DataFrame(index=metadf.index, data=inan, columns=mapnp[:,1])
         inandf.to_pickle(preprocessed_data_paths[2])
         status=write_status('done :)', 100, status)
-        print ''
+        print('')
     else:
-        print "loading snps..."
+        print("loading snps...")
         snpsdf = read_pickle(preprocessed_data_paths[0])
-        print "loading metainfo..."
+        print("loading metainfo...")
         metadf = read_pickle(preprocessed_data_paths[1])
-        print "loading nan entries..."
+        print("loading nan entries...")
         inandf = read_pickle(preprocessed_data_paths[2])
     snps = snpsdf.values
     populations = metadf.population.values.astype('S3')
@@ -722,7 +724,7 @@ def robot_wireless(data_set='robot_wireless'):
     allX = np.zeros((len(times), 2))
     allY[:]=-92.
     strengths={}
-    for address, j in zip(addresses, range(len(addresses))):
+    for address, j in zip(addresses, list(range(len(addresses)))):
         ind = np.nonzero(address==macaddress)
         temp_strengths=strength[ind]
         temp_x=x[ind]
@@ -788,11 +790,11 @@ def ripley_synth(data_set='ripley_prnn_data'):
 """def global_average_temperature(data_set='global_temperature', num_train=1000, refresh_data=False):
     path = os.path.join(data_path, data_set)
     if data_available(data_set) and not refresh_data:
-        print 'Using cached version of the data set, to use latest version set refresh_data to True'
+        print('Using cached version of the data set, to use latest version set refresh_data to True')
     else:
         download_data(data_set)
     data = np.loadtxt(os.path.join(data_path, data_set, 'GLBTS.long.data'))
-    print 'Most recent data observation from month ', data[-1, 1], ' in year ', data[-1, 0]
+    print('Most recent data observation from month ', data[-1, 1], ' in year ', data[-1, 0])
     allX = data[data[:, 3]!=-99.99, 2:3]
     allY = data[data[:, 3]!=-99.99, 3:4]
     X = allX[:num_train, 0:1]
@@ -805,11 +807,11 @@ def mauna_loa(data_set='mauna_loa', num_train=545, refresh_data=False):
     """CO2 concentrations from the Mauna Loa observatory."""
     path = os.path.join(data_path, data_set)
     if data_available(data_set) and not refresh_data:
-        print 'Using cached version of the data set, to use latest version set refresh_data to True'
+        print('Using cached version of the data set, to use latest version set refresh_data to True')
     else:
         download_data(data_set)
     data = np.loadtxt(os.path.join(data_path, data_set, 'co2_mm_mlo.txt'))
-    print 'Most recent data observation from month ', data[-1, 1], ' in year ', data[-1, 0]
+    print(('Most recent data observation from month ', data[-1, 1], ' in year ', data[-1, 0]))
     allX = data[data[:, 3]!=-99.99, 2:3]
     allY = data[data[:, 3]!=-99.99, 3:4]
     X = allX[:num_train, 0:1]
@@ -828,14 +830,14 @@ def osu_run1(data_set='osu_run1', sample_every=4):
         zip = zipfile.ZipFile(os.path.join(data_path, data_set, 'run1TXT.ZIP'), 'r')
         for name in zip.namelist():
             zip.extract(name, path)
-    import mocap
+    from . import mocap
     Y, connect = mocap.load_text_data('Aug210106', path)
     Y = Y[0:-1:sample_every, :]
     return data_details_return({'Y': Y, 'connect' : connect}, data_set)
 
 def swiss_roll_generated(num_samples=1000, sigma=0.0):
     with open(os.path.join(os.path.dirname(__file__), 'datasets', 'swiss_roll.pickle')) as f:
-        import cPickle as pickle
+        import pickle as pickle
         data = pickle.load(f)
     Na = data['Y'].shape[0]
     perm = np.random.permutation(np.r_[:Na])[:num_samples]
@@ -1206,9 +1208,11 @@ def creep_data(data_set='creep_rupture'):
     all_data = np.loadtxt(os.path.join(data_path, data_set, 'taka'))
     y = all_data[:, 1:2].copy()
     features = [0]
-    features.extend(range(2, 31))
+    features.extend(list(range(2, 31)))
     X = all_data[:, features].copy()
     return data_details_return({'X': X, 'y': y}, data_set)
+
+
 def ceres(data_set='ceres'):
     """Twenty two observations of the Dwarf planet Ceres as observed by Giueseppe Piazzi and published in the September edition of Monatlicher Correspondenz in 1801. These were the measurements used by Gauss to fit a model of the planets orbit through which the planet was recovered three months later."""
     if not data_available(data_set):
@@ -1216,9 +1220,10 @@ def ceres(data_set='ceres'):
     import pandas as pd
     data = pd.read_csv(os.path.join(data_path, data_set, 'ceresData.txt'), index_col = 'Tag', header=None, sep='\t',names=['Tag', 'Mittlere Sonnenzeit', 'Gerade Aufstig in Zeit', 'Gerade Aufstiegung in Graden', 'Nordlich Abweich', 'Geocentrische Laenger', 'Geocentrische Breite', 'Ort der Sonne + 20" Aberration', 'Logar. d. Distanz'], parse_dates=True, dayfirst=False)
     return data_details_return({'data': data}, data_set)
+
 def cifar10_patches(data_set='cifar-10'):
     """The Candian Institute for Advanced Research 10 image data set. Code for loading in this data is taken from this Boris Babenko's blog post, original code available here: http://bbabenko.tumblr.com/post/86756017649/learning-low-level-vision-feautres-in-10-lines-of-code"""
-    import cPickle as pickle
+    import pickle as pickle
     dir_path = os.path.join(data_path, data_set)
     filename = os.path.join(dir_path, 'cifar-10-python.tar.gz')
     if not data_available(data_set):
@@ -1264,7 +1269,7 @@ def cmu_mocap_35_walk_jog(data_set='cmu_mocap'):
 def cmu_mocap(subject, train_motions, test_motions=[], sample_every=4, data_set='cmu_mocap'):
     """Load a given subject's training and test motions from the CMU motion capture data."""
     # Load in subject skeleton.
-    import mocap
+    from . import mocap
     subject_dir = os.path.join(data_path, data_set)
 
     # Make sure the data is downloaded.

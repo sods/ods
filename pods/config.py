@@ -1,9 +1,14 @@
 #
 # This loads the configuration
 #
-import ConfigParser
+import sys
+
+if sys.version_info >= (3,0):
+    import configparser
+else:
+    import ConfigParser as configparser
 import os
-config = ConfigParser.ConfigParser()
+config = configparser.ConfigParser()
 
 # This is the default configuration file that always needs to be present.
 default_file = os.path.abspath(os.path.join(os.path.dirname( __file__ ), 'defaults.cfg'))
@@ -20,4 +25,4 @@ user_file = os.path.join(home,'.ods_user.cfg')
 config.readfp(open(default_file))
 config.read([local_file, user_file])
 if not config:
-    raise ValueError, "No configuration file found at either " + user_file + " or " + local_file + " or " + default_file + "."
+    raise ValueError("No configuration file found at either " + user_file + " or " + local_file + " or " + default_file + ".")

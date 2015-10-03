@@ -1,10 +1,12 @@
+
+
 import smtplib
 import getpass
 
-from config import *
+from . import config
 
-gmail_sender= config.get('Gmail', 'user')
-gmail_name = config.get('Gmail', 'name')
+gmail_sender= config.config.get('Gmail', 'user')
+gmail_name = config.config.get('Gmail', 'name')
 
 class gmail():
     def __init__(self, username=None, name=None):
@@ -26,7 +28,7 @@ class gmail():
 
     def get_password(self):
         if self.password is None:
-            print "Check console for password input!"
+            print("Check console for password input!")
             import sys
             sys.stdout.flush()
             self.password = getpass.getpass("Enter your password for gmail:")
