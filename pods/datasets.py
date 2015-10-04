@@ -963,8 +963,9 @@ def toy_linear_1d_classification(seed=default_seed):
     X = (np.r_[x1, x2])[:, None]
     return {'X': X, 'Y':  sample_class(2.*X), 'F': 2.*X, 'seed' : seed}
 
-def airline_delay(data_set='airline_delay', all_data=800000, num_test=100000, seed=default_seed):
+def airline_delay(data_set='airline_delay', num_train=700000, num_test=100000, seed=default_seed):
     """Airline delay data used in Gaussian Processes for Big Data by Hensman, Fusi and Lawrence"""
+    
     if not data_available(data_set):
         download_data(data_set)
 
@@ -983,6 +984,7 @@ def airline_delay(data_set='airline_delay', all_data=800000, num_test=100000, se
     Xall = data.values
 
     # Subset the data (memory!!)
+    all_data = num_train+num_test
     Xall = Xall[:all_data]
     Yall = Yall[:all_data]
 
@@ -1404,4 +1406,4 @@ def cmu_mocap(subject, train_motions, test_motions=[], sample_every=4, data_set=
     return data_details_return({'Y': Y, 'lbls' : lbls, 'Ytest': Ytest, 'lblstest' : lblstest, 'info': info, 'skel': skel}, data_set)
 
 
-data_load_files = [boston_housing, boxjenkins_airline, brendan_faces, della_gatta_TRP63_gene_expression, epomeo_gpx, football_data, sod1_mouse, spellman_yeast, spellman_yeast_cdc15, lee_yeast_ChIP, fruitfly_tomancak, drosophila_protein, drosophila_knirps, google_trends, hapmap3, oil, leukemia, oil_100, pumadyn, robot_wireless, silhouette, decampos_digits, ripley_synth, mauna_loa, osu_run1, swiss_roll_generated, singlecell, swiss_roll, swiss_roll_1000, isomap_faces, simulation_BGPLVM, toy_rbf_1d, toy_rbf_1d_50, toy_linear_1d_classification, olivetti_glasses, olivetti_faces, xw_pen, download_rogers_girolami_data, olympic_100m_men, olympic_100m_women, olympic_200m_men, olympic_200m_women, olympic_400m_men, olympic_400m_women, olympic_marathon_men, olympic_sprints, movie_collaborative_filter, movie_body_count, movie_body_count_r_classify, movielens100k, crescent_data, creep_data, ceres, cifar10_patches,cmu_mocap_49_balance, cmu_mocap_35_walk_jog, cmu_mocap]
+data_load_files = [airline_delay, boston_housing, boxjenkins_airline, brendan_faces, della_gatta_TRP63_gene_expression, epomeo_gpx, football_data, sod1_mouse, spellman_yeast, spellman_yeast_cdc15, lee_yeast_ChIP, fruitfly_tomancak, drosophila_protein, drosophila_knirps, google_trends, hapmap3, oil, leukemia, oil_100, pumadyn, robot_wireless, silhouette, decampos_digits, ripley_synth, mauna_loa, osu_run1, swiss_roll_generated, singlecell, swiss_roll, swiss_roll_1000, isomap_faces, simulation_BGPLVM, toy_rbf_1d, toy_rbf_1d_50, toy_linear_1d_classification, olivetti_glasses, olivetti_faces, xw_pen, download_rogers_girolami_data, olympic_100m_men, olympic_100m_women, olympic_200m_men, olympic_200m_women, olympic_400m_men, olympic_400m_women, olympic_marathon_men, olympic_sprints, movie_collaborative_filter, movie_body_count, movie_body_count_r_classify, movielens100k, crescent_data, creep_data, ceres, cifar10_patches,cmu_mocap_49_balance, cmu_mocap_35_walk_jog, cmu_mocap]
