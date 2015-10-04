@@ -1,7 +1,8 @@
-import google
-import assesser
-import lab
-import datasets
-import mocap
-import email_
-import notebook
+from __future__ import absolute_import
+from . import google
+from . import assesser
+from . import lab
+from . import datasets
+from . import mocap
+from . import odsmail
+from . import notebook

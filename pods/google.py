@@ -1,14 +1,23 @@
+from __future__ import print_function
+from __future__ import absolute_import
 # Copyright 2014 Open Data Science Initiative and other authors. See AUTHORS.txt
 # Licensed under the BSD 3-clause license (see LICENSE.txt)
 
 
-import pandas as pd
-import urlparse
+import sys
 import os
-from config import *
+
+import pandas as pd
+
+if sys.version_info>=(3,0):
+    import urllib.parse as urlparse
+else:
+    import urlparse
+
+from .config import *
 import numpy as np
 
-import notebook as nb
+from . import notebook as nb
 
 gdata_available=True
 try:
@@ -94,7 +103,7 @@ if gdata_available:
                     self.gd_client.UpdateWorksheet(entry)
                     self.worksheet_name = title
                     return
-            raise ValueError, "Can't find worksheet " + self.worksheet_name + " to change the name in Google spreadsheet " + self.url
+            raise ValueError("Can't find worksheet " + self.worksheet_name + " to change the name in Google spreadsheet " + self.url)
                 
 
         def set_sheet_focus(self, worksheet_name):
@@ -135,7 +144,7 @@ if gdata_available:
                 if header is None:
                     header=2
                 elif header==1:
-                    raise ValueError, 'Comment will be overwritten by column headers'
+                    raise ValueError('Comment will be overwritten by column headers')
                 self.write_comment(comment)
             else:
                 if header is None:
@@ -176,16 +185,16 @@ if gdata_available:
 
             """
             if not data_frame.index.is_unique:
-                raise ValueError, "Index for data_frame is not unique in Google spreadsheet " + self.url
+                raise ValueError("Index for data_frame is not unique in Google spreadsheet " + self.url)
             ss = self.read(header=header)
             if not ss.index.is_unique:
-                raise ValueError, "Index in google doc is not unique in Google spreadsheet " + self.url
+                raise ValueError("Index in google doc is not unique in Google spreadsheet " + self.url)
             if columns is None:
                 columns = ss.columns
             if (len(set(ss.columns) - set(data_frame.columns))>0 or
                 len(set(data_frame.columns) - set(ss.columns))>0):
                 # TODO: Have a lazy option that doesn't mind this mismatch and accounts for it.
-                raise ValueError, 'There is a mismatch between columns in online spreadsheet and the data frame we are using to update in Google spreadsheet ' + self.url
+                raise ValueError('There is a mismatch between columns in online spreadsheet and the data frame we are using to update in Google spreadsheet ' + self.url)
             add_row = []
             remove_row = []
             update_cell = []
@@ -245,7 +254,7 @@ if gdata_available:
                     print("Warning deleting row indexed by '" + current_index + "' from " + cells.entry[counter].cell.row + " currently! Not comprehensively tested. Best guess is that row to delete is " + str(v) + " in Google spreadsheet " + self.url)
                     ans = raw_input("Delete row (Y/N)?")
                     if len(ans)==0 or (not ans[0]=='Y' and not ans[0] == 'y'):
-                        raise ValueError, "Not willing to delete row."
+                        raise ValueError("Not willing to delete row.")
                     counter+=len(row)
                     continue
                 else:
@@ -267,7 +276,7 @@ if gdata_available:
             updated = self.gd_client.ExecuteBatch(batchRequest, cells.GetBatchLink().href)
             # Delete the rows to be removed.
             for row in sorted(row_to_delete, reverse=True):
-                print("Delete row ", row)
+                print(("Delete row ", row))
                 self._delete_row(row)
             # Insert the rows to be added
             for index in add_row:
@@ -421,11 +430,11 @@ if gdata_available:
                         # Read the column titles for the fields.
                         fieldname = value.strip()
                         if fieldname in names.values():
-                            print("ValueError, Field name duplicated in header in spreadsheet name:", self.worksheet_name, "in Google sheet ", self.url)
+                            print(("ValueError, Field name duplicated in header in spreadsheet name:", self.worksheet_name, "in Google sheet ", self.url))
                             ans = raw_input('Try and fix the error on the sheet and then return here. Error fixed (Y/N)?')
                             if ans[0]=='Y' or ans[0] == 'y':
                                 return self.read(names, header, na_values, read_values, dtype, usecols, index_field)
-                            raise ValueError, "Field name duplicated in header in sheet in " + self.worksheet_name + " in Google spreadsheet " + self.url
+                            raise ValueError("Field name duplicated in header in sheet in " + self.worksheet_name + " in Google spreadsheet " + self.url)
                         else:
                             names[col] = fieldname
                     continue
@@ -476,12 +485,12 @@ if gdata_available:
                     try:
                         index.append(index_dict[key])
                     except KeyError:
-                        print("KeyError, unidentified key in ", self.worksheet_name, " in Google spreadsheet ", self.url)
+                        print(("KeyError, unidentified key in ", self.worksheet_name, " in Google spreadsheet ", self.url))
                         ans = raw_input('Try and fix the error on the sheet and then return here. Error fixed (Y/N)?')
                         if ans[0]=='Y' or ans[0] == 'y':
                             return self.read(names, header, na_values, read_values, dtype, usecols, index_field)
                         else:
-                            raise KeyError, "Unidentified key in " + self.worksheet_name + " in Google spreadsheet " + self.url
+                            raise KeyError("Unidentified key in " + self.worksheet_name + " in Google spreadsheet " + self.url)
 
                 else:
                     index.append(int(key)-header)
@@ -524,12 +533,12 @@ if gdata_available:
         def delete_sheet(self, worksheet_name):
             """Delete the worksheet with the given name."""
             if worksheet_name == self.worksheet_name:
-                raise ValueError, "Can't delete the sheet I'm currently pointing to, use set_sheet_focus to change sheet first."
+                raise ValueError("Can't delete the sheet I'm currently pointing to, use set_sheet_focus to change sheet first.")
             for entry in self.feed.entry:
                 if worksheet_name==entry.title.text:
                     self.gd_client.DeleteWorksheet(entry)
                     return
-            raise ValueError, "Can't find worksheet " + worksheet_name + " to change the name " + " in Google spreadsheet " + self.url
+            raise ValueError("Can't find worksheet " + worksheet_name + " to change the name " + " in Google spreadsheet " + self.url)
 
         def update_sheet_list(self):
             """Update object with the worksheet feed and the list of worksheet_ids, can only be run once there is a spreadsheet key and a resource feed in place. Needs to be rerun if a worksheet is added."""
@@ -587,7 +596,7 @@ if gdata_available:
             for acl_entry in acl_feed.entry:
                 if acl_entry.scope.value == user:
                     return acl_entry
-            raise ValueError, "User: " + str(user) + " not in the acl feed for this resource" + " in Google spreadsheet " + self.url
+            raise ValueError("User: " + str(user) + " not in the acl feed for this resource" + " in Google spreadsheet " + self.url)
 
 
         def share_delete(self, user):
@@ -606,7 +615,7 @@ if gdata_available:
             :param send_notifications: 
             """
             if share_type not in ['writer', 'reader', 'owner']:
-                raise ValueError, "Share type should be 'writer', 'reader' or 'owner'"
+                raise ValueError("Share type should be 'writer', 'reader' or 'owner'")
 
             #acl_entry = self._get_acl_entry(user)# update ACL entry
 
@@ -636,7 +645,7 @@ if gdata_available:
             for entry in self.docs_client.GetResources(limit=55).entry:
                 revisions = self.docs_client.GetRevisions(entry)
                 for revision in revisions.entry:
-                    print(revision.publish, revision.GetPublishLink())
+                    print((revision.publish, revision.GetPublishLink()))
 
 
 
@@ -664,12 +673,12 @@ if gdata_available:
                     feed = self.docs_client.GetResourceById(self._key)
 
             # Sometimes the server doesn't respond. Retry the request.
-            except gdata.service.RequestError, inst:
+            except gdata.service.RequestError as inst:
                 if tries<10:
                     status = inst[0]['status']
                     print("Error status: " + str(status) + '<br><br>' + inst[0]['reason'] + '<br><br>' + inst[0]['body'])
                     if status>499:
-                        print("Try", tries+1, "of", max_tries, "waiting 2 seconds and retrying.")
+                        print(("Try", tries+1, "of", max_tries, "waiting 2 seconds and retrying."))
                         import sys
                         sys.stdout.flush()
                         import time
