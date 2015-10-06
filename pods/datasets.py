@@ -73,7 +73,6 @@ def prompt_user(prompt):
             choice = input().lower()
         else:
             choice = raw_input().lower()
-
         # would like to test for which exceptions here
     except:
         print('Stdin is not implemented.')
@@ -545,7 +544,7 @@ def hapmap3(data_set='hapmap3'):
     dir_path = os.path.join(data_path,'hapmap3')
     hapmap_file_name = 'hapmap3_r2_b36_fwd.consensus.qc.poly'
     unpacked_files = [os.path.join(dir_path, hapmap_file_name+ending) for ending in ['.ped', '.map']]
-    unpacked_files_exist = reduce(lambda a, b:a and b, map(os.path.exists, unpacked_files))
+    unpacked_files_exist = reduce(lambda a, b:a and b, list(map(os.path.exists, unpacked_files)))
 
     if not unpacked_files_exist and not data_available(data_set):
         download_data(data_set)
@@ -555,7 +554,7 @@ def hapmap3(data_set='hapmap3'):
                                 '.info.pickle',
                                 '.nan.pickle']]
 
-    if not reduce(lambda a,b: a and b, map(os.path.exists, preprocessed_data_paths)):
+    if not reduce(lambda a,b: a and b, list(map(os.path.exists, preprocessed_data_paths))):
         if not overide_manual_authorize and not prompt_user("Preprocessing requires ~25GB "
                             "of memory and can take a (very) long time, continue? [Y/n]"):
             print("Preprocessing required for further usage.")
@@ -599,7 +598,7 @@ def hapmap3(data_set='hapmap3'):
         snpstr = snpstrnp[:,6:].astype('S1').reshape(snpstrnp.shape[0], -1, 2)
         inan = snpstr[:,:,0] == '0'
         status=write_status('filtering reference alleles...', 55, status)
-        ref = np.array(map(lambda x: np.unique(x)[-2:], snpstr.swapaxes(0,1)[:,:,:]))
+        ref = np.array([np.unique(x)[-2:] for x in snpstr.swapaxes(0,1)[:,:,:]])
         status=write_status('encoding snps...', 70, status)
         # Encode the information for each gene in {-1,0,1}:
         status=write_status('encoding snps...', 73, status)
@@ -744,7 +743,7 @@ def robot_wireless(data_set='robot_wireless'):
     allX = np.zeros((len(times), 2))
     allY[:]=-92.
     strengths={}
-    for address, j in zip(addresses, range(len(addresses))):
+    for address, j in zip(addresses, list(range(len(addresses)))):
         ind = np.nonzero(address==macaddress)
         temp_strengths=strength[ind]
         temp_x=x[ind]
@@ -810,11 +809,11 @@ def ripley_synth(data_set='ripley_prnn_data'):
 """def global_average_temperature(data_set='global_temperature', num_train=1000, refresh_data=False):
     path = os.path.join(data_path, data_set)
     if data_available(data_set) and not refresh_data:
-        print 'Using cached version of the data set, to use latest version set refresh_data to True'
+        print('Using cached version of the data set, to use latest version set refresh_data to True')
     else:
         download_data(data_set)
     data = np.loadtxt(os.path.join(data_path, data_set, 'GLBTS.long.data'))
-    print 'Most recent data observation from month ', data[-1, 1], ' in year ', data[-1, 0]
+    print('Most recent data observation from month ', data[-1, 1], ' in year ', data[-1, 0])
     allX = data[data[:, 3]!=-99.99, 2:3]
     allY = data[data[:, 3]!=-99.99, 3:4]
     X = allX[:num_train, 0:1]
@@ -1265,7 +1264,7 @@ def creep_data(data_set='creep_rupture'):
     all_data = np.loadtxt(os.path.join(data_path, data_set, 'taka'))
     y = all_data[:, 1:2].copy()
     features = [0]
-    features.extend(range(2, 31))
+    features.extend(list(range(2, 31)))
     X = all_data[:, features].copy()
     return data_details_return({'X': X, 'y': y}, data_set)
 
@@ -1276,6 +1275,7 @@ def ceres(data_set='ceres'):
     import pandas as pd
     data = pd.read_csv(os.path.join(data_path, data_set, 'ceresData.txt'), index_col = 'Tag', header=None, sep='\t',names=['Tag', 'Mittlere Sonnenzeit', 'Gerade Aufstig in Zeit', 'Gerade Aufstiegung in Graden', 'Nordlich Abweich', 'Geocentrische Laenger', 'Geocentrische Breite', 'Ort der Sonne + 20" Aberration', 'Logar. d. Distanz'], parse_dates=True, dayfirst=False)
     return data_details_return({'data': data}, data_set)
+
 def cifar10_patches(data_set='cifar-10'):
     """The Candian Institute for Advanced Research 10 image data set. Code for loading in this data is taken from this Boris Babenko's blog post, original code available here: http://bbabenko.tumblr.com/post/86756017649/learning-low-level-vision-feautres-in-10-lines-of-code"""
     if sys.version_info>=(3,0):

@@ -3,10 +3,10 @@ from __future__ import absolute_import
 import smtplib
 import getpass
 
-from .config import *
+from . import config
 
-gmail_sender= config.get('Gmail', 'user')
-gmail_name = config.get('Gmail', 'name')
+gmail_sender= config.config.get('Gmail', 'user')
+gmail_name = config.config.get('Gmail', 'name')
 
 class gmail():
     def __init__(self, username=None, name=None):

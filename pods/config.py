@@ -1,7 +1,6 @@
 #
 # This loads the configuration
 #
-
 import sys
 import os
     

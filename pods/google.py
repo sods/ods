@@ -1,18 +1,18 @@
-from __future__ import print_function
-from __future__ import absolute_import
 # Copyright 2014 Open Data Science Initiative and other authors. See AUTHORS.txt
 # Licensed under the BSD 3-clause license (see LICENSE.txt)
-
+from __future__ import print_function
+from __future__ import absolute_import
 
 import sys
 import os
 
+# Deal with raw_input in python
+try:
+    input = raw_input
+except NameError:
+    pass
+    
 import pandas as pd
-
-if sys.version_info>=(3,0):
-    import urllib.parse as urlparse
-else:
-    import urlparse
 
 from .config import *
 import numpy as np
@@ -252,20 +252,20 @@ if gdata_available:
                     v = int(cells.entry[counter].cell.row)-header-1
                     row_to_delete.append(v)
                     print("Warning deleting row indexed by '" + current_index + "' from " + cells.entry[counter].cell.row + " currently! Not comprehensively tested. Best guess is that row to delete is " + str(v) + " in Google spreadsheet " + self.url)
-                    ans = raw_input("Delete row (Y/N)?")
+                    ans = input("Delete row (Y/N)?")
                     if len(ans)==0 or (not ans[0]=='Y' and not ans[0] == 'y'):
                         raise ValueError("Not willing to delete row.")
                     counter+=len(row)
                     continue
                 else:
                     counter+=1
-                for current_column, entry in row.iteritems():
+                for current_column, entry in row.items():
                     if (current_index, current_column) in update_cell:
                         val = data_frame[current_column][index]
                         if not pd.isnull(val):
                             v = []
                             try:
-                                v = unicode(val)
+                                v = str(val)
                             except UnicodeDecodeError:
                                 v = str(val)
                             cells.entry[counter].cell.inputValue = v
@@ -299,11 +299,11 @@ if gdata_available:
             :type data_series: pandas.Series"""
             dict = {}
             dict['index'] = index
-            for column, entry in data_series.iteritems():
+            for column, entry in data_series.items():
                 if not pd.isnull(entry):
                     val = []
                     try:
-                        val = unicode(entry)
+                        val = str(entry)
                     except UnicodeDecodeError:
                         val = str(entry)
                     dict[column] = val
@@ -357,7 +357,7 @@ if gdata_available:
                     if not pd.isnull(entry):
                         val = []
                         try:
-                            val = unicode(entry)
+                            val = str(entry)
                         except UnicodeDecodeError:
                             val = str(entry)
                         cells.entry[counter].cell.inputValue = val
@@ -429,9 +429,9 @@ if gdata_available:
                     if read_names:
                         # Read the column titles for the fields.
                         fieldname = value.strip()
-                        if fieldname in names.values():
+                        if fieldname in list(names.values()):
                             print(("ValueError, Field name duplicated in header in spreadsheet name:", self.worksheet_name, "in Google sheet ", self.url))
-                            ans = raw_input('Try and fix the error on the sheet and then return here. Error fixed (Y/N)?')
+                            ans = input('Try and fix the error on the sheet and then return here. Error fixed (Y/N)?')
                             if ans[0]=='Y' or ans[0] == 'y':
                                 return self.read(names, header, na_values, read_values, dtype, usecols, index_field)
                             raise ValueError("Field name duplicated in header in sheet in " + self.worksheet_name + " in Google spreadsheet " + self.url)
@@ -479,14 +479,14 @@ if gdata_available:
 
             entries = []
             index = []
-            for key in sorted(entries_dict.keys(), key=int):
+            for key in sorted(list(entries_dict.keys()), key=int):
                 entries.append(entries_dict[key])
                 if len(index_dict)>0:
                     try:
                         index.append(index_dict[key])
                     except KeyError:
                         print(("KeyError, unidentified key in ", self.worksheet_name, " in Google spreadsheet ", self.url))
-                        ans = raw_input('Try and fix the error on the sheet and then return here. Error fixed (Y/N)?')
+                        ans = input('Try and fix the error on the sheet and then return here. Error fixed (Y/N)?')
                         if ans[0]=='Y' or ans[0] == 'y':
                             return self.read(names, header, na_values, read_values, dtype, usecols, index_field)
                         else:
@@ -501,7 +501,7 @@ if gdata_available:
                 # this seems to cause problems, but it shouldn't come here now. If no index column is included index defaults to row number - header.
                 entries = pd.DataFrame(entries)
             if len(names)>0:
-                for field in names.values():
+                for field in list(names.values()):
                     if field not in list(entries.columns) + ['index']:
                         if usecols is None or field in usecols:
                             entries[field] = np.NaN
@@ -571,7 +571,7 @@ if gdata_available:
             
         def worksheet_ids(self):
             def _id(entry):
-                split = urlparse.urlsplit(entry.id.text)
+                split = urllib.parse.urlsplit(entry.id.text)
                 return os.path.basename(split.path)
             return dict([(entry.title.text, _id(entry)) for entry in self.feed.entry])
 
@@ -673,7 +673,7 @@ if gdata_available:
                     feed = self.docs_client.GetResourceById(self._key)
 
             # Sometimes the server doesn't respond. Retry the request.
-            except gdata.service.RequestError as inst:
+            except gdata.service.RequestError(inst):
                 if tries<10:
                     status = inst[0]['status']
                     print("Error status: " + str(status) + '<br><br>' + inst[0]['reason'] + '<br><br>' + inst[0]['body'])

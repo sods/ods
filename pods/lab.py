@@ -18,6 +18,8 @@ import pandas as pd
 import pickle
 import numpy as np
 
+from . import config
+
 gdata_available=True
 try:
     import gdata.docs.client
@@ -28,7 +30,7 @@ except ImportError:
 
 
 if gdata_available:
-    default_class_dir = os.path.expanduser(os.path.expandvars(config.get('class info', 'dir')))
+    default_class_dir = os.path.expanduser(os.path.expandvars(config.config.get('class info', 'dir')))
 
     class distributor():
         """

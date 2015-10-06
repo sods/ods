@@ -28,7 +28,7 @@ def download_url(url, dir_name='.', save_name=None, store_directory=None, messag
         os.makedirs(dir_name)
     try:
         response = urlopen(url+suffix)
-    except URLError as e:
+    except URLError(e):
         if not hasattr(e, "code"):
             raise
         if e.code > 399 and e.code<500:
