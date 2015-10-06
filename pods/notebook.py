@@ -46,6 +46,7 @@ def display_iframe_url(target, **kwargs):
     txt = iframe_url(target, **kwargs)
     display(HTML(txt))
 
+
 def display_google_book(id, page, width=700, height=500, **kwargs):
     """Display an embedded version of a Google book.
     :param id: the id of the google book to display.
@@ -55,6 +56,8 @@ def display_google_book(id, page, width=700, height=500, **kwargs):
     url = 'http://books.google.co.uk/books?id={id}&pg=PA{page}&output=embed'.format(id=id, page=page)
     display_iframe_url(url, width=width, height=height, **kwargs)
 
+def code_hide():
+    """Hide code in a notebook."""
 def code_toggle(start_show=False, message=None):
     """Toggling on and off code in a notebook. 
     :param start_show: Whether to display the code or not on first load (default is False).
@@ -69,7 +72,7 @@ def code_toggle(start_show=False, message=None):
     
     html ='<script>\n'
     if message is None:
-        message = u'The raw code for this IPython notebook is by default hidden for easier reading. To toggle on/off the raw code, click <a href="javascript:code_toggle()">here</a>.'
+        message = u'The raw code for this jupyter notebook can be hidden for easier reading.'
     if start_show:
         html += u'code_show=true;\n'
     else:
@@ -85,7 +88,7 @@ def code_toggle(start_show=False, message=None):
 $( document ).ready(code_toggle);
 </script>
 '''
-    html += message
+    html += message + ' To toggle on/off the raw code, click <a href="javascript:code_toggle()">here</a>.' 
     display(HTML(html))
 
 
