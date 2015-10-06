@@ -1,8 +1,11 @@
 # Copyright 2014 Open Data Science Initiative and other authors. See AUTHORS.txt
 # Licensed under the BSD 3-clause license (see LICENSE.txt)
+from __future__ import print_function
+from __future__ import absolute_import
 
-import csv
 import os
+import sys
+import csv
 import copy
 import numpy as np
 import pylab as pb
@@ -27,8 +30,13 @@ try:
 except ImportError:
     pandas_available=False
 
-import sys
-import urllib.request, urllib.error, urllib.parse
+if sys.version_info>=(3,0):
+    from urllib.parse import quote
+    from urllib.request import urlopen 
+else:
+    from urllib2 import quote
+    from urllib2 import urlopen
+
 
 # Global variables
 data_path = os.path.expanduser(os.path.expandvars(config.get('datasets', 'dir')))
@@ -61,7 +69,10 @@ def prompt_user(prompt):
 
     try:
         print(prompt)
-        choice = input().lower()
+        if sys.version_info>=(3,0):
+            choice = input().lower()
+        else:
+            choice = raw_input().lower()
         # would like to test for which exceptions here
     except:
         print('Stdin is not implemented.')
@@ -208,11 +219,7 @@ def cmu_urls_files(subj_motions, messages = True):
     return resource
 
 
-
-
-
 # The data sets
-
 def boston_housing(data_set='boston_housing'):
     if not data_available(data_set):
         download_data(data_set)
@@ -455,13 +462,13 @@ def google_trends(query_terms=['big data', 'machine learning', 'data science'], 
         # quote the query terms.
         quoted_terms = []
         for term in query_terms:
-            quoted_terms.append(urllib.parse.quote(term))
-        print(("Query terms: ", ', '.join(query_terms)))
+            quoted_terms.append(quote(term))
+        print("Query terms: ", ', '.join(query_terms))
 
         print("Fetching query:")
         query = 'http://www.google.com/trends/fetchComponent?q=%s&cid=TIMESERIES_GRAPH_0&export=3' % ",".join(quoted_terms)
 
-        data = urllib.request.urlopen(query).read()
+        data = urlopen(query).read().decode('utf8')
         print("Done.")
         # In the notebook they did some data cleaning: remove Javascript header+footer, and translate new Date(....,..,..) into YYYY-MM-DD.
         header = """// Data table response\ngoogle.visualization.Query.setResponse("""
@@ -469,7 +476,7 @@ def google_trends(query_terms=['big data', 'machine learning', 'data science'], 
         data = re.sub('new Date\((\d+),(\d+),(\d+)\)', (lambda m: '"%s-%02d-%02d"' % (m.group(1).strip(), 1+int(m.group(2)), int(m.group(3)))), data)
         timeseries = json.loads(data)
         columns = [k['label'] for k in timeseries['table']['cols']]
-        rows = [[k['v'] for k in x['c']] for x in timeseries['table']['rows']]
+        rows = list(map(lambda x: [k['v'] for k in x['c']], timeseries['table']['rows']))
         df = pd.DataFrame(rows, columns=columns)
         if not os.path.isdir(dir_path):
             os.makedirs(dir_path)
@@ -527,7 +534,10 @@ def hapmap3(data_set='hapmap3'):
         from pandas import read_pickle, DataFrame
         from sys import stdout
         import bz2
-        import pickle as pickle
+        if sys.version_info>=(3,0):
+            import pickle
+        else:
+            import cPickle as pickle
     except ImportError as i:
         raise i("Need pandas for hapmap dataset, make sure to install pandas (http://pandas.pydata.org/) before loading the hapmap dataset")
 
@@ -846,7 +856,10 @@ def osu_run1(data_set='osu_run1', sample_every=4):
 
 def swiss_roll_generated(num_samples=1000, sigma=0.0):
     with open(os.path.join(os.path.dirname(__file__), 'datasets', 'swiss_roll.pickle')) as f:
-        import pickle as pickle
+        if sys.version_info>=(3,0):
+            import pickle
+        else:
+            import cPickle as pickle
         data = pickle.load(f)
     Na = data['Y'].shape[0]
     perm = np.random.permutation(np.r_[:Na])[:num_samples]
@@ -948,6 +961,39 @@ def toy_linear_1d_classification(seed=default_seed):
     x2 = np.random.normal(3, 5, 20)
     X = (np.r_[x1, x2])[:, None]
     return {'X': X, 'Y':  sample_class(2.*X), 'F': 2.*X, 'seed' : seed}
+
+def airline_delay(data_set='airline_delay', num_train=700000, num_test=100000, seed=default_seed):
+    """Airline delay data used in Gaussian Processes for Big Data by Hensman, Fusi and Lawrence"""
+    
+    if not data_available(data_set):
+        download_data(data_set)
+
+    dir_path = os.path.join(data_path, data_set)
+    filename = os.path.join(dir_path, 'filtered_data.pickle')
+
+    # 1. Load the dataset
+    import pandas as pd
+    data = pd.read_pickle(filename)
+
+    # WARNING: removing year
+    data.pop('Year')
+
+    # Get data matrices
+    Yall = data.pop('ArrDelay').values[:,None]
+    Xall = data.values
+
+    # Subset the data (memory!!)
+    all_data = num_train+num_test
+    Xall = Xall[:all_data]
+    Yall = Yall[:all_data]
+
+    # Get testing points
+    np.random.seed(seed=seed)
+    N_shuffled = np.random.permutation(Yall.shape[0])
+    train, test = N_shuffled[num_test:], N_shuffled[:num_test]
+    X, Y = Xall[train], Yall[train]
+    Xtest, Ytest = Xall[test], Yall[test]
+    return data_details_return({'X': X, 'Y': Y, 'Xtest': Xtest, 'Ytest': Ytest, 'seed' : seed, 'info': "Airline delay data used for demonstrating Gaussian processes for big data."}, data_set)
 
 def olivetti_glasses(data_set='olivetti_glasses', num_training=200, seed=default_seed):
     path = os.path.join(data_path, data_set)
@@ -1149,13 +1195,14 @@ def movielens100k(data_set='movielens100k'):
         for name in zip.namelist():
             zip.extract(name, dir_path)
     import pandas as pd
+    encoding = 'latin-1'
     movie_path = os.path.join(data_path, 'movielens100k', 'ml-100k')
-    items = pd.read_csv(os.path.join(movie_path, 'u.item'), index_col = 'index', header=None, sep='|',names=['index', 'title', 'date', 'empty', 'imdb_url', 'unknown', 'Action', 'Adventure', 'Animation', 'Children''s', 'Comedy', 'Crime', 'Documentary', 'Drama', 'Fantasy', 'Film-Noir', 'Horror', 'Musical', 'Mystery', 'Romance', 'Sci-Fi', 'Thriller', 'War', 'Western'])
-    users = pd.read_csv(os.path.join(movie_path, 'u.user'), index_col = 'index', header=None, sep='|', names=['index', 'age', 'sex', 'job', 'id'])
+    items = pd.read_csv(os.path.join(movie_path, 'u.item'), index_col = 'index', header=None, sep='|',names=['index', 'title', 'date', 'empty', 'imdb_url', 'unknown', 'Action', 'Adventure', 'Animation', 'Children''s', 'Comedy', 'Crime', 'Documentary', 'Drama', 'Fantasy', 'Film-Noir', 'Horror', 'Musical', 'Mystery', 'Romance', 'Sci-Fi', 'Thriller', 'War', 'Western'], encoding=encoding)
+    users = pd.read_csv(os.path.join(movie_path, 'u.user'), index_col = 'index', header=None, sep='|', names=['index', 'age', 'sex', 'job', 'id'], encoding=encoding)
     parts = ['u1.base', 'u1.test', 'u2.base', 'u2.test','u3.base', 'u3.test','u4.base', 'u4.test','u5.base', 'u5.test','ua.base', 'ua.test','ub.base', 'ub.test']
     ratings = []
     for part in parts:
-        rate_part = pd.read_csv(os.path.join(movie_path, part), index_col = 'index', header=None, sep='\t', names=['user', 'item', 'rating', 'index'])
+        rate_part = pd.read_csv(os.path.join(movie_path, part), index_col = 'index', header=None, sep='\t', names=['user', 'item', 'rating', 'index'], encoding=encoding)
         rate_part['split'] = part
         ratings.append(rate_part)
     Y = pd.concat(ratings)
@@ -1221,7 +1268,6 @@ def creep_data(data_set='creep_rupture'):
     X = all_data[:, features].copy()
     return data_details_return({'X': X, 'y': y}, data_set)
 
-
 def ceres(data_set='ceres'):
     """Twenty two observations of the Dwarf planet Ceres as observed by Giueseppe Piazzi and published in the September edition of Monatlicher Correspondenz in 1801. These were the measurements used by Gauss to fit a model of the planets orbit through which the planet was recovered three months later."""
     if not data_available(data_set):
@@ -1232,7 +1278,10 @@ def ceres(data_set='ceres'):
 
 def cifar10_patches(data_set='cifar-10'):
     """The Candian Institute for Advanced Research 10 image data set. Code for loading in this data is taken from this Boris Babenko's blog post, original code available here: http://bbabenko.tumblr.com/post/86756017649/learning-low-level-vision-feautres-in-10-lines-of-code"""
-    import pickle as pickle
+    if sys.version_info>=(3,0):
+        import pickle
+    else:
+        import cPickle as pickle
     dir_path = os.path.join(data_path, data_set)
     filename = os.path.join(dir_path, 'cifar-10-python.tar.gz')
     if not data_available(data_set):
@@ -1275,6 +1324,8 @@ def cmu_mocap_35_walk_jog(data_set='cmu_mocap'):
     data['info'] = "Walk and jog data from CMU data base subject 35. As used in Tayor, Roweis and Hinton at NIPS 2007, but without their pre-processing (i.e. as used by Lawrence at AISTATS 2007). It consists of " + data['info']
     return data
 
+
+    
 def cmu_mocap(subject, train_motions, test_motions=[], sample_every=4, data_set='cmu_mocap'):
     """Load a given subject's training and test motions from the CMU motion capture data."""
     # Load in subject skeleton.
@@ -1355,3 +1406,4 @@ def cmu_mocap(subject, train_motions, test_motions=[], sample_every=4, data_set=
     return data_details_return({'Y': Y, 'lbls' : lbls, 'Ytest': Ytest, 'lblstest' : lblstest, 'info': info, 'skel': skel}, data_set)
 
 
+data_load_files = [airline_delay, boston_housing, boxjenkins_airline, brendan_faces, della_gatta_TRP63_gene_expression, epomeo_gpx, football_data, sod1_mouse, spellman_yeast, spellman_yeast_cdc15, lee_yeast_ChIP, fruitfly_tomancak, drosophila_protein, drosophila_knirps, google_trends, hapmap3, oil, leukemia, oil_100, pumadyn, robot_wireless, silhouette, decampos_digits, ripley_synth, mauna_loa, osu_run1, swiss_roll_generated, singlecell, swiss_roll, swiss_roll_1000, isomap_faces, simulation_BGPLVM, toy_rbf_1d, toy_rbf_1d_50, toy_linear_1d_classification, olivetti_glasses, olivetti_faces, xw_pen, download_rogers_girolami_data, olympic_100m_men, olympic_100m_women, olympic_200m_men, olympic_200m_women, olympic_400m_men, olympic_400m_women, olympic_marathon_men, olympic_sprints, movie_collaborative_filter, movie_body_count, movie_body_count_r_classify, movielens100k, crescent_data, creep_data, ceres, cifar10_patches,cmu_mocap_49_balance, cmu_mocap_35_walk_jog, cmu_mocap]

@@ -1,15 +1,19 @@
 # Copyright 2014 Open Data Science Initiative and other authors. See AUTHORS.txt
 # Licensed under the BSD 3-clause license (see LICENSE.txt)
-
-
+from __future__ import print_function
+from __future__ import absolute_import
 
 import sys
-import pandas as pd
-if sys.version_info >= (3,0):
-    from urllib.parse import urlparse
-else:
-    import urllib.parse
 import os
+
+# Deal with raw_input in python
+try:
+    input = raw_input
+except NameError:
+    pass
+    
+import pandas as pd
+
 from .config import *
 import numpy as np
 

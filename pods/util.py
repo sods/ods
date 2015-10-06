@@ -8,13 +8,16 @@ from .config import *
 
 def download_url(url, dir_name='.', save_name=None, store_directory=None, messages=True, suffix=''):
     """Download a file from a url and save it to disk."""
-    try:
-        import urllib2
-    except:
-        import urllib as urllib2
+    if sys.version_info>=(3,0):
+        from urllib.parse import quote
+        from urllib.request import urlopen 
+        from urllib.error import URLError
+    else:
+        from urllib2 import quote
+        from urllib2 import urlopen
+        from urllib2 import URLError
     i = url.rfind('/')
     file = url[i+1:]
-    print(file)
     if store_directory is not None:
         dir_name = os.path.join(dir_name, store_directory)
     if save_name is None:
@@ -24,20 +27,22 @@ def download_url(url, dir_name='.', save_name=None, store_directory=None, messag
     if not os.path.exists(dir_name):
         os.makedirs(dir_name)
     try:
-        response = urllib2.urlopen(url+suffix)
-    except urllib2.URLError(e):
+        response = urlopen(url+suffix)
+    except URLError(e):
         if not hasattr(e, "code"):
             raise
-        response = e
-        if response.code > 399 and response.code<500:
-            raise ValueError('Tried url ' + url + suffix + ' and received client error ' + str(response.code))
-        elif response.code > 499:
-            raise ValueError('Tried url ' + url + suffix + ' and received server error ' + str(response.code))
+        if e.code > 399 and e.code<500:
+            raise ValueError('Tried url ' + url + suffix + ' and received client error ' + str(e.code))
+        elif e.code > 499:
+            raise ValueError('Tried url ' + url + suffix + ' and received server error ' + str(e.code))
     with open(save_name, 'wb') as f:
         meta = response.info()
-        content_length_str = meta.getheaders("Content-Length")
+        content_length_str = meta.get("Content-Length")
         if content_length_str:
-            file_size = int(content_length_str[0])
+            if sys.version_info>=(3,0):
+                file_size = int(content_length_str)
+            else:
+                file_size = int(content_length_str[0])
         else:
             file_size = None
         status = ""

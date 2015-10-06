@@ -2,6 +2,7 @@
 # Licensed under the BSD 3-clause license (see LICENSE.txt)
 
 import os
+import sys
 import numpy as np
 import math
 

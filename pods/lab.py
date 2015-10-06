@@ -2,16 +2,20 @@ from __future__ import absolute_import
 # Copyright 2014 Open Data Science Initiative and other authors. See AUTHORS.txt
 # Licensed under the BSD 3-clause license (see LICENSE.txt)
 
+import os
+import sys
 
 import pandas as pd
-try:
+if sys.version_info>=(3,0):
+    import urllib.parse as urlparse
+else:
     import urlparse
-except ImportError:
-    import urllib as urlparse
-import os
+
+from .config import *
+
 import pickle
 import pandas as pd
-import os
+import pickle
 import numpy as np
 
 from . import config

@@ -2,12 +2,13 @@
 # This loads the configuration
 #
 import sys
-
-if sys.version_info >= (3,0):
+import os
+    
+if sys.version_info>=(3,0):
     import configparser
 else:
     import ConfigParser as configparser
-import os
+
 config = configparser.ConfigParser()
 
 # This is the default configuration file that always needs to be present.
