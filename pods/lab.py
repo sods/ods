@@ -4,10 +4,13 @@ from __future__ import absolute_import
 
 
 import pandas as pd
+try:
+    import urlparse
+except ImportError:
+    import urllib as urlparse
 import os
 import pickle
 import pandas as pd
-import pickle
 import os
 import numpy as np
 

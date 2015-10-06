@@ -10,9 +10,9 @@ if sys.version_info >= (3,0):
 else:
     import urllib.parse
 import os
+from .config import *
 import numpy as np
 
-from . import config
 from . import notebook as nb
 
 gdata_available=True
@@ -669,7 +669,7 @@ if gdata_available:
                     feed = self.docs_client.GetResourceById(self._key)
 
             # Sometimes the server doesn't respond. Retry the request.
-            except gdata.service.RequestError as inst:
+            except gdata.service.RequestError(inst):
                 if tries<10:
                     status = inst[0]['status']
                     print("Error status: " + str(status) + '<br><br>' + inst[0]['reason'] + '<br><br>' + inst[0]['body'])

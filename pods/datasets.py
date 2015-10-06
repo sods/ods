@@ -477,7 +477,7 @@ def google_trends(query_terms=['big data', 'machine learning', 'data science'], 
         df.to_csv(file_name)
     else:
         print("Reading cached data for google trends. To refresh the cache set 'refresh_data=True' when calling this function.")
-        print(("Query terms: ", ', '.join(query_terms)))
+        print("Query terms: ", ', '.join(query_terms))
 
         df = pd.read_csv(file_name, parse_dates=[0])
 
@@ -820,7 +820,7 @@ def mauna_loa(data_set='mauna_loa', num_train=545, refresh_data=False):
     else:
         download_data(data_set)
     data = np.loadtxt(os.path.join(data_path, data_set, 'co2_mm_mlo.txt'))
-    print(('Most recent data observation from month ', data[-1, 1], ' in year ', data[-1, 0]))
+    print('Most recent data observation from month ', data[-1, 1], ' in year ', data[-1, 0])
     allX = data[data[:, 3]!=-99.99, 2:3]
     allY = data[data[:, 3]!=-99.99, 3:4]
     X = allX[:num_train, 0:1]

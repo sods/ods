@@ -8,7 +8,10 @@ from .config import *
 
 def download_url(url, dir_name='.', save_name=None, store_directory=None, messages=True, suffix=''):
     """Download a file from a url and save it to disk."""
-    import urllib2
+    try:
+        import urllib2
+    except:
+        import urllib as urllib2
     i = url.rfind('/')
     file = url[i+1:]
     print(file)
@@ -17,12 +20,12 @@ def download_url(url, dir_name='.', save_name=None, store_directory=None, messag
     if save_name is None:
         save_name = file
     save_name = os.path.join(dir_name, save_name)
-    print(("Downloading ", url, "->", save_name))
+    print("Downloading ", url, "->", save_name)
     if not os.path.exists(dir_name):
         os.makedirs(dir_name)
     try:
         response = urllib2.urlopen(url+suffix)
-    except urllib2.URLError as e:
+    except urllib2.URLError(e):
         if not hasattr(e, "code"):
             raise
         response = e

@@ -4,7 +4,6 @@
 import os
 import numpy as np
 import math
-import urllib.request, urllib.error, urllib.parse
 
 class vertex:
     def __init__(self, name, id, parents=[], children=[], meta = {}):
