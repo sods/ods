@@ -19,16 +19,24 @@ import numpy as np
 
 from . import notebook as nb
 
-gdata_available=True
+gspread_available=True
 try:
-    import gdata.docs.client
-    import gdata.spreadsheet.service 
+    import gspread
+    from collections import defaultdict
+    from itertools import chain
+    
+    from oauth2client.client import SignedJwtAssertionCredentials
+    import httplib2
+    # easy_install --upgrade google-api-python-client
+    from apiclient import errors
+    from apiclient.discovery import build
+    from apiclient.http import BatchHttpRequest
+    
 except ImportError:
-    gdata_available=False
+    gspread_available=False
 
-if gdata_available:
-    import atom
-
+if gspread_available:
+    import json
     class sheet():
         """
         Class for interchanging information between google spreadsheets and pandas data frames. The class manages a spreadsheet.
@@ -43,52 +51,59 @@ if gdata_available:
         :param published: whether the google doc underlying the system has been published or not (default: False).
         :type published: bool
         """
-        def __init__(self, spreadsheet_key=None, worksheet_name=None, title='Google Spreadsheet', column_indent=0, gd_client=None, docs_client=None, published=False):
-
-            self.email = config.get('google docs', 'user')
-            self.password = config.get('google docs', 'password')
-
+        def __init__(self, spreadsheet_key=None, worksheet_name=None, title='Google Spreadsheet', column_indent=0, gs_client=None, drive_service=None, published=False, credentials=None, http=None):
+            self._keyfile = os.path.expanduser(os.path.expandvars(config.get('google docs', 'oauth2_keyfile')))
             source = 'ODS Gdata Bot'                
-
+            
+            if credentials is None:
+                self._oauthkey = json.load(open(os.path.join(self._keyfile)))
+                drive_scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']    
+                email = self._oauthkey['client_email']
+                key = bytes(self._oauthkey['private_key'], 'UTF-8')
+                self.credentials = SignedJwtAssertionCredentials(email, key, drive_scope)
+                
             
             self.published = published
 
-            if gd_client is None:
-                self.gd_client = gdata.spreadsheet.service.SpreadsheetsService()
-                self.gd_client.email = self.email
-                self.gd_client.password = self.password
-                self.gd_client.source = source
-                self.gd_client.ProgrammaticLogin()
+            # Get a Google sheets client
+            if gs_client is None:
+                self.gs_client = gspread.authorize(self.credentials)
             else:
-                self.gd_client=gd_client
+                self.gs_client=gs_client
 
-            if docs_client is None:
-                self.docs_client = gdata.docs.client.DocsClient()
-                self.docs_client.client_login(self.email, self.password, source)
+            # Get a google drive API connection.
+            if drive_service is None or http is None:
+                http = httplib2.Http()
+                self.http = self.credentials.authorize(http)
+                self.drive_service = build('drive', 'v2', http=self.http)
             else:
-                self.docs_client = docs_client
+                self.drive_service = drive_service
+                self.http = http
 
+            # No spreadsheet key means a new document.
             if spreadsheet_key is None:
                 # need to create the document
-                document = gdata.docs.data.Resource(type='spreadsheet', title=title)
-                self.document = self.docs_client.create_resource(document)
-                self._key = self.document.get_id().split("%3A")[1]
-                # try to ensure that we can set title properly. Not sure why resource is not initially returned.
-                self.document = self._get_resource_feed()
-                self.feed = self._get_worksheet_feed()
-                if worksheet_name is not None:
-                    self.worksheet_name='Sheet1'
-                    self.change_sheet_name(worksheet_name)
+                body = {
+                    'mimeType': 'application/vnd.google-apps.spreadsheet',
+                    'title': title,
+                }
+                try:
+                    self.document = self.drive_service.files().insert(body=body).execute(http=self.http)
+                except(errors.HttpError, error):
+                    print(error)
+                self._file_id=self.drive_service.files().list(q="title='" + title + "'").execute(http=http)['items'][0]['id']
 
             else:
                 # document exists already
-                self._key = spreadsheet_key
-                self.document = self._get_resource_feed()
-                
-            self.set_sheet_focus(worksheet_name=worksheet_name)
-
+                self._file_id = spreadsheet_key
+                #self.document = self._get_resource_feed()
+            self.sheet = self.gs_client.open_by_key(self._file_id)
+            if worksheet_name is None:
+                self.worksheet = self.sheet.worksheets()[0]
+            else:
+                self.worksheet = self.sheet.worksheet(title=worksheet_name)
             self.column_indent = column_indent
-            self.url = 'https://docs.google.com/spreadsheets/d/' + self._key + '/'
+            self.url = 'https://docs.google.com/spreadsheets/d/' + self._file_id + '/'
 
 
 #############################################################################
@@ -97,6 +112,7 @@ if gdata_available:
 
         def change_sheet_name(self, title):
             """Change the title of the current worksheet to title."""
+            ### TODO
             for entry in self.feed.entry:
                 if self.worksheet_name==entry.title.text:
                     entry.title=atom.Title(text=title)
@@ -107,27 +123,29 @@ if gdata_available:
                 
 
         def set_sheet_focus(self, worksheet_name):
-            """Set the current worksheet to the given name. If the name doesn't exist then create the sheet using sheet.add_sheet()"""
-            self.update_sheet_list()
+            """Set the current worksheet to the given name. If the name doesn't exist then create the sheet using sheet.add_worksheet()"""
+            self.worksheets = self.gs_client.worksheets()
             # if the worksheet is set to None default to first sheet, warn if it's name is not "Sheet1".
+            names = [worksheet.title for worksheet in worksheets]
             if worksheet_name is None:
-                self.worksheet_name = self.feed.entry[0].title.text
-                if len(self.feed.entry)>1 and self.worksheet_name != 'Sheet1':
+                self.worksheet_name = self.worksheets[0].title
+                if len(self.worksheets)>1 and self.worksheet_name != 'Sheet1':
                     print("Warning, multiple worksheets in this spreadsheet and no title specified. Assuming you are requesting the sheet called '{sheetname}'. To surpress this warning, please specify the sheet name.".format(sheetname=self.worksheet_name))
             else:
-                if worksheet_name not in self.id_dict:
+                if worksheet_name not in names:
                     # create new worksheet here.
-                    self.add_sheet(worksheet_name=worksheet_name)
+                    self.gs_client.add_worksheet(title=worksheet_name)
                     self.worksheet_name = worksheet_name
                 else:
                     self.worksheet_name = worksheet_name
+                    self.worksheet = self.gs_client.set_worksheet(self.worksheet_name)
             # Get list of ids from the spreadsheet
-            self.worksheet_id = self.id_dict[self.worksheet_name]
+            self.worksheet = self.gs_client(self.worksheet_name)
 
         def add_sheet(self, worksheet_name, rows=100, columns=10):
             """Add a worksheet. To add and set to the current sheet use set_sheet_focus()."""
-            self.gd_client.AddWorksheet(title=worksheet_name, row_count=rows, col_count=columns, key=self._key)
-            self.update_sheet_list()
+            self.gs_client.add_worksheet(title=worksheet_name, rows=rows, cols=columns)
+            self.worksheets = self.gs_client.worksheets()
 
         def write(self, data_frame, header=None, comment=None):
             """
@@ -287,7 +305,7 @@ if gdata_available:
             Delete a row of the spreadsheet.
             :param row_number: the row number to be deleted.
             :type row_number: int"""
-            list_feed = self._get_list_feed(self._key, self.worksheet_id)
+            list_feed = self._get_list_feed(self._file_id, self.worksheet_id)
             self.gd_client.DeleteRow(list_feed.entry[row_number])
 
         def _add_row(self, index, data_series):
@@ -307,7 +325,7 @@ if gdata_available:
                     except UnicodeDecodeError:
                         val = str(entry)
                     dict[column] = val
-            self.gd_client.InsertRow(dict, self._key, self.worksheet_id)
+            self.worksheet.insert_row(dict, index)
 
 
         def write_comment(self, comment, row=1, column=1):
@@ -367,26 +385,21 @@ if gdata_available:
 
         def write_headers(self, data_frame, header=1):
             """Write the headers of a data frame to the spreadsheet."""
-            # query needs to be set large enough to pull down relevant cells of sheet.
-            query = gdata.spreadsheet.service.CellQuery()
-            query.return_empty = "true" 
-            query.min_row = str(header)
-            query.max_row = query.min_row
-            query.min_col = str(self.column_indent+1) 
-            query.max_col = str(len(data_frame.columns)+self.column_indent+1) 
 
-            cells = self._get_cell_feed(query=query)
-
-            batchRequest = gdata.spreadsheet.SpreadsheetsCellsFeed()
             index_name = data_frame.index.name 
             if index_name == '' or index_name is None:
                 index_name = 'index'
             headers = [index_name] + list(data_frame.columns)
-            for i, column in enumerate(headers):
-                cells.entry[i].cell.inputValue = column
-                batchRequest.AddUpdate(cells.entry[i])
+            start = self.worksheet.get_addr_int(header, self.column_indent+1)
+            end = self.worksheet.get_addr_int(header, len(data_frame.columns)+self.column_indent+1)
+            # Select a range
+            cell_list = self.worksheet.range(start + ':' + end)
+            
+            for cell, value in zip(cell_list, headers):
+                cell.value = value
 
-            return self.gd_client.ExecuteBatch(batchRequest, cells.GetBatchLink().href)
+            # Update in batch
+            return self.worksheet.update_cells(cell_list)
 
         def read(self, names=None, header=1, na_values=[], read_values=False, dtype={}, usecols=None, index_field=None):
             """
@@ -407,114 +420,153 @@ if gdata_available:
             """
 
             # todo: need to check if something is written below the 'table' as this will be read (for example a rogue entry in the row below the last row of the data.
-            entries_dict = {}
-            index_dict = {}
-            cells =  self._get_cell_feed()
-            read_names = False
-            if names is None:
-                read_names = True
-                names = {}
-            for myentry in cells.entry:
-                col = myentry.cell.col
-                row = myentry.cell.row
+            #dictvals = self.worksheet.get_all_records(empty2zero=False, head=header)
+
+            cells = self.worksheet._fetch_cells()
+
+            # code modified from gspread (https://github.com/burnash/gspread/blob/master/gspread/models.py)
+            # defaultdicts fill in gaps for empty rows/cells not returned by gdocs
+            rows = defaultdict(lambda: defaultdict(str))
+            for cell in cells:
+                row = rows.setdefault(int(cell.row), defaultdict(str))
                 if read_values:
-                    # Compute the evaluated cell entry
-                    value = myentry.cell.value
+                    row[cell.col] = cell.value
                 else:
-                    # return a formula if it's present
-                    value = myentry.cell.inputValue
-                if int(row)<header:
-                    continue
-                if int(row)==header:
-                    if read_names:
-                        # Read the column titles for the fields.
-                        fieldname = value.strip()
-                        if fieldname in list(names.values()):
-                            print(("ValueError, Field name duplicated in header in spreadsheet name:", self.worksheet_name, "in Google sheet ", self.url))
-                            ans = input('Try and fix the error on the sheet and then return here. Error fixed (Y/N)?')
-                            if ans[0]=='Y' or ans[0] == 'y':
-                                return self.read(names, header, na_values, read_values, dtype, usecols, index_field)
-                            raise ValueError("Field name duplicated in header in sheet in " + self.worksheet_name + " in Google spreadsheet " + self.url)
-                        else:
-                            names[col] = fieldname
-                    continue
+                    row[cell.col] = cell.input_value
 
-                if not row in entries_dict:
-                    entries_dict[row] = {}
+            # we return a whole rectangular region worth of cells, including
+            # empties
+            if not rows:
+                return []
 
-                if col in names:
-                    field = names[col]
-                else:
-                    field = col
+            all_row_keys = chain.from_iterable(row.keys() for row in rows.values())
+            rect_cols = range(1, max(all_row_keys) + 1)
+            rect_rows = range(1, max(rows.keys()) + 1)
 
-                if ((index_field is None and field.lower() == 'index') 
-                    or field==index_field):
-                    val = value.strip()
-                    if field in dtype:
-                        index_dict[row] = dtype[field](val)
-                    else:
-                        index_dict[row] = val
-                elif usecols is None or field in usecols:
-                    val = value.strip()
-                    if not val in na_values and val != '':
-                        if field in dtype:
-                            entries_dict[row][field] = dtype[field](val)
-                        else:
-                            try:
-                                a = float(val)
-                            except ValueError:
-                                entries_dict[row][field] = val
-                            else:
-                                try:
-                                    a = int(a)
-                                except ValueError:
-                                    entries_dict[row][field] = a
-                                else:
-                                    if a == int(a):
-                                        entries_dict[row][field] = int(a)
-                                    else:
-                                        entries_dict[row][field] = a
+            data = [[rows[i][j] for j in rect_cols] for i in rect_rows]
+            idx = header - 1
+            keys = data[idx]
+            values = [gspread.utils.numericise_all(row, False) for row in data[idx + 1:]]
 
-
-
-            entries = []
-            index = []
-            for key in sorted(list(entries_dict.keys()), key=int):
-                entries.append(entries_dict[key])
-                if len(index_dict)>0:
-                    try:
-                        index.append(index_dict[key])
-                    except KeyError:
-                        print(("KeyError, unidentified key in ", self.worksheet_name, " in Google spreadsheet ", self.url))
-                        ans = input('Try and fix the error on the sheet and then return here. Error fixed (Y/N)?')
-                        if ans[0]=='Y' or ans[0] == 'y':
-                            return self.read(names, header, na_values, read_values, dtype, usecols, index_field)
-                        else:
-                            raise KeyError("Unidentified key in " + self.worksheet_name + " in Google spreadsheet " + self.url)
-
-                else:
-                    index.append(int(key)-header)
-
-            if len(index)>0:
-                entries = pd.DataFrame(entries, index=index)
+            dictvals= [dict(zip(keys, row)) for row in values]
+            if index_field is None:
+                if 'index' in dictvals[0].keys():
+                    index_field = 'index'
+                elif 'Index' in dictvals[0].keys():
+                    index_field = 'Index'
+                elif 'INDEX' in dictvals[0].keys():
+                    index_field = 'INDEX'
+            
+            if index_field is not None and index_field in df2[0].keys():
+                return pd.DataFrame(dictvals).set_index(index_field)
             else:
-                # this seems to cause problems, but it shouldn't come here now. If no index column is included index defaults to row number - header.
-                entries = pd.DataFrame(entries)
-            if len(names)>0:
-                for field in list(names.values()):
-                    if field not in list(entries.columns) + ['index']:
-                        if usecols is None or field in usecols:
-                            entries[field] = np.NaN
+                print("Warning no such column name for index in sheet. Generating new index")
+                return pd.DataFrame(dictvals)
 
-                column_order = []
-                for key in sorted(names, key=int):
-                    if usecols is None or names[key] in usecols:
-                        column_order.append(names[key])
-                if 'index' in column_order:
-                    column_order.remove('index')
-                entries = entries[column_order]
+            # columns = self.worksheet.row_values(header)
+            # indices = self.worksheet_column_values(self.col_indent+1)
+            # start = self.worksheet.get_addr_int(header+1, self.column_indent+1)
+            # end = self.worksheet.get_addr_int(header+len(indices)), len(columns)+self.column_indent)
+            # entries = self.worksheet.range(start + ':' + end)
+            # return pd.DataFrame(entries, columns=columns, index=indices)
+            # read_names = False
+            # if names is None:
+            #     read_names = True
+            # if read_values:
+            #     # Compute the evaluated cell entry
+            #     value = myentry.cell.value
+            # else:
+            #         # return a formula if it's present
+            #         value = myentry.cell.inputValue
+            #     if int(row)<header:
+            #         continue
+            #     if int(row)==header:
+            #         if read_names:
+            #             # Read the column titles for the fields.
+            #             fieldname = value.strip()
+            #             if fieldname in list(names.values()):
+            #                 print(("ValueError, Field name duplicated in header in spreadsheet name:", self.worksheet_name, "in Google sheet ", self.url))
+            #                 ans = input('Try and fix the error on the sheet and then return here. Error fixed (Y/N)?')
+            #                 if ans[0]=='Y' or ans[0] == 'y':
+            #                     return self.read(names, header, na_values, read_values, dtype, usecols, index_field)
+            #                 raise ValueError("Field name duplicated in header in sheet in " + self.worksheet_name + " in Google spreadsheet " + self.url)
+            #             else:
+            #                 names[col] = fieldname
+            #         continue
 
-            return entries
+            #     if col in names:
+            #         field = names[col]
+            #     else:
+            #         field = col
+
+            #     if ((index_field is None and field.lower() == 'index') 
+            #         or field==index_field):
+            #         val = value.strip()
+            #         if field in dtype:
+            #             index_dict[row] = dtype[field](val)
+            #         else:
+            #             index_dict[row] = val
+            #     elif usecols is None or field in usecols:
+            #         val = value.strip()
+            #         if not val in na_values and val != '':
+            #             if field in dtype:
+            #                 entries_dict[row][field] = dtype[field](val)
+            #             else:
+            #                 try:
+            #                     a = float(val)
+            #                 except ValueError:
+            #                     entries_dict[row][field] = val
+            #                 else:
+            #                     try:
+            #                         a = int(a)
+            #                     except ValueError:
+            #                         entries_dict[row][field] = a
+            #                     else:
+            #                         if a == int(a):
+            #                             entries_dict[row][field] = int(a)
+            #                         else:
+            #                             entries_dict[row][field] = a
+
+
+
+            # entries = []
+            # index = []
+            # for key in sorted(list(entries_dict.keys()), key=int):
+            #     entries.append(entries_dict[key])
+            #     if len(index_dict)>0:
+            #         try:
+            #             index.append(index_dict[key])
+            #         except KeyError:
+            #             print(("KeyError, unidentified key in ", self.worksheet_name, " in Google spreadsheet ", self.url))
+            #             ans = input('Try and fix the error on the sheet and then return here. Error fixed (Y/N)?')
+            #             if ans[0]=='Y' or ans[0] == 'y':
+            #                 return self.read(names, header, na_values, read_values, dtype, usecols, index_field)
+            #             else:
+            #                 raise KeyError("Unidentified key in " + self.worksheet_name + " in Google spreadsheet " + self.url)
+
+            #     else:
+            #         index.append(int(key)-header)
+
+            # if len(index)>0:
+            #     entries = pd.DataFrame(entries, index=index)
+            # else:
+            #     # this seems to cause problems, but it shouldn't come here now. If no index column is included index defaults to row number - header.
+            #     entries = pd.DataFrame(entries)
+            # if len(names)>0:
+            #     for field in list(names.values()):
+            #         if field not in list(entries.columns) + ['index']:
+            #             if usecols is None or field in usecols:
+            #                 entries[field] = np.NaN
+
+            #     column_order = []
+            #     for key in sorted(names, key=int):
+            #         if usecols is None or names[key] in usecols:
+            #             column_order.append(names[key])
+            #     if 'index' in column_order:
+            #         column_order.remove('index')
+            #     entries = entries[column_order]
+
+            # return entries
 
 #######################################################################
 # Place methods here that are really associated with the spreadsheet. #
@@ -525,25 +577,22 @@ if gdata_available:
             pass
             #self.document.title = atom.data.Title(text=title)
             #self.docs_client.update_resource(self.document)
-
+            body = self.drive_service.files().get(fileId=self._file_id).execute()
+            body['title'] = title
+            body = self.drive_service.files().update(fileId=self._file_id, body=bodyr).execute()
+            
         def get_title(self):
             """Get the title of the google spreadsheet."""
-            return self.document.title.text
+            ## TODO
+            return self.drive_service.files().get(fileId=self._file_id).execute()['title']       
 
         def delete_sheet(self, worksheet_name):
             """Delete the worksheet with the given name."""
-            if worksheet_name == self.worksheet_name:
-                raise ValueError("Can't delete the sheet I'm currently pointing to, use set_sheet_focus to change sheet first.")
-            for entry in self.feed.entry:
-                if worksheet_name==entry.title.text:
-                    self.gd_client.DeleteWorksheet(entry)
-                    return
-            raise ValueError("Can't find worksheet " + worksheet_name + " to change the name " + " in Google spreadsheet " + self.url)
+            self.gs_client.del_worksheet(entry)
 
         def update_sheet_list(self):
-            """Update object with the worksheet feed and the list of worksheet_ids, can only be run once there is a spreadsheet key and a resource feed in place. Needs to be rerun if a worksheet is added."""
-            self.feed = self._get_worksheet_feed()
-            self.id_dict = self.worksheet_ids()
+            """Update object with the worksheet feed and the list of worksheets, can only be run once there is a gspread client (gs_client) in place. Needs to be rerun if a worksheet is added."""
+            self.worksheets = self.gs_client.worksheets()
 
         def _repr_html_(self):
             if self.published: #self.document.published.tag=='published':
@@ -569,42 +618,40 @@ if gdata_available:
                 else:
                     raise
             
-        def worksheet_ids(self):
-            def _id(entry):
-                split = urllib.parse.urlsplit(entry.id.text)
-                return os.path.basename(split.path)
-            return dict([(entry.title.text, _id(entry)) for entry in self.feed.entry])
-
-        def share(self, users, share_type='writer', send_notifications=False):
+        def share(self, users, share_type='writer', send_notifications=False, email_message=None):
             """
             Share a document with a given list of users.
             """
             # share a document with the given list of users.
-            for user in users:
-                acl_entry = gdata.docs.data.AclEntry(
-                    scope=gdata.acl.data.AclScope(value=user, type='user'),
-                    role=gdata.acl.data.AclRole(value=share_type),
-                    )
-                acl2 = self.docs_client.AddAclEntry(self.document, acl_entry, send_notifications=send_notifications)
-                    
+            # From https://developers.google.com/drive/web/manage-sharing
+            users = list(users)
+            def batch_callback(request_id, response, exception):
+                print("Response for request_id (%s):" % request_id)
+                print(response)
 
-        def _get_acl_entry(self, user):
-            """
-            Return the acl entry associated with a given user name.
-            """
-            acl_feed = self._get_acl_feed()
-            for acl_entry in acl_feed.entry:
-                if acl_entry.scope.value == user:
-                    return acl_entry
-            raise ValueError("User: " + str(user) + " not in the acl feed for this resource" + " in Google spreadsheet " + self.url)
+                # Potentially log or re-raise exceptions
+                if exception:
+                    raise exception
 
+            batch_request = BatchHttpRequest(callback=batch_callback)
+            for count, user in enumerate(users):
+                batch_entry = self.drive_service.permissions().insert(fileId=self._file_id, sendNotificationEmails=send_notifications, emailMessage=email_message,
+                                                             body={
+                                                                 'value': user,
+                                                                 'type': 'user',
+                                                                 'role': share_type
+                                                             })
+                batch_request.add(batch_entry, request_id="batch"+str(count))
+
+            batch_request.execute()
 
         def share_delete(self, user):
             """
             Remove sharing from a given user.
             """
-            acl_entry = self._get_acl_entry(user)
-            self.docs_client.DeleteAclEntry(acl_entry)
+            permission_id = self._permission_id(user)
+            self.drive_service.permissions().delete(fileId=self._file_id,
+                                                    permissionId=permission_id).execute()
 
         def share_modify(self, user, share_type='reader', send_notifications=False):
             """
@@ -616,36 +663,36 @@ if gdata_available:
             """
             if share_type not in ['writer', 'reader', 'owner']:
                 raise ValueError("Share type should be 'writer', 'reader' or 'owner'")
+            
+            permission_id = self._permission_id(user)
+            permission = self.drive_service.permissions().get(fileId=self._file_id, permissionId=permission_id).execute()
+            permission['role'] = share_type
+            self.drive_service.permissions().update(fileId=self._file_id, permissionId=permission_id, body=permission).execute()
 
-            #acl_entry = self._get_acl_entry(user)# update ACL entry
-
-            #acl_entry.role.value = share_type
-            # According to Ali Afshar you need to remove the etag (https://groups.google.com/forum/#!msg/google-documents-list-api/eFSmo14nDLA/Oo4SjePHZd8J), can't work out how though!
-            #etag_element = acl_entry.find('etag')
-            #acl_entry.remove(etagelement)
-            #self.docs_client.UpdateAclEntry(acl_entry, sent_notifications=send_notifications)
-            # Hack: delete and re-add.
-            self.share_delete(user)
-            self.share([user], share_type, send_notifications)
-
+        def _permission_id(self, user):
+             
+            return self.drive_service.permissions().getIdForEmail(email=user).execute()['id']
+            
         def share_list(self):
             """
             Provide a list of all users who can access the document in the form of 
             """
+            permissions = self.drive_service.permissions().list(fileId=self._file_id).execute()
+                
             entries = []
-            acl_feed = self._get_acl_feed()
-            for acl_entry in acl_feed.entry:
-                entries.append((acl_entry.scope.value, acl_entry.role.value))
+            for permission in permissions['items']:
+                entries.append((permission['emailAddress'], permission['role']))
             return entries
 
+        def ispublished(self):
+            self.drive_service.revisions().list(fileId=self._file_id).execute()
+        
         def revision_history(self):
             """
             Get the revision history of the document from Google Docs.
             """
-            for entry in self.docs_client.GetResources(limit=55).entry:
-                revisions = self.docs_client.GetRevisions(entry)
-                for revision in revisions.entry:
-                    print((revision.publish, revision.GetPublishLink()))
+            for item in self.drive_service.revisions().list(fileId=self._file_id).execute()['items']:
+                print(item['published'], item['selfLink'])
 
 
 
@@ -657,20 +704,20 @@ if gdata_available:
             try:
                 if type == 'cell':
                     if query is None:
-                        feed = self.gd_client.GetCellsFeed(self._key, wksht_id=self.worksheet_id)
+                        feed = self.gd_client.get_cells_feed(worksheet=self.worksheet_id)
                     else:
-                        feed = self.gd_client.GetCellsFeed(self._key, wksht_id=self.worksheet_id, query=query)
+                        feed = self.gd_client.GetCellsFeed(self._file_id, wksht_id=self.worksheet_id, query=query)
 
                 elif type == 'list':
-                    feed = self.gd_client.GetListFeed(self._key, self.worksheet_id)
+                    feed = self.gd_client.GetListFeed(self._file_id, self.worksheet_id)
                 elif type == 'worksheet':
-                    feed = self.gd_client.GetWorksheetsFeed(self._key)
+                    feed = self.gd_client.get_worksheets_feed(self._file_id)
 
                 elif type == 'acl':
                     feed = self.docs_client.GetAcl(self.document)
 
                 elif type == 'resource':
-                    feed = self.docs_client.GetResourceById(self._key)
+                    feed = self.docs_client.GetResourceById(self._file_id)
 
             # Sometimes the server doesn't respond. Retry the request.
             except gdata.service.RequestError(inst):
