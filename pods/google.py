@@ -19,6 +19,8 @@ import numpy as np
 
 from . import notebook as nb
 
+import pods
+
 gspread_available=True
 try:
     import gspread
@@ -37,6 +39,168 @@ except ImportError:
 
 if gspread_available:
     import json
+    import warnings
+    sheet_mime = 'application/vnd.google-apps.spreadsheet'
+    keyfile = os.path.expanduser(os.path.expandvars(config.get('google docs', 'oauth2_keyfile')))
+
+    class drive:
+        """
+        Class for accessing a google drive and managing files.
+        """
+        def __init__(self, scope=None, credentials=None, http=None, service=None):
+            # Get a google drive API connection.
+            if service is None:
+                if http is None:
+                    if credentials is None:
+                        self._oauthkey = json.load(open(os.path.join(keyfile)))
+                        self.email = self._oauthkey['client_email']
+                        self.key = bytes(self._oauthkey['private_key'], 'UTF-8')
+                        if scope is None:
+                            self.scope = ['https://www.googleapis.com/auth/drive']
+                        else:
+                            self.scope = scope
+                        self.credentials = SignedJwtAssertionCredentials(self.email, self.key, self.scope)
+                    else:
+                        self.credentials = credentials
+                        self.key = None
+                        self.email = None
+                    
+                    http = httplib2.Http()
+                    self.http = self.credentials.authorize(http)
+                else:
+                    self.http = http
+                self.service = build('drive', 'v2', http=self.http)
+            else:
+                self.service = service
+
+        def list(self):
+            """List all resources on the google drive"""
+            result = []
+            page_token = None
+            while True:
+                param = {}
+                if page_token:
+                    param['pageToken'] = page_token
+                files = self.service.files().list(**param).execute()
+                result.extend(files['items'])
+                page_token = files.get('nexPageToken')
+                if not page_token:
+                    break
+            return result
+            
+    class file:
+        def __init__(self, name=None, mime_type=None, file_id=None, drive=None):
+
+            if drive is None:
+                self.drive=pods.google.drive()
+            else:
+                self.drive = drive
+
+            if file_id is None:
+                if name is None:
+                    name = "Google Drive File"
+                # create a new sheet
+                body = {'mimeType': mime_type,
+                        'title': name}
+                try:
+                    self.drive.service.files().insert(body=body).execute(http=self.drive.http)
+                except(errors.HttpError):
+                    print("Http error")
+
+                self._id=self.drive.service.files().list(q="title='" + name + "'").execute(http=self.drive.http)['items'][0]['id']
+            else:
+                if name is not None or mime_type is not None:
+                    raise ValueError("Do not specify mime type and name for an existing file.")
+                else:
+                    self._id=file_id
+
+        def share(self, users, share_type='writer', send_notifications=False, email_message=None):
+            """
+            Share a document with a given list of users.
+            """
+            users = list(users)
+            def batch_callback(request_id, response, exception):
+                print("Response for request_id (%s):" % request_id)
+                print(response)
+
+                # Potentially log or re-raise exceptions
+                if exception:
+                    raise exception
+
+            batch_request = BatchHttpRequest(callback=batch_callback)
+            for count, user in enumerate(users):
+                batch_entry = self.drive.service.permissions().insert(fileId=self._id, sendNotificationEmails=send_notifications, emailMessage=email_message,
+                                                             body={
+                                                                 'value': user,
+                                                                 'type': 'user',
+                                                                 'role': share_type
+                                                             })
+                batch_request.add(batch_entry, request_id="batch"+str(count))
+
+            batch_request.execute()
+
+        def share_delete(self, user):
+            """
+            Remove sharing from a given user.
+            """
+            permission_id = self._permission_id(user)
+            self.drive.service.permissions().delete(fileId=self._id,
+                                              permissionId=permission_id).execute()
+
+
+        def share_modify(self, user, share_type='reader', send_notifications=False):
+            """
+            :param user: email of the user to update.
+            :type user: string
+            :param share_type: type of sharing for the given user, type options are 'reader', 'writer', 'owner'
+            :type user: string
+            :param send_notifications: 
+            """
+            if share_type not in ['writer', 'reader', 'owner']:
+                raise ValueError("Share type should be 'writer', 'reader' or 'owner'")
+            
+            permission_id = self._permission_id(user)
+            permission = self.drive.service.permissions().get(fileId=self._id, permissionId=permission_id).execute()
+            permission['role'] = share_type
+            self.drive.service.permissions().update(fileId=self._id, permissionId=permission_id, body=permission).execute()
+
+        def _permission_id(self, user):
+             
+            return self.drive.service.permissions().getIdForEmail(email=user).execute()['id']
+            
+        def share_list(self):
+            """
+            Provide a list of all users who can access the document in the form of 
+            """
+            permissions = self.drive.service.permissions().list(fileId=self._id).execute()
+                
+            entries = []
+            for permission in permissions['items']:
+                entries.append((permission['emailAddress'], permission['role']))
+            return entries
+
+        def revision_history(self):
+            """
+            Get the revision history of the document from Google Docs.
+            """
+            for item in self.drive.service.revisions().list(fileId=self._id).execute()['items']:
+                print(item['published'], item['selfLink'])
+            
+        def update_name(self, name):
+            """Change the title of the file."""
+            body = self.drive.service.files().get(fileId=self._id).execute()
+            body['title'] = name
+            body = self.drive.service.files().update(fileId=self._id, body=body).execute()
+
+        def get_name(self):
+            """Get the title of the file."""
+            return self.drive.service.files().get(fileId=self._id).execute()['title']
+
+        def update_drive(self, drive):
+            """Update the file's drive API service."""
+            self.drive = drive
+
+            
     class sheet():
         """
         Class for interchanging information between google spreadsheets and pandas data frames. The class manages a spreadsheet.
@@ -46,61 +210,37 @@ if gspread_available:
         :param title: the title of the spreadsheet (used if the spreadsheet is created for the first time)
         :param column_indent: the column indent to use in the spreadsheet.
         :type column_indent: int
-        :param gd_client: the google spreadsheet service client to use (default is NOne which performs a programmatic login)
-        :param docs_client: the google docs login client (default is none which causes a new client login)
+        :param drive: the google drive client to use (default is None which performs a programmatic login)
+        :param gs_client: the google spread sheet client login (default is none which causes a new client login)
         """
-        def __init__(self, spreadsheet_key=None, worksheet_name=None, title='Google Spreadsheet', column_indent=0, gs_client=None, drive_service=None, credentials=None, http=None):
-            self._keyfile = os.path.expanduser(os.path.expandvars(config.get('google docs', 'oauth2_keyfile')))
-            source = 'ODS Gdata Bot'                
-            
-            if credentials is None:
-                self._oauthkey = json.load(open(os.path.join(self._keyfile)))
-                drive_scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']    
-                email = self._oauthkey['client_email']
-                key = bytes(self._oauthkey['private_key'], 'UTF-8')
-                self.credentials = SignedJwtAssertionCredentials(email, key, drive_scope)
-                
-            
+        def __init__(self, file=None, gs_client=None, worksheet_name=None, column_indent=0):
 
+            source = 'ODS Gdata Bot'                
+            scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']    
+
+            if file is None:
+                drive = pods.google.drive(scope=scope)
+                self.file = pods.google.file(drive=drive, name="Google Sheet", mime_type=sheet_mime)
+            else:
+                if 'https://spreadsheets.google.com/feeds' not in file.drive.scope:
+                    drive = pods.google.drive(scope=scope)
+                    file.update_drive(drive)
+                self.file = file
+                
             # Get a Google sheets client
             if gs_client is None:
-                self.gs_client = gspread.authorize(self.credentials)
+                self.gs_client = gspread.authorize(self.file.drive.credentials)
             else:
-                self.gs_client=gs_client
+                self.gs_client = gs_client
 
-            # Get a google drive API connection.
-            if drive_service is None or http is None:
-                http = httplib2.Http()
-                self.http = self.credentials.authorize(http)
-                self.drive_service = build('drive', 'v2', http=self.http)
-            else:
-                self.drive_service = drive_service
-                self.http = http
+            self.sheet = self.gs_client.open_by_key(self.file._id)
 
-            # No spreadsheet key means a new document.
-            if spreadsheet_key is None:
-                # need to create the document
-                body = {
-                    'mimeType': 'application/vnd.google-apps.spreadsheet',
-                    'title': title,
-                }
-                try:
-                    self.document = self.drive_service.files().insert(body=body).execute(http=self.http)
-                except(errors.HttpError, error):
-                    print(error)
-                self._file_id=self.drive_service.files().list(q="title='" + title + "'").execute(http=http)['items'][0]['id']
-
-            else:
-                # document exists already
-                self._file_id = spreadsheet_key
-                #self.document = self._get_resource_feed()
-            self.sheet = self.gs_client.open_by_key(self._file_id)
             if worksheet_name is None:
                 self.worksheet = self.sheet.worksheets()[0]
             else:
                 self.worksheet = self.sheet.worksheet(title=worksheet_name)
             self.column_indent = column_indent
-            self.url = 'https://docs.google.com/spreadsheets/d/' + self._file_id + '/'
+            self.url = 'https://docs.google.com/spreadsheets/d/' + self.file._id + '/'
 
 
 #############################################################################
@@ -109,13 +249,7 @@ if gspread_available:
 
         def change_sheet_name(self, title):
             """Change the title of the current worksheet to title."""
-            ### TODO
-            for entry in self.feed.entry:
-                if self.worksheet_name==entry.title.text:
-                    entry.title=atom.Title(text=title)
-                    self.gd_client.UpdateWorksheet(entry)
-                    self.worksheet_name = title
-                    return
+            raise NotImplementedError
             raise ValueError("Can't find worksheet " + self.worksheet_name + " to change the name in Google spreadsheet " + self.url)
                 
 
@@ -427,79 +561,6 @@ if gspread_available:
                 print("Warning no such column name for index in sheet. Generating new index")
                 return pd.DataFrame(dictvals)
 
-            # columns = self.worksheet.row_values(header)
-            # indices = self.worksheet_column_values(self.col_indent+1)
-            # start = self.worksheet.get_addr_int(header+1, self.column_indent+1)
-            # end = self.worksheet.get_addr_int(header+len(indices)), len(columns)+self.column_indent)
-            # entries = self.worksheet.range(start + ':' + end)
-            # return pd.DataFrame(entries, columns=columns, index=indices)
-            # read_names = False
-            # if names is None:
-            #     read_names = True
-            # if read_values:
-            #     # Compute the evaluated cell entry
-            #     value = myentry.cell.value
-            # else:
-            #         # return a formula if it's present
-            #         value = myentry.cell.inputValue
-            #     if int(row)<header:
-            #         continue
-            #     if int(row)==header:
-            #         if read_names:
-            #             # Read the column titles for the fields.
-            #             fieldname = value.strip()
-            #             if fieldname in list(names.values()):
-            #                 print(("ValueError, Field name duplicated in header in spreadsheet name:", self.worksheet_name, "in Google sheet ", self.url))
-            #                 ans = input('Try and fix the error on the sheet and then return here. Error fixed (Y/N)?')
-            #                 if ans[0]=='Y' or ans[0] == 'y':
-            #                     return self.read(names, header, na_values, read_values, dtype, usecols, index_field)
-            #                 raise ValueError("Field name duplicated in header in sheet in " + self.worksheet_name + " in Google spreadsheet " + self.url)
-            #             else:
-            #                 names[col] = fieldname
-            #         continue
-
-            #     if col in names:
-            #         field = names[col]
-            #     else:
-            #         field = col
-
-            #     if ((index_field is None and field.lower() == 'index') 
-            #         or field==index_field):
-            #         val = value.strip()
-            #         if field in dtype:
-            #             index_dict[row] = dtype[field](val)
-            #         else:
-            #             index_dict[row] = val
-            #     elif usecols is None or field in usecols:
-            #         val = value.strip()
-            #         if not val in na_values and val != '':
-            #             if field in dtype:
-            #                 entries_dict[row][field] = dtype[field](val)
-            #             else:
-            #                 try:
-            #                     a = float(val)
-            #                 except ValueError:
-            #                     entries_dict[row][field] = val
-            #                 else:
-            #                     try:
-            #                         a = int(a)
-            #                     except ValueError:
-            #                         entries_dict[row][field] = a
-            #                     else:
-            #                         if a == int(a):
-            #                             entries_dict[row][field] = int(a)
-            #                         else:
-            #                             entries_dict[row][field] = a
-
-
-
-            # entries = []
-            # index = []
-            # for key in sorted(list(entries_dict.keys()), key=int):
-            #     entries.append(entries_dict[key])
-            #     if len(index_dict)>0:
-            #         try:
-            #             index.append(index_dict[key])
             #         except KeyError:
             #             print(("KeyError, unidentified key in ", self.worksheet_name, " in Google spreadsheet ", self.url))
             #             ans = input('Try and fix the error on the sheet and then return here. Error fixed (Y/N)?')
@@ -508,44 +569,17 @@ if gspread_available:
             #             else:
             #                 raise KeyError("Unidentified key in " + self.worksheet_name + " in Google spreadsheet " + self.url)
 
-            #     else:
-            #         index.append(int(key)-header)
-
-            # if len(index)>0:
-            #     entries = pd.DataFrame(entries, index=index)
-            # else:
-            #     # this seems to cause problems, but it shouldn't come here now. If no index column is included index defaults to row number - header.
-            #     entries = pd.DataFrame(entries)
-            # if len(names)>0:
-            #     for field in list(names.values()):
-            #         if field not in list(entries.columns) + ['index']:
-            #             if usecols is None or field in usecols:
-            #                 entries[field] = np.NaN
-
-            #     column_order = []
-            #     for key in sorted(names, key=int):
-            #         if usecols is None or names[key] in usecols:
-            #             column_order.append(names[key])
-            #     if 'index' in column_order:
-            #         column_order.remove('index')
-            #     entries = entries[column_order]
-
-            # return entries
-
 #######################################################################
 # Place methods here that are really associated with the spreadsheet. #
 #######################################################################
 
         def set_title(self, title):
             """Change the title of the google spreadsheet."""
-            pass
-            body = self.drive_service.files().get(fileId=self._file_id).execute()
-            body['title'] = title
-            body = self.drive_service.files().update(fileId=self._file_id, body=body).execute()
+            self.file.update_name(title)
             
         def get_title(self):
             """Get the title of the google spreadsheet."""
-            return self.drive_service.files().get(fileId=self._file_id).execute()['title']       
+            return self.file.get_name()
 
         def delete_sheet(self, worksheet_name):
             """Delete the worksheet with the given name."""
@@ -584,36 +618,15 @@ if gspread_available:
             """
             Share a document with a given list of users.
             """
-            # share a document with the given list of users.
-            # From https://developers.google.com/drive/web/manage-sharing
-            users = list(users)
-            def batch_callback(request_id, response, exception):
-                print("Response for request_id (%s):" % request_id)
-                print(response)
-
-                # Potentially log or re-raise exceptions
-                if exception:
-                    raise exception
-
-            batch_request = BatchHttpRequest(callback=batch_callback)
-            for count, user in enumerate(users):
-                batch_entry = self.drive_service.permissions().insert(fileId=self._file_id, sendNotificationEmails=send_notifications, emailMessage=email_message,
-                                                             body={
-                                                                 'value': user,
-                                                                 'type': 'user',
-                                                                 'role': share_type
-                                                             })
-                batch_request.add(batch_entry, request_id="batch"+str(count))
-
-            batch_request.execute()
+            warnings.warn("Sharing should be performed on the drive class.", DeprecationWarning)
+            self.file.share(users, share_type, send_notifications, email_message)
 
         def share_delete(self, user):
             """
             Remove sharing from a given user.
             """
-            permission_id = self._permission_id(user)
-            self.drive_service.permissions().delete(fileId=self._file_id,
-                                                    permissionId=permission_id).execute()
+            warnings.warn("Sharing should be performed on the drive class.", DeprecationWarning)
+            return self.file.share_delete(user)
 
         def share_modify(self, user, share_type='reader', send_notifications=False):
             """
@@ -623,113 +636,34 @@ if gspread_available:
             :type user: string
             :param send_notifications: 
             """
-            if share_type not in ['writer', 'reader', 'owner']:
-                raise ValueError("Share type should be 'writer', 'reader' or 'owner'")
+            warnings.warn("Sharing should be performed on the drive class.", DeprecationWarning)
+
+            return self.file.share_modify(user, share_type, send_notifications)
             
-            permission_id = self._permission_id(user)
-            permission = self.drive_service.permissions().get(fileId=self._file_id, permissionId=permission_id).execute()
-            permission['role'] = share_type
-            self.drive_service.permissions().update(fileId=self._file_id, permissionId=permission_id, body=permission).execute()
 
         def _permission_id(self, user):
              
-            return self.drive_service.permissions().getIdForEmail(email=user).execute()['id']
+            return self.file.service.permissions().getIdForEmail(email=user).execute()['id']
             
         def share_list(self):
             """
             Provide a list of all users who can access the document in the form of 
             """
-            permissions = self.drive_service.permissions().list(fileId=self._file_id).execute()
-                
-            entries = []
-            for permission in permissions['items']:
-                entries.append((permission['emailAddress'], permission['role']))
-            return entries
+            warnings.warn("Sharing should be performed on the drive class.", DeprecationWarning)
 
-        def ispublished(self):
-            """Find out whether or not the spreadsheet has been published."""
-            return self.drive_service.revisions().list(fileId=self._file_id).execute()['items'][-1]['published']
-        
+            return self.file.share_list()
+
         def revision_history(self):
             """
             Get the revision history of the document from Google Docs.
             """
-            for item in self.drive_service.revisions().list(fileId=self._file_id).execute()['items']:
-                print(item['published'], item['selfLink'])
+            warnings.warn("Revision history should be performed on the drive class.", DeprecationWarning)
+            return self.file.revision_history()
+
+        def ispublished(self):
+            """Find out whether or not the spreadsheet has been published."""
+            return self.file.drive.service.revisions().list(fileId=self.file._id).execute()['items'][-1]['published']
+        
 
 
 
-        def _get_feed(self, type, query=None, tries=0, max_tries=10):
-            """
-            Check for exceptions when calling for a group of cells from
-            the google docs API. Retry a maximum number of times (default 10).
-            """
-            try:
-                if type == 'cell':
-                    if query is None:
-                        feed = self.gd_client.get_cells_feed(worksheet=self.worksheet_id)
-                    else:
-                        feed = self.gd_client.GetCellsFeed(self._file_id, wksht_id=self.worksheet_id, query=query)
-
-                elif type == 'list':
-                    feed = self.gd_client.GetListFeed(self._file_id, self.worksheet_id)
-                elif type == 'worksheet':
-                    feed = self.gd_client.get_worksheets_feed(self._file_id)
-
-                elif type == 'acl':
-                    feed = self.docs_client.GetAcl(self.document)
-
-                elif type == 'resource':
-                    feed = self.docs_client.GetResourceById(self._file_id)
-
-            # Sometimes the server doesn't respond. Retry the request.
-            except gdata.service.RequestError(inst):
-                if tries<10:
-                    status = inst[0]['status']
-                    print("Error status: " + str(status) + '<br><br>' + inst[0]['reason'] + '<br><br>' + inst[0]['body'])
-                    if status>499:
-                        print(("Try", tries+1, "of", max_tries, "waiting 2 seconds and retrying."))
-                        import sys
-                        sys.stdout.flush()
-                        import time
-                        time.sleep(2)
-                        feed = self._get_feed(type=type, query=query, tries=tries+1)
-                    else:
-                        raise 
-                else:
-                    print("Maximum tries at contacting Google servers exceeded.")
-                    import sys
-                    sys.stdout.flush()
-                    raise
-            return feed
-
-        def _get_cell_feed(self, query=None, tries=0, max_tries=10):
-            """
-            Wrapper for _get_feed() when a cell feed is required.
-            """
-            # problem: if there are only 1000 lines in the spreadsheet and you request more you get this error: 400 Invalid query parameter value for max-row.
-            return self._get_feed(type='cell', query=query, tries=tries, max_tries=max_tries)
-
-        def _get_resource_feed(self, tries=0, max_tries=10):
-            """
-            Wrapper for _get_feed() when a resource is required.
-            """
-            return self._get_feed(type='resource', tries=tries, max_tries=max_tries)
-
-        def _get_list_feed(self, tries=0, max_tries=10):
-            """
-            Wrapper for _get_feed() when a list feed is required.
-            """
-            return self._get_feed(type='list', query=None, tries=tries, max_tries=max_tries)
-
-        def _get_worksheet_feed(self, tries=0, max_tries=10):
-            """
-            Wrapper for _get_feed() when a cell worksheet feed is required.
-            """
-            return self._get_feed(type='worksheet', query=None, tries=tries, max_tries=max_tries)
-
-        def _get_acl_feed(self, tries=0, max_tries=10):
-            """
-            Wrapper for _get_feed() when an acl feed is required.
-            """
-            return self._get_feed(type='acl', query=None, tries=tries, max_tries=max_tries)
