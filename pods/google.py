@@ -73,30 +73,46 @@ if gspread_available:
             else:
                 self.service = service
 
-        def list(self):
+        def ls(self):
             """List all resources on the google drive"""
-            result = []
+            results = []
             page_token = None
             while True:
                 param = {}
                 if page_token:
                     param['pageToken'] = page_token
                 files = self.service.files().list(**param).execute()
-                result.extend(files['items'])
+                results.extend(files['items'])
                 page_token = files.get('nexPageToken')
                 if not page_token:
                     break
-            return result
+            files = []
+            for result in results:
+                if not result['labels']['trashed']:
+                    files.append(pods.google.file(id=result['id'], name=result['title'], mime_type=result['mimeType'], url=result['alternateLink'], drive=self))
+            return files
+
+        def _repr_html_(self):
+            """Create a representation of the google drive for the notebook."""
+            files = self.ls()
+            output = '<p><b>Google Drive</b></p>'
+            for file in files:
+                output += file._repr_html_()
+                
             
+            return output
+
+        
     class file:
-        def __init__(self, name=None, mime_type=None, file_id=None, drive=None):
+        """Resource found on the google drive."""
+        def __init__(self, name=None, mime_type=None, url=None, id=None, drive=None):
 
             if drive is None:
                 self.drive=pods.google.drive()
             else:
                 self.drive = drive
 
-            if file_id is None:
+            if id is None:
                 if name is None:
                     name = "Google Drive File"
                 # create a new sheet
@@ -108,12 +124,37 @@ if gspread_available:
                     print("Http error")
 
                 self._id=self.drive.service.files().list(q="title='" + name + "'").execute(http=self.drive.http)['items'][0]['id']
-            else:
-                if name is not None or mime_type is not None:
-                    raise ValueError("Do not specify mime type and name for an existing file.")
+                self.name = name
+                self.mime_type = mime_type
+            else:                
+                self._id=id
+                if name is None:
+                    self.get_name()
                 else:
-                    self._id=file_id
+                    self.name = name
+                if mime_type is None:
+                    self.get_mime_type()
+                else:
+                    self.mime_type = mime_type
+                if url is None:    
+                    self.get_url()
+                else:
+                    self.url = url
 
+            
+
+        def delete(self, empty_bin=False):
+            """Delete the file from drive."""
+            if empty_bin:
+                self.drive.service.files().delete(fileId=self._id).execute()
+            else:
+                self.drive.service.files().trash(fileId=self._id).execute()
+
+        def undelete(self):
+            """Recover file from the trash (if it's there)."""
+            self.drive.service.files().untrash(fileId=self._id).execute()
+
+            
         def share(self, users, share_type='writer', send_notifications=False, email_message=None):
             """
             Share a document with a given list of users.
@@ -191,16 +232,32 @@ if gspread_available:
             body = self.drive.service.files().get(fileId=self._id).execute()
             body['title'] = name
             body = self.drive.service.files().update(fileId=self._id, body=body).execute()
+            self.name = name
+
+        def get_mime_type(self):
+            """Get the mime type of the file."""
+
+            details=self.drive.service.files().list(q="title='" + self.name + "'").execute(http=self.drive.http)['items'][0]
+            self.mime_type = details['mimeType']
+            return self.mime_type
 
         def get_name(self):
             """Get the title of the file."""
-            return self.drive.service.files().get(fileId=self._id).execute()['title']
+            self.name = self.drive.service.files().get(fileId=self._id).execute()['title']
+            return self.name
 
+        def get_url(self):
+            self.url = self.drive.service.files().get(fileId=self._id).execute()['alternateLink']
+            return self.url
+        
         def update_drive(self, drive):
             """Update the file's drive API service."""
             self.drive = drive
 
-            
+        def _repr_html_(self):
+            output = '<p><b>{title}</b> at <a href="{url}" target="_blank">this url.</a> ({mime_type})</p>'.format(url=self.url, title=self.name, mime_type=self.mime_type)
+            return output
+
     class sheet():
         """
         Class for interchanging information between google spreadsheets and pandas data frames. The class manages a spreadsheet.
