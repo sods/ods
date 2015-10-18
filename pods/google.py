@@ -89,7 +89,7 @@ if gspread_available:
             files = []
             for result in results:
                 if not result['labels']['trashed']:
-                    files.append(pods.google.file(id=result['id'], name=result['title'], mime_type=result['mimeType'], url=result['alternateLink'], drive=self))
+                    files.append(pods.google.resource(id=result['id'], name=result['title'], mime_type=result['mimeType'], url=result['alternateLink'], drive=self))
             return files
 
         def _repr_html_(self):
@@ -103,7 +103,7 @@ if gspread_available:
             return output
 
         
-    class file:
+    class resource:
         """Resource found on the google drive."""
         def __init__(self, name=None, mime_type=None, url=None, id=None, drive=None):
 
@@ -114,7 +114,7 @@ if gspread_available:
 
             if id is None:
                 if name is None:
-                    name = "Google Drive File"
+                    name = "Google Drive Resource"
                 # create a new sheet
                 body = {'mimeType': mime_type,
                         'title': name}
@@ -159,7 +159,8 @@ if gspread_available:
             """
             Share a document with a given list of users.
             """
-            users = list(users)
+            if type(users) is str:
+                users = [users]
             def batch_callback(request_id, response, exception):
                 print("Response for request_id (%s):" % request_id)
                 print(response)
@@ -270,34 +271,34 @@ if gspread_available:
         :param drive: the google drive client to use (default is None which performs a programmatic login)
         :param gs_client: the google spread sheet client login (default is none which causes a new client login)
         """
-        def __init__(self, file=None, gs_client=None, worksheet_name=None, column_indent=0):
+        def __init__(self, resource=None, gs_client=None, worksheet_name=None, column_indent=0):
 
             source = 'ODS Gdata Bot'                
             scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']    
 
-            if file is None:
+            if resource is None:
                 drive = pods.google.drive(scope=scope)
-                self.file = pods.google.file(drive=drive, name="Google Sheet", mime_type=sheet_mime)
+                self.resource = pods.google.resource(drive=drive, name="Google Sheet", mime_type=sheet_mime)
             else:
-                if 'https://spreadsheets.google.com/feeds' not in file.drive.scope:
+                if 'https://spreadsheets.google.com/feeds' not in resource.drive.scope:
                     drive = pods.google.drive(scope=scope)
-                    file.update_drive(drive)
-                self.file = file
+                    resource.update_drive(drive)
+                self.resource = resource
                 
             # Get a Google sheets client
             if gs_client is None:
-                self.gs_client = gspread.authorize(self.file.drive.credentials)
+                self.gs_client = gspread.authorize(self.resource.drive.credentials)
             else:
                 self.gs_client = gs_client
 
-            self.sheet = self.gs_client.open_by_key(self.file._id)
+            self.sheet = self.gs_client.open_by_key(self.resource._id)
 
             if worksheet_name is None:
                 self.worksheet = self.sheet.worksheets()[0]
             else:
                 self.worksheet = self.sheet.worksheet(title=worksheet_name)
             self.column_indent = column_indent
-            self.url = 'https://docs.google.com/spreadsheets/d/' + self.file._id + '/'
+            self.url = 'https://docs.google.com/spreadsheets/d/' + self.resource._id + '/'
 
 
 #############################################################################
@@ -632,11 +633,11 @@ if gspread_available:
 
         def set_title(self, title):
             """Change the title of the google spreadsheet."""
-            self.file.update_name(title)
+            self.resource.update_name(title)
             
         def get_title(self):
             """Get the title of the google spreadsheet."""
-            return self.file.get_name()
+            return self.resource.get_name()
 
         def delete_sheet(self, worksheet_name):
             """Delete the worksheet with the given name."""
@@ -676,14 +677,14 @@ if gspread_available:
             Share a document with a given list of users.
             """
             warnings.warn("Sharing should be performed on the drive class.", DeprecationWarning)
-            self.file.share(users, share_type, send_notifications, email_message)
+            self.resource.share(users, share_type, send_notifications, email_message)
 
         def share_delete(self, user):
             """
             Remove sharing from a given user.
             """
             warnings.warn("Sharing should be performed on the drive class.", DeprecationWarning)
-            return self.file.share_delete(user)
+            return self.resource.share_delete(user)
 
         def share_modify(self, user, share_type='reader', send_notifications=False):
             """
@@ -695,12 +696,12 @@ if gspread_available:
             """
             warnings.warn("Sharing should be performed on the drive class.", DeprecationWarning)
 
-            return self.file.share_modify(user, share_type, send_notifications)
+            return self.resource.share_modify(user, share_type, send_notifications)
             
 
         def _permission_id(self, user):
              
-            return self.file.service.permissions().getIdForEmail(email=user).execute()['id']
+            return self.resource.service.permissions().getIdForEmail(email=user).execute()['id']
             
         def share_list(self):
             """
@@ -708,18 +709,18 @@ if gspread_available:
             """
             warnings.warn("Sharing should be performed on the drive class.", DeprecationWarning)
 
-            return self.file.share_list()
+            return self.resource.share_list()
 
         def revision_history(self):
             """
             Get the revision history of the document from Google Docs.
             """
             warnings.warn("Revision history should be performed on the drive class.", DeprecationWarning)
-            return self.file.revision_history()
+            return self.resource.revision_history()
 
         def ispublished(self):
             """Find out whether or not the spreadsheet has been published."""
-            return self.file.drive.service.revisions().list(fileId=self.file._id).execute()['items'][-1]['published']
+            return self.resource.drive.service.revisions().list(fileId=self.resource._id).execute()['items'][-1]['published']
         
 
 
