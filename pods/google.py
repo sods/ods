@@ -558,6 +558,68 @@ if gspread_available:
             # Update in batch
             return self.worksheet.update_cells(cell_list)
 
+        def read_headers(self, header=1):
+
+            header_row = self.worksheet.row_values(header)[self.column_indent:]
+
+        def read_body(self, column_names=None, header=1, na_values=[], read_values=False, dtype={}, usecols=None, index_field=None):
+            """
+            Read in the body of a google sheet storing entries. Fields present are defined in 'column_names'
+
+            :param column_names: list of names to give to the columns (in case they aren't present in the spreadsheet). Default None (for None, the column headers are read from the spreadsheet.
+            :type column_names: list
+            :param header: number of rows to use as header (default is 1).
+            :type header: int
+            :param na_values: additional list containing entry types that are to be considered to be missing data (default is empty list).
+            :type na_values: list
+            :param read_values: whether to read values rather than the formulae in the spreadsheet (default is False).
+            :type read_values: bool
+            :param dtype: Type name or dict of column -> type Data type for data or columns. E.g. {'a': np.float64, 'b': np.int32}
+            :type dtype: dictonary
+            :param usecols: return a subset of the columns.
+            :type usecols: list
+            """
+            
+            # Find the index column number.
+            if index_field=None:
+                # Return any column titled index or otherwise the first column
+                index_col_num=next((i for i, column in enumerate(column_names) if v == 'index' or 'Index' or 'INDEX'), 0)
+                index_field = column_names[index_col_num]
+            else:
+                index_col_num=next((i for i, column in enumerate(column_names) if v == index_field), -1)
+                if index_col_num == -1:
+                    raise ValueError("Column " + index_field + " suggested for index not found in header row.")
+                
+                            
+
+            index_col = self.worksheet.col_values(self.column_indent+index_col_num)[header:]
+            num_entries = len(num_index)
+            start = self.worksheet.get_addr_int(header+1,
+                                                self.column_indent)
+            end = self.worksheet.get_addr_int(header+num_entries,
+                                              self.column_indent
+                                              +len(column_names)+1)
+            body_cells = self.worksheet.range(start + ':' + end)
+
+            data = {}
+            for col_name in column_names:
+                if not use_cols or col_name in use_cols:
+                    data[col_name] = [None for i in range(num_entries]]
+
+            for cell in cells:
+                col_name = column_names[cell.col-self.column_indent]
+                if not use_cols or col_name in use_cols:
+                    if read_values:
+                        val = cell.value
+                    else:
+                        val = cell.input_value
+
+                    if val is not None and val not in na_values:
+                        if col_name in dtype.keys():
+                            val = dtype['col_name'](val)
+                        data[col_name][cell.row-header-1]=val
+            return data
+        
         def read(self, names=None, header=1, na_values=[], read_values=False, dtype={}, usecols=None, index_field=None):
             """
             Read in information from a Google document storing entries. Fields present are defined in 'names'
