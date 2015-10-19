@@ -356,6 +356,7 @@ if gspread_available:
             else:
                 if header is None:
                     header=1
+                    
             self.write_headers(data_frame, header)
             self.write_body(data_frame, header)
 

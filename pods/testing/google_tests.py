@@ -4,7 +4,7 @@ import pods
 test_user = 'opendsi.sheffield@gmail.com' 
 
 if pods.google.gspread_available:
-    class Test_google:
+    class Test_drive:
         def __init__(self):
             pass
 
@@ -105,3 +105,48 @@ if pods.google.gspread_available:
         def test_mime_type(self):
             "Test that mime_type of file is correct."
             eq_(self.sheet.resource.get_mime_type(), pods.google.sheet_mime, msg="Mime type of google spread sheet does not match expectation.")
+
+    class Test_sheet():
+        """Class for testing google spreadsheet functionality."""
+
+        @classmethod
+        def setup_class(cls):
+            cls.column_indent = 3
+            cls.header = 4
+            pods.datasets.override_manual_authorize=True
+            cls.sheet_one = pods.google.sheet()
+            cls.resource = pods.google.resource(drive=cls.sheet_one.resource.drive, mime_type=pods.google.sheet_mime)
+            cls.sheet_two = pods.google.sheet(resource=cls.resource)
+            cls.data = pods.datasets.movie_body_count()
+            cls.sheet_two.write(cls.data['Y'])
+            cls.sheet_two.resource.share(['lawrennd@gmail.com', 'N.Lawrence@sheffield.ac.uk'])
+            cls.sheet_three = pods.google.sheet(column_indent=cls.column_indent)
+            cls.sheet_three.write(cls.data['Y'], header=cls.header)
+
+        @classmethod
+        def teardown_class(cls):
+            cls.sheet_one.resource.delete(empty_bin=True)
+
+        def read_sheet(self, sheet, df, header=1):
+            """Test reading."""
+            df2 = sheet.read(header=header)
+            eq_(df2.shape[0], df.shape[0], "Rows of read data frame do not match.")
+            eq_(df2.shape[1], df.shape[1], "Columns of read data frame do not match.")
+            for column in df.columns:
+                if column not in df2.columns:
+                    ok_(False, "Missing column " + str(column) + " in downloaded frame.")
+            for index in df.index:
+                if index not in df2.index:
+                    ok_(False, "Missing index " + str(index) + " in downloaded frame.")
+
+
+        def test_read(self):
+            """Test reading."""
+            print("Test reading of sheet started at origin.")
+            self.read_sheet(self.sheet_two, self.data['Y'])
+
+        def test_read_indented(self):
+            print("Test reading of sheet offset from origin.")
+            """Test reading of indented and headered sheet."""
+            self.read_sheet(self.sheet_three, self.data['Y'], header=self.header)
+            

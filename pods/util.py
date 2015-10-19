@@ -11,11 +11,11 @@ def download_url(url, dir_name='.', save_name=None, store_directory=None, messag
     if sys.version_info>=(3,0):
         from urllib.parse import quote
         from urllib.request import urlopen 
-        from urllib.error import URLError
+        from urllib.error import HTTPError, URLError
     else:
         from urllib2 import quote
         from urllib2 import urlopen
-        from urllib2 import URLError
+        from urllib2 import URLError as HTTPError
     i = url.rfind('/')
     file = url[i+1:]
     if store_directory is not None:
@@ -28,13 +28,15 @@ def download_url(url, dir_name='.', save_name=None, store_directory=None, messag
         os.makedirs(dir_name)
     try:
         response = urlopen(url+suffix)
-    except URLError(e):
+    except HTTPError as e:
         if not hasattr(e, "code"):
             raise
         if e.code > 399 and e.code<500:
             raise ValueError('Tried url ' + url + suffix + ' and received client error ' + str(e.code))
         elif e.code > 499:
             raise ValueError('Tried url ' + url + suffix + ' and received server error ' + str(e.code))
+    except URLError as e:
+        raise ValueError('Tried url ' + url + suffix + ' and failed with error ' + str(e.reason))
     with open(save_name, 'wb') as f:
         meta = response.info()
         content_length_str = meta.get("Content-Length")
