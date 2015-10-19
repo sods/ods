@@ -1,5 +1,7 @@
 from nose.tools import eq_, ok_
 import pods
+import pandas as pd
+import numpy as np
 
 test_user = 'opendsi.sheffield@gmail.com' 
 
@@ -118,18 +120,23 @@ if pods.google.gspread_available:
             cls.resource = pods.google.resource(drive=cls.sheet_one.resource.drive, mime_type=pods.google.sheet_mime)
             cls.sheet_two = pods.google.sheet(resource=cls.resource)
             cls.data = pods.datasets.movie_body_count()
+
             cls.sheet_two.write(cls.data['Y'])
             cls.sheet_two.resource.share(['lawrennd@gmail.com', 'N.Lawrence@sheffield.ac.uk'])
-            cls.sheet_three = pods.google.sheet(col_indent=cls.col_indent)
-            cls.sheet_three.write(cls.data['Y'], header=cls.header)
+
+            cls.sheet_three = pods.google.sheet(col_indent=cls.col_indent, header=cls.header)
+            cls.sheet_three.write(cls.data['Y'])
+
+            cls.data_two = pd.DataFrame([[0.2, 'cat', 12], ['orange', 'barley', np.nan], [12, 11, 2.3], [2.3, 'egg', 'plant']], columns = ['dog', 'flea', 'cat'], index = ['a', 'b', 'c', 'd'])
+            cls.sheet_update.write(cls.data_two)
 
         @classmethod
         def teardown_class(cls):
             cls.sheet_one.resource.delete(empty_bin=True)
 
-        def read_sheet(self, sheet, df, header=1):
+        def read_sheet(self, sheet, df):
             """Test reading."""
-            df2 = sheet.read(header=header)
+            df2 = sheet.read()
             eq_(df2.shape[0], df.shape[0], "Rows of read data frame do not match.")
             eq_(df2.shape[1], df.shape[1], "Columns of read data frame do not match.")
             for column in df.columns:
@@ -148,5 +155,13 @@ if pods.google.gspread_available:
         def test_read_indented(self):
             print("Test reading of sheet offset from origin.")
             """Test reading of indented and headered sheet."""
-            self.read_sheet(self.sheet_three, self.data['Y'], header=self.header)
+            self.read_sheet(self.sheet_three, self.data['Y'])
             
+       def test_drop(self):
+            """Test reading."""
+            print("Test reading of sheet started at origin.")
+            data_three = self.data_three
+            data_three.drop('c')
+            self.update_sheet.update(data_three)
+            
+            self.read_sheet(self.update_sheet, self.data['Y'])
