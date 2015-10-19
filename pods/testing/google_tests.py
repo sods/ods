@@ -127,13 +127,30 @@ if pods.google.gspread_available:
             cls.sheet_three = pods.google.sheet(col_indent=cls.col_indent, header=cls.header)
             cls.sheet_three.write(cls.data['Y'])
 
-            cls.data_two = pd.DataFrame([[0.2, 'cat', 12], ['orange', 'barley', np.nan], [12, 11, 2.3], [2.3, 'egg', 'plant']], columns = ['dog', 'flea', 'cat'], index = ['a', 'b', 'c', 'd'])
-            cls.sheet_update.write(cls.data_two)
+            cls.data_two = pd.DataFrame([[0.2, 'cat', 12], ['orange', 'barley', np.nan], [12, 11, 2.3], [2.3, 'egg', 'plant'], ['Sheffield', 'United', 'FC'], ['Sheffield', 'Wednesday', 'FC']], columns = ['dog', 'flea', 'cat'], index = ['a', 'b', 'c', 'd', 'e', 'f'])
+            cls.update_sheet = pods.google.sheet(col_indent=cls.col_indent, header=cls.header)
+            cls.update_sheet.write(cls.data_two)
 
+            cls.update_sheet_two = pods.google.sheet()
+            cls.update_sheet_two.write(cls.data_two)
+
+            cls.update_sheet_three = pods.google.sheet()
+            cls.update_sheet_three.write(cls.data_two)
+
+            cls.update_sheet_four = pods.google.sheet()
+            cls.update_sheet_four.write(cls.data_two)
+            
         @classmethod
         def teardown_class(cls):
+            """Delete of the sheets created for the tests."""
             cls.sheet_one.resource.delete(empty_bin=True)
-
+            cls.sheet_two.resource.delete(empty_bin=True)
+            cls.sheet_three.resource.delete(empty_bin=True)
+            cls.update_sheet.resource.delete(empty_bin=True)
+            cls.update_sheet_two.resource.delete(empty_bin=True)
+            cls.update_sheet_three.resource.delete(empty_bin=True)
+            cls.update_sheet_four.resource.delete(empty_bin=True)
+            
         def read_sheet(self, sheet, df):
             """Test reading."""
             df2 = sheet.read()
@@ -153,15 +170,41 @@ if pods.google.gspread_available:
             self.read_sheet(self.sheet_two, self.data['Y'])
 
         def test_read_indented(self):
-            print("Test reading of sheet offset from origin.")
             """Test reading of indented and headered sheet."""
+            print("Test reading of sheet offset from origin.")
             self.read_sheet(self.sheet_three, self.data['Y'])
             
-       def test_drop(self):
+        def test_drop(self):
             """Test reading."""
-            print("Test reading of sheet started at origin.")
-            data_three = self.data_three
-            data_three.drop('c')
+            print("Test dropping of rows from sheet.")
+            data_three = self.data_two.drop(['c', 'e'])
             self.update_sheet.update(data_three)
+            self.read_sheet(self.update_sheet, data_three)
+
+        def test_drop_swap(self):
+            """Test reading."""
+            print("Test dropping and replacing with other rows.")
+            data_three = self.data_two.drop(['c', 'e'])            
+            data_three.loc['barry'] = ['bat', 'ball', np.nan]
+            data_three.loc['sid'] = ['bart', 'simpson', 'naff']
+            self.update_sheet_two.update(data_three)
+            self.read_sheet(self.update_sheet_two, data_three)
+
+        def test_add(self):
+            """Test reading."""
+            print("Test adding of rows to sheet.")
+            data_three = self.data_two.copy()            
+            data_three.loc['barry'] = ['bat', 'ball', np.nan]
+            data_three.loc['sid'] = ['bart', 'simpson', 'naff']
+            self.update_sheet_three.update(data_three)
+            self.read_sheet(self.update_sheet_three, data_three)
+
+        def test_update(self):
+            """Test reading."""
+            print("Test adding of rows to sheet.")
+            data_three = self.data_two.copy()            
+            data_three['flea']['f'] = 'United'
+            data_three['dog']['e'] = 23.2
+            self.update_sheet_four.update(data_three)
+            self.read_sheet(self.update_sheet_four, data_three)
             
-            self.read_sheet(self.update_sheet, self.data['Y'])
