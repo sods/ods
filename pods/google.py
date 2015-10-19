@@ -100,8 +100,7 @@ if gspread_available:
             output = '<p><b>Google Drive</b></p>'
             for file in files:
                 output += file._repr_html_()
-                
-            
+                    
             return output
 
         
@@ -823,7 +822,7 @@ if gspread_available:
             """
             warnings.warn("Sharing should be performed on the drive class.", DeprecationWarning)
 
-            return self.resource.share_modify(user, share_type, send_notifications)
+            self.resource.share_modify(user, share_type, send_notifications)
             
 
         def _permission_id(self, user):
