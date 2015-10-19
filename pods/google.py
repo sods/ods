@@ -266,12 +266,12 @@ if gspread_available:
         :param spreadsheet_key: the google key of the spreadsheet to open (default is None which creates a new spreadsheet).
         :param worksheet_name: the worksheet in the spreadsheet to work with (default None which causes Sheet1 to be the name)
         :param title: the title of the spreadsheet (used if the spreadsheet is created for the first time)
-        :param column_indent: the column indent to use in the spreadsheet.
-        :type column_indent: int
+        :param col_indent: the column indent to use in the spreadsheet.
+        :type col_indent: int
         :param drive: the google drive client to use (default is None which performs a programmatic login)
         :param gs_client: the google spread sheet client login (default is none which causes a new client login)
         """
-        def __init__(self, resource=None, gs_client=None, worksheet_name=None, column_indent=0):
+        def __init__(self, resource=None, gs_client=None, worksheet_name=None, col_indent=0):
 
             source = 'ODS Gdata Bot'                
             scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']    
@@ -297,7 +297,7 @@ if gspread_available:
                 self.worksheet = self.sheet.worksheets()[0]
             else:
                 self.worksheet = self.sheet.worksheet(title=worksheet_name)
-            self.column_indent = column_indent
+            self.col_indent = col_indent
             self.url = 'https://docs.google.com/spreadsheets/d/' + self.resource._id + '/'
 
 
@@ -331,9 +331,9 @@ if gspread_available:
             # Get list of ids from the spreadsheet
             self.worksheet = self.sheet(self.worksheet_name)
 
-        def add_sheet(self, worksheet_name, rows=100, columns=10):
+        def add_sheet(self, worksheet_name, rows=100, cols=10):
             """Add a worksheet. To add and set to the current sheet use set_sheet_focus()."""
-            self.sheet.add_worksheet(title=worksheet_name, rows=rows, cols=columns)
+            self.sheet.add_worksheet(title=worksheet_name, rows=rows, cols=cols)
             self.worksheets = self.sheet.worksheets()
 
         def write(self, data_frame, header=None, comment=None):
@@ -433,8 +433,8 @@ if gspread_available:
             self.row_batch_size = 10
             query = gdata.spreadsheet.service.CellQuery()
             query.return_empty = "true" 
-            query.min_col = str(self.column_indent+1) 
-            query.max_col = str(len(ss.columns)+1+self.column_indent)
+            query.min_col = str(self.col_indent+1) 
+            query.max_col = str(len(ss.columns)+1+self.col_indent)
             query.min_row = str(row_number)
             query.max_row = str(row_number + self.row_batch_size)
             cells = self._get_cell_feed(query=query)
@@ -518,26 +518,35 @@ if gspread_available:
             # self.worksheet.insert_row(dict, index)
 
 
-        def write_comment(self, comment, row=1, column=1):
+        def write_comment(self, comment, row=1, col=1):
             """Write a comment in the given cell"""
-            self.worksheet.update_cell(row, column, comment)
+            self.worksheet.update_cell(row, col, comment)
 
-        def write_body(self, data_frame, header=1):
+        def write_body(self, data_frame, header=1, write_values=False, nan_val=''):
             """Write the body of a data frame to a google doc."""
             # query needs to be set large enough to pull down relevant cells of sheet.
             row_number = header
             start = self.worksheet.get_addr_int(row_number+1,
-                                                self.column_indent+1)
-            end = self.worksheet.get_addr_int(row_number+data_frame.shape[0], len(data_frame.columns)+self.column_indent+1)
+                                                self.col_indent+1)
+            end = self.worksheet.get_addr_int(row_number+data_frame.shape[0], len(data_frame.columns)+self.col_indent+1)
             cell_list = self.worksheet.range(start + ':' + end)
             for cell in cell_list:
-                if cell.col == self.column_indent + 1:
+                if cell.col == self.col_indent + 1:
                     # Write index
-                    cell.value = data_frame.index[cell.row-header-1]
+                    if write_values:
+                        cell.input_value = data_frame.index[cell.row-header-1]
+                    else:
+                        cell.value = data_frame.index[cell.row-header-1]
                 else:
-                    column = data_frame.columns[cell.col-self.column_indent-2]
+                    column = data_frame.columns[cell.col-self.col_indent-2]
                     index = data_frame.index[cell.row-header-1]
-                    cell.value = data_frame[column][index]
+                    val = data_frame[column][index]
+                    if np.isnan(val):
+                        val = nan_val
+                    if write_values:
+                        cell.input_value = val
+                    else:
+                        cell.value = val
             self.worksheet.update_cells(cell_list)
 
         def write_headers(self, data_frame, header=1):
@@ -547,8 +556,8 @@ if gspread_available:
             if index_name == '' or index_name is None:
                 index_name = 'index'
             headers = [index_name] + list(data_frame.columns)
-            start = self.worksheet.get_addr_int(header, self.column_indent+1)
-            end = self.worksheet.get_addr_int(header, len(data_frame.columns)+self.column_indent+1)
+            start = self.worksheet.get_addr_int(header, self.col_indent+1)
+            end = self.worksheet.get_addr_int(header, len(data_frame.columns)+self.col_indent+1)
             # Select a range
             cell_list = self.worksheet.range(start + ':' + end)
             
@@ -560,9 +569,9 @@ if gspread_available:
 
         def read_headers(self, header=1):
 
-            header_row = self.worksheet.row_values(header)[self.column_indent:]
+            return self.worksheet.row_values(header)[self.col_indent:]
 
-        def read_body(self, column_names=None, header=1, na_values=[], read_values=False, dtype={}, usecols=None, index_field=None):
+        def read_body(self, column_names=None, header=1, na_values=[], read_values=False, dtype={}, use_columns=None, index_field=None):
             """
             Read in the body of a google sheet storing entries. Fields present are defined in 'column_names'
 
@@ -576,51 +585,56 @@ if gspread_available:
             :type read_values: bool
             :param dtype: Type name or dict of column -> type Data type for data or columns. E.g. {'a': np.float64, 'b': np.int32}
             :type dtype: dictonary
-            :param usecols: return a subset of the columns.
-            :type usecols: list
+            :param use_columns: return a subset of the columns.
+            :type use_columns: list
             """
+            if type(na_values) is str:
+                na_values = [na_values]
             
             # Find the index column number.
-            if index_field=None:
+            if index_field is None:
                 # Return any column titled index or otherwise the first column
-                index_col_num=next((i for i, column in enumerate(column_names) if v == 'index' or 'Index' or 'INDEX'), 0)
+                index_col_num=next((i for i, column in enumerate(column_names) if column == 'index' or 'Index' or 'INDEX'), 0)
                 index_field = column_names[index_col_num]
             else:
-                index_col_num=next((i for i, column in enumerate(column_names) if v == index_field), -1)
+                index_col_num=next((i for i, column in enumerate(column_names) if column == index_field), -1)
                 if index_col_num == -1:
                     raise ValueError("Column " + index_field + " suggested for index not found in header row.")
                 
                             
-
-            index_col = self.worksheet.col_values(self.column_indent+index_col_num)[header:]
-            num_entries = len(num_index)
+            # Assume the index column is full and count the entries.
+            index_col = self.worksheet.col_values(self.col_indent+index_col_num+1)[header:]
+            num_entries = len(index_col)
             start = self.worksheet.get_addr_int(header+1,
-                                                self.column_indent)
+                                                self.col_indent+1)
             end = self.worksheet.get_addr_int(header+num_entries,
-                                              self.column_indent
-                                              +len(column_names)+1)
+                                              self.col_indent
+                                              +len(column_names))
             body_cells = self.worksheet.range(start + ':' + end)
 
             data = {}
             for col_name in column_names:
-                if not use_cols or col_name in use_cols:
-                    data[col_name] = [None for i in range(num_entries]]
+                if not use_columns or col_name in use_columns:
+                    data[col_name] = [None for i in range(num_entries)]
 
-            for cell in cells:
-                col_name = column_names[cell.col-self.column_indent]
-                if not use_cols or col_name in use_cols:
+            for cell in body_cells:
+                column_name = column_names[cell.col-self.col_indent-1]
+                if not use_columns or column_name in use_columns:
                     if read_values:
                         val = cell.value
                     else:
                         val = cell.input_value
 
                     if val is not None and val not in na_values:
-                        if col_name in dtype.keys():
-                            val = dtype['col_name'](val)
-                        data[col_name][cell.row-header-1]=val
+                        if column_name in dtype.keys():
+                            val = dtype[column_name](val)
+                        else:
+                            val = gspread.utils.numericise(val)
+                            
+                        data[column_name][cell.row-header-1]=val
             return data
-        
-        def read(self, names=None, header=1, na_values=[], read_values=False, dtype={}, usecols=None, index_field=None):
+
+        def read(self, names=None, index_field=None, header=1, na_values=[], read_values=False, dtype={}, use_columns=None):
             """
             Read in information from a Google document storing entries. Fields present are defined in 'names'
 
@@ -634,73 +648,28 @@ if gspread_available:
             :type read_values: bool
             :param dtype: Type name or dict of column -> type Data type for data or columns. E.g. {'a': np.float64, 'b': np.int32}
             :type dtype: dictonary
-            :param usecols: return a subset of the columns.
-            :type usecols: list
+            :param use_columns: return a subset of the columns.
+            :type use_columns: list
             """
 
             # todo: need to check if something is written below the 'table' as this will be read (for example a rogue entry in the row below the last row of the data.
             #dictvals = self.worksheet.get_all_records(empty2zero=False, head=header)
+            if type(na_values) is str:
+                na_values = [na_values]
 
-            cells = self.worksheet._fetch_cells()
-
-            # code modified from gspread (https://github.com/burnash/gspread/blob/master/gspread/models.py)
-            # defaultdicts fill in gaps for empty rows/cells not returned by gdocs
-            rows = defaultdict(lambda: defaultdict(str))
-            for cell in cells:
-                row = rows.setdefault(int(cell.row), defaultdict(str))
-                if read_values:
-                    row[cell.col] = cell.value
-                else:
-                    row[cell.col] = cell.input_value
-
-            # we return a whole rectangular region worth of cells, including
-            # empties
-            if not rows:
-                return []
-
-            all_row_keys = chain.from_iterable(row.keys() for row in rows.values())
-            rect_cols = range(1, max(all_row_keys) + 1)
-            rect_rows = range(1, max(rows.keys()) + 1)
-
-            data = [[rows[i][j] for j in rect_cols] for i in rect_rows]
-            idx = header - 1
-            keys = data[idx]
-            values = [gspread.utils.numericise_all(row, False) for row in data[idx + 1:]]
-
-            dictvals= [dict(zip(keys, row)) for row in values]
-            if index_field is None:
-                if 'index' in dictvals[0].keys():
-                    index_field = 'index'
-                elif 'Index' in dictvals[0].keys():
-                    index_field = 'Index'
-                elif 'INDEX' in dictvals[0].keys():
-                    index_field = 'INDEX'
-            
-            if index_field is not None and index_field in dictvals[0].keys():
-                return pd.DataFrame(dictvals).set_index(index_field)
-            else:
-                print("Warning no such column name for index in sheet. Generating new index")
-                return pd.DataFrame(dictvals)
+            column_names = self.worksheet.read_header(header=header)
+            if index_field is not None and index_field not in column_names:
+                raise ValueError("Invalid index: " + index_field + " not present in sheet.")
+            data = self.worksheet.read_body(header=header, index_field=index_field, column_names=column_names, na_values=na_values, read_values=read_values, dtype=dtype, use_columns=use_columns)
+            return pd.DataFrame(data).set_index(index_field)
 
             #         except KeyError:
             #             print(("KeyError, unidentified key in ", self.worksheet_name, " in Google spreadsheet ", self.url))
             #             ans = input('Try and fix the error on the sheet and then return here. Error fixed (Y/N)?')
             #             if ans[0]=='Y' or ans[0] == 'y':
-            #                 return self.read(names, header, na_values, read_values, dtype, usecols, index_field)
+            #                 return self.read(names, header, na_values, read_values, dtype, use_columns, index_field)
             #             else:
             #                 raise KeyError("Unidentified key in " + self.worksheet_name + " in Google spreadsheet " + self.url)
-
-#######################################################################
-# Place methods here that are really associated with the spreadsheet. #
-#######################################################################
-
-        def set_title(self, title):
-            """Change the title of the google spreadsheet."""
-            self.resource.update_name(title)
-            
-        def get_title(self):
-            """Get the title of the google spreadsheet."""
-            return self.resource.get_name()
 
         def delete_sheet(self, worksheet_name):
             """Delete the worksheet with the given name."""
@@ -734,6 +703,19 @@ if gspread_available:
                     print(ds.url)
                 else:
                     raise
+            
+#######################################################################
+# Place methods here that are really associated with the resource. #
+#######################################################################
+
+        def set_title(self, title):
+            """Change the title of the google spreadsheet."""
+            self.resource.update_name(title)
+            
+        def get_title(self):
+            """Get the title of the google spreadsheet."""
+            return self.resource.get_name()
+
             
         def share(self, users, share_type='writer', send_notifications=False, email_message=None):
             """
