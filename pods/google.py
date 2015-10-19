@@ -541,8 +541,9 @@ if gspread_available:
                     column = data_frame.columns[cell.col-self.col_indent-2]
                     index = data_frame.index[cell.row-header-1]
                     val = data_frame[column][index]
-                    if np.isnan(val):
-                        val = nan_val
+                    if type(val) is float:
+                        if np.isnan(val):
+                            val = nan_val
                     if write_values:
                         cell.input_value = val
                     else:
@@ -571,7 +572,7 @@ if gspread_available:
 
             return self.worksheet.row_values(header)[self.col_indent:]
 
-        def read_body(self, column_names=None, header=1, na_values=[], read_values=False, dtype={}, use_columns=None, index_field=None):
+        def read_body(self, column_names, index_field, header=1, na_values=[], read_values=False, dtype={}, use_columns=None):
             """
             Read in the body of a google sheet storing entries. Fields present are defined in 'column_names'
 
@@ -592,14 +593,10 @@ if gspread_available:
                 na_values = [na_values]
             
             # Find the index column number.
-            if index_field is None:
-                # Return any column titled index or otherwise the first column
-                index_col_num=next((i for i, column in enumerate(column_names) if column == 'index' or 'Index' or 'INDEX'), 0)
-                index_field = column_names[index_col_num]
-            else:
-                index_col_num=next((i for i, column in enumerate(column_names) if column == index_field), -1)
-                if index_col_num == -1:
-                    raise ValueError("Column " + index_field + " suggested for index not found in header row.")
+            
+            index_col_num=next((i for i, column in enumerate(column_names) if column == index_field), -1)
+            if index_col_num == -1:
+                raise ValueError("Column " + index_field + " suggested for index not found in header row.")
                 
                             
             # Assume the index column is full and count the entries.
@@ -657,10 +654,18 @@ if gspread_available:
             if type(na_values) is str:
                 na_values = [na_values]
 
-            column_names = self.worksheet.read_header(header=header)
-            if index_field is not None and index_field not in column_names:
-                raise ValueError("Invalid index: " + index_field + " not present in sheet.")
-            data = self.worksheet.read_body(header=header, index_field=index_field, column_names=column_names, na_values=na_values, read_values=read_values, dtype=dtype, use_columns=use_columns)
+            column_names = self.read_headers(header=header)
+
+            if index_field is None:
+                # Return any column titled index or otherwise the first column
+                index_col_num=next((i for i, column in enumerate(column_names) if column == 'index' or 'Index' or 'INDEX'), 0)
+                index_field = column_names[index_col_num]
+            elif index_field not in column_names:
+                raise ValueError("Invalid index: " + index_field + " not present in sheet header row " + str(header) + ".")
+
+            data = self.read_body(header=header, index_field=index_field, column_names=column_names, na_values=na_values, read_values=read_values, dtype=dtype, use_columns=use_columns)
+            #if len(data[index_field])>len(set(data[index_field])):
+            #    raise ValueError("Invalid index column, entries are not unique")
             return pd.DataFrame(data).set_index(index_field)
 
             #         except KeyError:

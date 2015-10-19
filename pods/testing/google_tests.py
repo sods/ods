@@ -111,7 +111,7 @@ if pods.google.gspread_available:
 
         @classmethod
         def setup_class(cls):
-            cls.column_indent = 3
+            cls.col_indent = 3
             cls.header = 4
             pods.datasets.override_manual_authorize=True
             cls.sheet_one = pods.google.sheet()
@@ -120,7 +120,7 @@ if pods.google.gspread_available:
             cls.data = pods.datasets.movie_body_count()
             cls.sheet_two.write(cls.data['Y'])
             cls.sheet_two.resource.share(['lawrennd@gmail.com', 'N.Lawrence@sheffield.ac.uk'])
-            cls.sheet_three = pods.google.sheet(column_indent=cls.column_indent)
+            cls.sheet_three = pods.google.sheet(col_indent=cls.col_indent)
             cls.sheet_three.write(cls.data['Y'], header=cls.header)
 
         @classmethod
