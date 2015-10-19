@@ -270,12 +270,19 @@ if gspread_available:
         :type col_indent: int
         :param drive: the google drive client to use (default is None which performs a programmatic login)
         :param gs_client: the google spread sheet client login (default is none which causes a new client login)
+        :param header: number of header rows in the document.
+        :type header: int
+        :param raw_values: whether to read values rather than the formulae in the spreadsheet (default is False).
+        :type raw_values: bool
         """
-        def __init__(self, resource=None, gs_client=None, worksheet_name=None, col_indent=0):
+        def __init__(self, resource=None, gs_client=None, worksheet_name=None, index_field=None, col_indent=0, raw_values=False, header=1):
 
             source = 'ODS Gdata Bot'                
             scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']    
-
+            self.raw_values = raw_values
+            self.header = header
+            self.index_field = None
+            
             if resource is None:
                 drive = pods.google.drive(scope=scope)
                 self.resource = pods.google.resource(drive=drive, name="Google Sheet", mime_type=sheet_mime)
@@ -336,39 +343,32 @@ if gspread_available:
             self.sheet.add_worksheet(title=worksheet_name, rows=rows, cols=cols)
             self.worksheets = self.sheet.worksheets()
 
-        def write(self, data_frame, header=None, comment=None):
+        def write(self, data_frame, comment=None):
             """
             Write a pandas data frame to a google document. This function will overwrite existing cells, but will not clear them first.
 
             :param data_frame: the data frame to write.
             :type data_frame: pandas.DataFrame
-            :param header: number of header rows in the document.
-            :type header: int
             :param comment: a comment to make at the top of the document (requres header>1
             :type comment: str
             """
             if comment is not None:
-                if header is None:
-                    header=2
-                elif header==1:
+                if self.header==1:
                     raise ValueError('Comment will be overwritten by column headers')
                 self.write_comment(comment)
-            else:
-                if header is None:
-                    header=1
                     
-            self.write_headers(data_frame, header)
-            self.write_body(data_frame, header)
+            self.write_headers(data_frame)
+            self.write_body(data_frame)
 
-        def augment(self, data_frame, columns, header=1, comment=None):
+        def augment(self, data_frame, columns, comment=None):
             """
             Augment is a special wrapper function for update that calls it
             with overwrite set to False. Use this command if you only want
             to make changes when the cell in the spreadsheet is empty.
             """
-            self.update(data_frame, columns, header, comment, overwrite=False)
+            self.update(data_frame, columns, comment, overwrite=False)
 
-        def update(self, data_frame, columns=None, header=1, comment=None, overwrite=True):
+        def update(self, data_frame, columns=None, comment=None, overwrite=True):
             """
             Update a google document with a given data frame. The
             update function assumes that the columns of the data_frame and
@@ -383,8 +383,6 @@ if gspread_available:
             :type data_frame: pandas.DataFrame
             :param columns: which columns are updated in the spreadsheet (by default all columns are updated)
             :type columns: list
-            :param hearder_rows: how many rows are in the header (including the column headers). By default there is 1 row. 
-            :type header: int
             :param comment: comment to place in the top row of the header (requires header>1)
             :type comment: str
             :rtype: pandas.DataFrame
@@ -394,196 +392,274 @@ if gspread_available:
             """
             if not data_frame.index.is_unique:
                 raise ValueError("Index for data_frame is not unique in Google spreadsheet " + self.url)
-            ss = self.read(header=header)
+            ss = self.read()
             if not ss.index.is_unique:
-                raise ValueError("Index in google doc is not unique in Google spreadsheet " + self.url)
+                raise ValueError("Index in sheet is not unique in Google spreadsheet " + self.url)
             if columns is None:
                 columns = ss.columns
             if (len(set(ss.columns) - set(data_frame.columns))>0 or
                 len(set(data_frame.columns) - set(ss.columns))>0):
                 # TODO: Have a lazy option that doesn't mind this mismatch and accounts for it.
                 raise ValueError('There is a mismatch between columns in online spreadsheet and the data frame we are using to update in Google spreadsheet ' + self.url)
+
+            
             add_row = []
             remove_row = []
-            update_cell = []
+            update_triples = []
             # Compute necessary changes
             for index in data_frame.index:
                 if index in ss.index:
                     for column in columns:
+                        ss_val = ss[column][index]
+                        df_val = data_frame[column][index]
                         if overwrite:
-                            if not ss[column][index] == data_frame[column][index]:
-                                update_cell.append((index, column))
+                            if not ss_val == df_val:
+                                update_triples.append((index, column, df_val))
                         else:
-                            if ((pd.isnull(ss[column][index]) 
-                                or ss[column][index] == '') 
-                                and not (pd.isnull(data_frame[column][index])
-                                         or data_frame[column][index] == '')):
-                                update_cell.append((index, column))
+                            if ((pd.isnull(ss_val) 
+                                or ss_val == '') 
+                                and not (pd.isnull(df_val)
+                                         or df_val == '')):
+                                update_triples.append((index, column, df_val))
 
                 else:
                     add_row.append(index)
+
             if overwrite:
                 for index in ss.index:
                     if index not in data_frame.index:
                         remove_row.append(index)
 
+            index_to_add = []
+            index_to_rem = []
+            swap_list = []
+                        
+            swap_index_len = min(len(add_row), len(remove_row))
+            row_change = len(add_row) - len(remove_row)
 
-            row_number = header+1
+            if row_change > 0:
+                index_to_add = add_row[-row_change:]
 
-            self.row_batch_size = 10
-            query = gdata.spreadsheet.service.CellQuery()
-            query.return_empty = "true" 
-            query.min_col = str(self.col_indent+1) 
-            query.max_col = str(len(ss.columns)+1+self.col_indent)
-            query.min_row = str(row_number)
-            query.max_row = str(row_number + self.row_batch_size)
-            cells = self._get_cell_feed(query=query)
+            if row_change < 0:
+                index_to_rem = remove_row[row_change:]
 
-            batchRequest = gdata.spreadsheet.SpreadsheetsCellsFeed()
-            counter = 0
-            row_to_delete = []
-            row_number = 1
-            for index, row in ss.iterrows():
-                if counter>=len(cells.entry):
-                    # Update current block
-                    updated = self.gd_client.ExecuteBatch(batchRequest, cells.GetBatchLink().href)
-                    # pull down new batch of cells.
-                    query.min_row = str(row_number)
-                    query.max_row = str(row_number + self.row_batch_size)
-                    cells = self._get_cell_feed(query=query)
-                    batchRequest = gdata.spreadsheet.SpreadsheetsCellsFeed()
-                    counter = 0
-                current_index = cells.entry[counter].cell.inputValue 
-                row_number = int(cells.entry[counter].cell.row) + 1
-
-                if current_index in remove_row:
-                    v = int(cells.entry[counter].cell.row)-header-1
-                    row_to_delete.append(v)
-                    print("Warning deleting row indexed by '" + current_index + "' from " + cells.entry[counter].cell.row + " currently! Not comprehensively tested. Best guess is that row to delete is " + str(v) + " in Google spreadsheet " + self.url)
-                    ans = input("Delete row (Y/N)?")
-                    if len(ans)==0 or (not ans[0]=='Y' and not ans[0] == 'y'):
-                        raise ValueError("Not willing to delete row.")
-                    counter+=len(row)
-                    continue
+            for add, rem in zip(add_row[:swap_len], remove_row[:swap_len]):
+                swap_list.append((add, rem))
+                
+            update_cells = []
+            for index,column,val in update_cells:
+                cell = self._cell(index, column)
+                if self.raw_values:
+                    cell.input_value = val
                 else:
-                    counter+=1
-                for current_column, entry in row.items():
-                    if (current_index, current_column) in update_cell:
-                        val = data_frame[current_column][index]
-                        if not pd.isnull(val):
-                            v = []
-                            try:
-                                v = str(val)
-                            except UnicodeDecodeError:
-                                v = str(val)
-                            cells.entry[counter].cell.inputValue = v
-                        else:
-                            cells.entry[counter].cell.inputValue = ''
-                        batchRequest.AddUpdate(cells.entry[counter])
-                    counter+=1
-            updated = self.gd_client.ExecuteBatch(batchRequest, cells.GetBatchLink().href)
-            # Delete the rows to be removed.
-            for row in sorted(row_to_delete, reverse=True):
-                print(("Delete row ", row))
-                self._delete_row(row)
-            # Insert the rows to be added
-            for index in add_row:
-                self._add_row(index, data_frame.loc[index])
+                    cell.value = val
+                update_cells.append(cell)
 
-        def _delete_row(self, row_number):
+            for add, rem in swap_list:
+                update_cells.append(self._overwrite_row(rem,
+                                                        data_series=data_frame.loc[add]))
+                
+            
+            update_cells.append(self._delete_rows(index_to_rem))
+            update_cells.append(self._add_rows(index_to_add, data_frame.loc[index_to_add]))
+
+
+        def _update_row_lookup(self, index):
+            """Update the data series to be used as a look-up to find row associated with each index.
+            :param index: the index names in order from the spreadsheet.
+            :type index: list"""
+            self.row_lookup = pd.Series(range(self.header+1, len(index)+self.header+1), index=index)
+
+        def _update_col_lookup(self, columns):
+            """Update the data series to be used as a look-up to find col associated with each column.
+            :param column: the column names in order from the spreadsheet.
+            :type column: list"""
+            self.col_lookup = pd.Series(range(self.col_indent+1, len(columns)+self.col_indent+1), index=columns)
+
+        def _cell(index, column):
+            """Return the cell of the spreadsheet associated with the given index and column."""
+            return self.worksheet.cell(self.row_lookup[index], self.col_lookup[column])
+
+        
+        def _overwrite_row(self, index, data_series):
+            """Overwrite the given row in a spreadsheet with a data series."""
+            cells = []
+            for column in self.col_lookup.index:
+                cell = self.cell(index, column)
+                if column in data_series.index:
+                    val = data_series[column]
+                else:
+                    val = None
+                if self.raw_values:
+                    cell.input_value = val
+                else:
+                    cell.value = val
+                cells.append(cell)
+            return cells
+
+        def _delete_rows(self, index):
             """
             Delete a row of the spreadsheet.
-            :param row_number: the row number to be deleted.
-            :type row_number: int"""
-            raise NotImplementedError("Delete row is not yet implemented in gspread")
+            :param index: the row number to be deleted.
+            :type index: index of pd.DataSeries"""
 
-        def _add_row(self, index, data_series):
+            if type(index) is str:
+                index = [index]
+            minind = self.row_lookup[index].min()
+                
+            start = self.worksheet.get_addr_int(minind,
+                                                self.col_lookup.min())
+            end = self.worksheet.get_addr_int(self.row_lookup.max(),
+                                              self.col_indent.max())
+            cells = self.worksheet.range(start + ':' + end)
+
+            # download existing values
+            data = defaultdict(lambda: defaultdict(str))
+            for cell in cells:
+                if self.raw_values:
+                    val = cell.input_value
+                else:
+                    val = cell.value
+                
+                row = data.setdefault(int(cell.row), defaultdict(str))
+                row[cell.col] = val
+
+            delete_rows = self.row_lookup[index].argsort()
+            # Find the ends of the banks to move up
+            end_step = []
+            for i, ind in enumerate(delete_rows):
+                if i>0:
+                    end_step.append(self.row_lookup[ind])-i
+            end_step.append(self.row_lookup.max()-len(index))
+
+            # Move up each bank in turn.
+            for i, ind in enumerate(delete_rows):
+                for cell in cells:
+                    if (i==0 and cell.row <= end_step[i]) or (i>0 and cell.row <= end_step[i] and cell.row>end_step[i-1]):
+                        val = data[cell.row+1+i][cell.col]
+                        if self.raw_values:
+                            cell.input_value = val
+                        else:
+                            cell.value = val
+
+            # Delete exposed rows at bottom
+            for cell in cells:
+                if cell.row > delete_rows[-1]:
+                    if self.raw_values:
+                        cell.input_value = ''
+                    else:
+                        cell.value = ''
+
+            # Update the row lookups
+            for i, ind in enumerate(delete_rows):
+                self.row_lookup[self.row_lookup>self.row_lookup[ind]] -= (i+1)
+                self.row_lookup.drop(ind)
+
+            return cells
+        
+            
+        def _add_rows(self, data_frame):
             """
             Add a row to the spreadsheet.
             :param index: index of the row to be added.
             :type index: str or int (any valid index for a pandas.DataFrame)
             :param data_series: the entries of the row to be added.
             :type data_series: pandas.Series"""
-            raise NotImplementedError("Add row not yet implemented in gspread interface")
-            # dict = {}
-            # dict['index'] = index
-            # for column, entry in data_series.items():
-            #     if not pd.isnull(entry):
-            #         val = []
-            #         try:
-            #             val = str(entry)
-            #         except UnicodeDecodeError:
-            #             val = str(entry)
-            #         dict[column] = val
-            # self.worksheet.insert_row(dict, index)
+            maxind = self.row_lookup.max()
+            for i, ind in enumerate(self.row_lookup):
+                self.row_lookup[ind] = maxind+1+i
+            start = self.worksheet.get_addr_int(maxind+1,
+                                                self.col_lookup.min())
+            end = self.worksheet.get_addr_int(maxind+len(index),
+                                              self.col_indent.max())
+            cells = self.worksheet.range(start + ':' + end)
+            for cell in cells:
+                if cell.val != '':
+                    raise ValueError("Overwriting non-empty cell in spreadsheet")
+                i = cell.row - maxind-1
+                j = cell.col - self.col_lookup.min()
+                index = data_frame.index[i]
+                column = data_frame.column[j]
+                val = data_frame[column][index]
+                if self.raw_values:
+                    cell.input_value = val
+                else:
+                    cell.value = val
 
-
+            return cells
+                                
         def write_comment(self, comment, row=1, col=1):
             """Write a comment in the given cell"""
             self.worksheet.update_cell(row, col, comment)
 
-        def write_body(self, data_frame, header=1, write_values=False, nan_val=''):
+        def write_body(self, data_frame, nan_val=''):
             """Write the body of a data frame to a google doc."""
             # query needs to be set large enough to pull down relevant cells of sheet.
-            row_number = header
+            row_number = self.header
             start = self.worksheet.get_addr_int(row_number+1,
                                                 self.col_indent+1)
             end = self.worksheet.get_addr_int(row_number+data_frame.shape[0], len(data_frame.columns)+self.col_indent+1)
-            cell_list = self.worksheet.range(start + ':' + end)
-            for cell in cell_list:
+            cells = self.worksheet.range(start + ':' + end)
+            for cell in cells:
                 if cell.col == self.col_indent + 1:
+                    if cell.value != '':
+                        raise ValueError("Non-empty cell be written to in Google sheet.")
                     # Write index
-                    if write_values:
-                        cell.input_value = data_frame.index[cell.row-header-1]
+                    if self.raw_values:
+                        cell.input_value = data_frame.index[cell.row-self.header-1]
                     else:
-                        cell.value = data_frame.index[cell.row-header-1]
+                        cell.value = data_frame.index[cell.row-self.header-1]
                 else:
                     column = data_frame.columns[cell.col-self.col_indent-2]
-                    index = data_frame.index[cell.row-header-1]
+                    index = data_frame.index[cell.row-self.header-1]
                     val = data_frame[column][index]
                     if type(val) is float:
                         if np.isnan(val):
                             val = nan_val
-                    if write_values:
+                    if self.raw_values:
                         cell.input_value = val
                     else:
                         cell.value = val
-            self.worksheet.update_cells(cell_list)
+            self.worksheet.update_cells(cells)
 
-        def write_headers(self, data_frame, header=1):
+        def write_headers(self, data_frame):
             """Write the headers of a data frame to the spreadsheet."""
 
             index_name = data_frame.index.name 
             if index_name == '' or index_name is None:
                 index_name = 'index'
             headers = [index_name] + list(data_frame.columns)
-            start = self.worksheet.get_addr_int(header, self.col_indent+1)
-            end = self.worksheet.get_addr_int(header, len(data_frame.columns)+self.col_indent+1)
+            start = self.worksheet.get_addr_int(self.header, self.col_indent+1)
+            end = self.worksheet.get_addr_int(self.header, len(data_frame.columns)+self.col_indent+1)
             # Select a range
-            cell_list = self.worksheet.range(start + ':' + end)
-            
-            for cell, value in zip(cell_list, headers):
+            cells = self.worksheet.range(start + ':' + end)
+            self._update_col_lookup(headers)
+            for cell, value in zip(cells, headers):
+                if cell.value != '':
+                    raise ValueError("Error over-writing in non empty sheet")
                 cell.value = value
-
             # Update in batch
-            return self.worksheet.update_cells(cell_list)
+            return self.worksheet.update_cells(cells)
 
-        def read_headers(self, header=1):
+        def read_headers(self):
+            
+            column_names=self.worksheet.row_values(self.header)[self.col_indent:]
+            self._update_col_lookup(column_names)
 
-            return self.worksheet.row_values(header)[self.col_indent:]
+            if self.index_field is None:
+                # Return any column titled index or otherwise the first column
+                index_col_num=next((i for i, column in enumerate(column_names) if column == 'index' or 'Index' or 'INDEX'), 0)
+                self.index_field = column_names[index_col_num]
+            elif self.index_field not in column_names:
+                raise ValueError("Invalid index: " + self.index_field + " not present in sheet header row " + str(self.header) + ".")
+            return column_names
 
-        def read_body(self, column_names, index_field, header=1, na_values=[], read_values=False, dtype={}, use_columns=None):
+        def read_body(self, na_values=[], dtype={}, use_columns=None):
             """
-            Read in the body of a google sheet storing entries. Fields present are defined in 'column_names'
+            Read in the body of a google sheet storing entries. 
 
-            :param column_names: list of names to give to the columns (in case they aren't present in the spreadsheet). Default None (for None, the column headers are read from the spreadsheet.
-            :type column_names: list
-            :param header: number of rows to use as header (default is 1).
-            :type header: int
             :param na_values: additional list containing entry types that are to be considered to be missing data (default is empty list).
             :type na_values: list
-            :param read_values: whether to read values rather than the formulae in the spreadsheet (default is False).
-            :type read_values: bool
             :param dtype: Type name or dict of column -> type Data type for data or columns. E.g. {'a': np.float64, 'b': np.int32}
             :type dtype: dictonary
             :param use_columns: return a subset of the columns.
@@ -593,52 +669,52 @@ if gspread_available:
                 na_values = [na_values]
             
             # Find the index column number.
-            
-            index_col_num=next((i for i, column in enumerate(column_names) if column == index_field), -1)
-            if index_col_num == -1:
-                raise ValueError("Column " + index_field + " suggested for index not found in header row.")
+            if self.index_field in self.col_lookup:
+                index_col_num = self.col_lookup[self.index_field]
+            else:
+                raise ValueError("Column " + self.index_field + " suggested for index not found in header row.")
                 
                             
             # Assume the index column is full and count the entries.
-            index_col = self.worksheet.col_values(self.col_indent+index_col_num+1)[header:]
-            num_entries = len(index_col)
-            start = self.worksheet.get_addr_int(header+1,
+            index = self.worksheet.col_values(index_col_num)[self.header:]
+            self._update_row_lookup(index)
+            
+            num_entries = len(index)
+            start = self.worksheet.get_addr_int(self.header+1,
                                                 self.col_indent+1)
-            end = self.worksheet.get_addr_int(header+num_entries,
+            end = self.worksheet.get_addr_int(self.header+num_entries,
                                               self.col_indent
-                                              +len(column_names))
+                                              +len(self.col_lookup.index))
             body_cells = self.worksheet.range(start + ':' + end)
 
             data = {}
-            for col_name in column_names:
-                if not use_columns or col_name in use_columns:
-                    data[col_name] = [None for i in range(num_entries)]
+            for column in self.col_lookup.index:
+                if not use_columns or column in use_columns:
+                    data[column] = [None for i in range(num_entries)]
 
             for cell in body_cells:
-                column_name = column_names[cell.col-self.col_indent-1]
-                if not use_columns or column_name in use_columns:
-                    if read_values:
+                column = self.col_lookup.index[cell.col-self.col_indent-1]
+                if not use_columns or column in use_columns:
+                    if self.raw_values:
                         val = cell.value
                     else:
                         val = cell.input_value
 
                     if val is not None and val not in na_values:
-                        if column_name in dtype.keys():
-                            val = dtype[column_name](val)
+                        if column in dtype.keys():
+                            val = dtype[column](val)
                         else:
                             val = gspread.utils.numericise(val)
                             
-                        data[column_name][cell.row-header-1]=val
+                        data[column][cell.row-self.header-1]=val
             return data
 
-        def read(self, names=None, index_field=None, header=1, na_values=[], read_values=False, dtype={}, use_columns=None):
+        def read(self, names=None, na_values=[], read_values=False, dtype={}, use_columns=None):
             """
             Read in information from a Google document storing entries. Fields present are defined in 'names'
 
             :param names: list of names to give to the columns (in case they aren't present in the spreadsheet). Default None (for None, the column headers are read from the spreadsheet.
             :type names: list
-            :param header: number of rows to use as header (default is 1).
-            :type header: int
             :param na_values: additional list containing entry types that are to be considered to be missing data (default is empty list).
             :type na_values: list
             :param read_values: whether to read values rather than the formulae in the spreadsheet (default is False).
@@ -650,23 +726,15 @@ if gspread_available:
             """
 
             # todo: need to check if something is written below the 'table' as this will be read (for example a rogue entry in the row below the last row of the data.
-            #dictvals = self.worksheet.get_all_records(empty2zero=False, head=header)
             if type(na_values) is str:
                 na_values = [na_values]
 
-            column_names = self.read_headers(header=header)
+            column_names = self.read_headers()
 
-            if index_field is None:
-                # Return any column titled index or otherwise the first column
-                index_col_num=next((i for i, column in enumerate(column_names) if column == 'index' or 'Index' or 'INDEX'), 0)
-                index_field = column_names[index_col_num]
-            elif index_field not in column_names:
-                raise ValueError("Invalid index: " + index_field + " not present in sheet header row " + str(header) + ".")
-
-            data = self.read_body(header=header, index_field=index_field, column_names=column_names, na_values=na_values, read_values=read_values, dtype=dtype, use_columns=use_columns)
+            data = self.read_body(na_values=na_values, dtype=dtype, use_columns=use_columns)
             #if len(data[index_field])>len(set(data[index_field])):
             #    raise ValueError("Invalid index column, entries are not unique")
-            return pd.DataFrame(data).set_index(index_field)
+            return pd.DataFrame(data).set_index(self.index_field)
 
             #         except KeyError:
             #             print(("KeyError, unidentified key in ", self.worksheet_name, " in Google spreadsheet ", self.url))
