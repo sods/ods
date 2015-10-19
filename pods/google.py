@@ -105,7 +105,9 @@ if gspread_available:
 
         
     class resource:
-        """Resource found on the google drive."""
+        """Resource found on the google drive.
+        :param id: the google id of the spreadsheet to open (default is None which creates a new spreadsheet).
+        """
         def __init__(self, name=None, mime_type=None, url=None, id=None, drive=None):
 
             if drive is None:
@@ -264,7 +266,6 @@ if gspread_available:
         """
         Class for interchanging information between google spreadsheets and pandas data frames. The class manages a spreadsheet.
 
-        :param spreadsheet_key: the google key of the spreadsheet to open (default is None which creates a new spreadsheet).
         :param worksheet_name: the worksheet in the spreadsheet to work with (default None which causes Sheet1 to be the name)
         :param title: the title of the spreadsheet (used if the spreadsheet is created for the first time)
         :param col_indent: the column indent to use in the spreadsheet.
