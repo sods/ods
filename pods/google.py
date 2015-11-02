@@ -509,6 +509,10 @@ if gspread_available:
                     resource.update_drive(drive)
                 self.resource = resource
 
+            if not self.resource.mime_type == sheet_mime:
+                raise ValueError("Resource passed to sheet object must be of type " + sheet_mime)
+
+            self.get_key()
             
             # Get a Google sheets client
             if gs_client is None:
@@ -516,7 +520,7 @@ if gspread_available:
             else:
                 self.gs_client = gs_client
             try:
-                self.sheet = self.open_by_key(self.resource._id)
+                self.sheet = self.gs_client.open_by_key(self._key)
             except(apiclient.errors.HttpError, gspread.GSpreadException):
                 if self.resource.drive.user_try_again("While trying to open spreadsheet " + self.resource.url):
                     self.sheet = self.gs_client.open_by_key(self.resource._id)
@@ -531,7 +535,27 @@ if gspread_available:
             self.col_indent = col_indent
             self.url = 'https://docs.google.com/spreadsheets/d/' + self.resource._id + '/'
 
+        def get_key(self):
+            """The file id in the google drive is different from the spreadsheet key. This method sets the correct spreadsheet key by extracting it from the url."""
+            m = gspread.client._url_key_re_v2.search(self.resource.url)
+            if m:
+                self._key = m.group(1)
+            else:
+                raise NoValidUrlKeyFound("Could not find the key in the url " + self.url)
 
+            return self._key
+
+        def open_by_key(self):
+            """Open spreadsheet by its key."""
+            try:
+                self.sheet = self.gs_client.open_by_key(self._key)
+            except(gspread.exceptions.SpreadSheetNotFound):
+                if self.resource.drive("Cannot open spreadsheet given the key " + self._key):
+                    self.sheet=self.open_by_key(self)
+                else:
+                    raise
+
+                
 #############################################################################
 # Place methods here that are really associated with individual worksheets. #
 #############################################################################
