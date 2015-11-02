@@ -102,7 +102,7 @@ def display_prediction(basis, num_basis=4, wlim=(-1.,1.), fig=None, ax=None, xli
     :param wlim: limits for the basis function weights."""
 
     import numpy as np
-    from IPython.html.widgets.interaction import interact, fixed
+    from IPython.interaction import interact, fixed
     from IPython.display import display
     import pylab as plt
 

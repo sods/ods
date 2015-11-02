@@ -494,7 +494,7 @@ if gspread_available:
             scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']    
             self.raw_values = raw_values
             self.header = header
-            self.index_field = None
+            self.index_field = index_field
             if type(na_values) is str:
                 na_values = [na_values]
             self.na_values = na_values
@@ -903,9 +903,15 @@ if gspread_available:
             # Update in batch
             return self.worksheet.update_cells(cells)
 
-        def read_headers(self):
-            
-            column_names=self.worksheet.row_values(self.header)[self.col_indent:]
+        def read_headers(self, names=None):
+            """Read the header row of the sheet."""
+            self.sheet_column_names=self.worksheet.row_values(self.header)[self.col_indent:]
+            if names is None:
+                column_names = self.sheet_column_names
+            else:
+                if len(self.sheet_column_names) != len(names):
+                    raise ValueError("Length of names provided does not equal number of columns in spreadsheet")
+                column_names = names
             self._update_col_lookup(column_names)
 
             if self.index_field is None:
@@ -978,7 +984,7 @@ if gspread_available:
             """
 
             # todo: need to check if something is written below the 'table' as this will be read (for example a rogue entry in the row below the last row of the data.
-            column_names = self.read_headers()
+            column_names = self.read_headers(names)
 
             data = self.read_body(use_columns=use_columns)
             #if len(data[index_field])>len(set(data[index_field])):
