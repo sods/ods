@@ -1,7 +1,6 @@
 # Copyright 2014 Open Data Science Initiative and other authors. See AUTHORS.txt
 # Licensed under the BSD 3-clause license (see LICENSE.txt)
 
-
 def display_url(target):
     """Displaying URL in an IPython notebook to allow the user to click and check on information. With thanks to Fernando Perez for putting together the implementation!
     :param target: the url to display.
@@ -102,7 +101,12 @@ def display_prediction(basis, num_basis=4, wlim=(-1.,1.), fig=None, ax=None, xli
     :param wlim: limits for the basis function weights."""
 
     import numpy as np
-    from IPython.html.widgets.interaction import interact, fixed
+    import IPython
+    if int(IPython.__version__[0])>3:
+        from ipywidgets import interact, fixed
+    else:
+        from IPython.html.widgets.interaction import interact, fixed
+        
     from IPython.display import display
     import pylab as plt
 
