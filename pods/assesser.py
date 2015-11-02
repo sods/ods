@@ -154,12 +154,16 @@ class assessment():
 
 
     def _repr_html_(self):
-        from IPython.nbconvert.filters.markdown import markdown2html
-        return markdown2html(self._repr_md_())
+        import pypandoc
+        #fromt IPython.nbconvert.filters.markdown import markdown2html
+        #return markdown2html(self._repr_md_())
+        return pypandoc.convert(self._repr_md_(), 'html', format='md')
 
     def _repr_latex_(self):
-        from IPython.nbconvert.filters.markdown import markdown2latex
-        return markdown2latex(self._repr_md_())
+        import pypandoc
+        #from IPython.nbconvert.filters.markdown import markdown2latex
+        #return markdown2latex(self._repr_md_())
+        return pypandoc.convert(self._repr_md_(), 'latex', format='md')
 
     def _repr_md_(self):
         output = ''
@@ -198,7 +202,7 @@ class assessment():
                                 output += '\n\n'
                         question = ''
                         if self.display_answer:
-                            output += '\n\n**Answer**\n\n' + part[1] + '\n\n'
+                            output += '\n\n**Your Answer**\n\n' + part[1] + '\n\n'
                         if part[2]>0 and self.display_marks:
                             output += ' *' + str(mark) + ' marks*\n\n'
                         mark=0
@@ -238,11 +242,11 @@ class feedback(assessment):
     def __init__(self, marksheet, part=0):
         assessment.__init__(self, part, display_answer=True, display_marks=False)
         self.marksheet=marksheet
-        for qu in xrange(len(self.answers)):
+        for qu in range(len(self.answers)):
             mark = 0
             question = ''
             counter = 0
-            for number in xrange(len(self.answers[qu])):
+            for number in range(len(self.answers[qu])):
 
                 if number==0:
                     if type(self.answers[qu][number]) is list or type(self.answers[qu][number]) is tuple:
@@ -254,7 +258,7 @@ class feedback(assessment):
                         counter += 1
                         index = str(qu+1) + '_' + str(counter)
                         fraction = marksheet.loc[index]['Correct (a fraction)']
-                        if fraction<1:
+                        if fraction and fraction<1:
                             # Markers might write unicode in their
                             # comments, need to handle this here.
                             comment = marksheet.loc[index]['Comments']
@@ -268,21 +272,24 @@ class feedback(assessment):
                                 else:
                                     comment = ''
                             if self.answers[qu][number][1] == '':
-                                self.answers[qu][number][1] = '<span style="color:red;">No **-' + str((1-fraction)*mark) + ' mark(s)**</span> ' + comment
+                                self.answers[qu][number][1] = '<span style="color:red;">No **' + str((fraction)*mark) + ' out of ' + str(mark) + ' marks**</span> ' + comment
                             else:
-                                self.answers[qu][number][1] = '' + comment + '<span style="color:red;">**Correct Answer:**</span>\n\n' + self.answers[qu][number][1] + '\n\n<span style="color:red;">**-' + str((1-fraction)*mark) + ' mark(s)**</span>'
+                                self.answers[qu][number][1] = '' + comment + '<span style="color:red;">**Correct Answer:**</span>\n\n' + self.answers[qu][number][1] + '\n\n<span style="color:red;">**' + str((fraction)*mark) + ' out of ' + str(mark) + ' marks**</span>'
                         else:
-                            self.answers[qu][number][1] = check_mark
+                            self.answers[qu][number][1] = str(mark) + " marks out of " + str(mark) + " marks. " + check_mark 
     def _repr_md_(self):
         import numpy as np
         total = np.ceil((self.marksheet['Correct (a fraction)']*self.marksheet['Max Mark']).sum())
         if np.isnan(total):
             return '### We do not have a record of a submitted assignment.\n\n#### Total Mark: 0'
+        elif total==0:
+            return '### No marks given. \n\n### Total Mark: 0'
         else:
             return '### <span style="color:red;">Total Marks ' + str(total) + '</span>\n\n' + assessment._repr_md_(self) 
 
         
-def answer(part, module='mlai2014.json'):
+def answer(part, module='mlai2015.json'):
     """Returns the answers to the lab classes."""
-    marks = json.load(open(os.path.join(data_directory, module), 'rb'))
+    with open(os.path.join(data_directory, module), encoding='utf-8') as data_file:
+        marks = json.loads(data_file.read())   
     return marks['Lab '  + str(part+1)]

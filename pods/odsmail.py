@@ -44,18 +44,19 @@ class gmail():
         if reply_to is None:
             reply_to = sender
         email_cc = ';'.join(cc)
+        from email.mime.text import MIMEText
         if html:
-            content_type = 'text/html'
+            message = MIMEText(body.encode('utf-8'), 'html', _charset="UTF-8")
         else:
-            content_type = 'text/plain'
-        headers = "\r\n".join(["from: " + sender,
-                               "subject: " + subject,
-                               "cc: " + email_cc,
-                               "to: " + recipient,
-                                "reply-to: " + reply_to,
-                               "mime-version: 1.0",
-                               "content-type: " + content_type])
+            message = MIMEText(body.encode('utf-8'), 'plain', _charset="UTF-8")
 
-        # body_of_email can be plaintext or html!                    
-        content = headers + "\r\n\r\n" + body
-        self.session.sendmail(self.username, recipient, content)
+        message['From'] = sender
+        message['To'] = recipient
+        message['Cc'] = email_cc
+        message['Reply-to'] = reply_to
+        message['Subject'] = subject
+        
+        msg_full = message.as_string()
+
+
+        self.session.sendmail(self.username, recipient, msg_full)

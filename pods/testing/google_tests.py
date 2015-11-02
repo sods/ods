@@ -76,6 +76,11 @@ if pods.google.gspread_available:
             """Test codes ability to create sheets from existing resource."""
             s = pods.google.sheet(resource=self.resource_one)
 
+        def test_create_plain(self):
+            """Test codes ability to create sheets from existing resource."""
+            s = self.drive.insert_file("Test file")
+            _id = self.get_id_by_name("Test file")
+
         def test_delete(self):
             # Test that a file can be deleted and undeleted (using trash)
             self.resource_one.delete()

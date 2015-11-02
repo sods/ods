@@ -61,8 +61,8 @@ if gdata_available:
                 class_dir = os.path.expanduser(os.path.expandvars(class_dir))
             self.class_dir = class_dir
             self.spreadsheet_title = spreadsheet_title
-            if keys_file is None:
-                keys_file = 'spreadsheet_keys.pickle'
+            # if keys_file is None:
+            #     keys_file = 'spreadsheet_keys.pickle'
             if participant_list is None:
                 participant_list = 'class_list.csv'
                 
@@ -90,22 +90,22 @@ if gdata_available:
                 raise ValueError("Could not determine type of participant list.")
 
             # load spreadsheet keys if they exist.
-            if keys_file is None:
-                self.keys_file=os.path.join(self.class_dir, 'spreadsheet_keys.pickle')
-            else:
-                self.keys_file=os.path.join(self.class_dir, keys_file)
-                
-            if os.path.exists(self.keys_file):
-                self.sheet_keys = pickle.load(open(self.keys_file, "rb"))
-                # remove any spreadsheet keys that aren't in users list.
-                remove_keys = []
-                for key in self.sheet_keys:
-                    if not np.any(self.users.Email==key):
-                        remove_keys.append(key)
-                for key in remove_keys:
-                    del self.sheet_keys[key]
-            else:
-                self.sheet_keys = {}
+            # if keys_file is None:
+            #     self.keys_file=os.path.join(self.class_dir, 'spreadsheet_keys.pickle')
+            # else:
+            #     self.keys_file=os.path.join(self.class_dir, keys_file)
+            self.sheet_keys = pd.Series(self.users['Sheet No'].values, index=self.users['Email'])
+            # if os.path.exists(self.keys_file):
+            #     self.sheet_keys = pickle.load(open(self.keys_file, "rb"))
+            #     # remove any spreadsheet keys that aren't in users list.
+            #     remove_keys = []
+            #     for key in self.sheet_keys:
+            #         if not np.any(self.users.Email==key):
+            #             remove_keys.append(key)
+            #     for key in remove_keys:
+            #         del self.sheet_keys[key]
+            # else:
+            #     self.sheet_keys = {}
 
         def _get_suffix(self):
             return self.suffix

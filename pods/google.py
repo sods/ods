@@ -30,7 +30,7 @@ try:
     from oauth2client.client import SignedJwtAssertionCredentials
     import httplib2
     # easy_install --upgrade google-api-python-client
-    from apiclient import errors
+    import apiclient
     from apiclient.discovery import build
     from apiclient.http import BatchHttpRequest
     
@@ -41,8 +41,12 @@ if gspread_available:
     import json
     import warnings
     sheet_mime = 'application/vnd.google-apps.spreadsheet'
+    default_mime = 'text/plain'
     keyfile = os.path.expanduser(os.path.expandvars(config.get('google docs', 'oauth2_keyfile')))
 
+
+
+    
     class drive:
         """
         Class for accessing a google drive and managing files.
@@ -75,25 +79,121 @@ if gspread_available:
             else:
                 self.service = service
 
+        def user_try_again(self, msg=None):
+            """Check with user whether the call should be retried in response to Http error."""
+            if msg is None:
+                msg = ""
+            else:
+                msg += ".\n\n"
+            msg += "Please ensure that you are attached to the internet and all resources are shared"
+            if self.email:
+                msg += " with google user " + self.email
+            msg+=".\n\n"
+            msg += 'Try and fix the error on the sheet and then return here. Error fixed (Y/N)?'
+            ans = input(msg)
+            if ans[0]=='Y' or ans[0] == 'y':
+                return True
+            else:
+                return False
+
+        def insert_file(self, name="Google resource", mime_type=None):
+            """Insert a new file into the google drive.
+            :param name: the name of the file to add.
+            :type name: string
+            :param mime_type: the mime type of the file to add (default text/plain).
+            :type mime_type: string
+            :rtype: None
+            """
+            if mime_type is None:
+                mime_type == default_mime
+                
+            body = {'mimeType': mime_type,
+                    'title': name}
+            try:
+                self.service.files().insert(body=body).execute(http=self.drive.http)
+            except(apiclient.errors.HttpError):
+                if self.user_try_again("While inserting file " + name):
+                    return self.insert_file(name, mime_type)
+                else:
+                    raise
+
+        def get_id_by_name(self, name):
+            """Get the id of a file in the google drive.
+            :param name: the name of the file to add.
+            :type name: string
+            :rtype: string
+            """
+            try:
+                return self.service.files().list(q="title='" + name + "'").execute(http=self.http)['items'][0]['id']
+            except(apiclient.errors.HttpError):
+                if self.user_try_again("While searching for file " + name):
+                    return self.get_id_by_name(name)
+                else:
+                    raise
+                
         def ls(self):
             """List all resources on the google drive"""
-            results = []
-            page_token = None
-            while True:
-                param = {}
-                if page_token:
-                    param['pageToken'] = page_token
-                files = self.service.files().list(**param).execute()
-                results.extend(files['items'])
-                page_token = files.get('nexPageToken')
-                if not page_token:
-                    break
-            files = []
-            for result in results:
-                if not result['labels']['trashed']:
-                    files.append(pods.google.resource(id=result['id'], name=result['title'], mime_type=result['mimeType'], url=result['alternateLink'], drive=self))
-            return files
+            try:
+                results = []
+                page_token = None
+                while True:
+                    param = {}
+                    if page_token:
+                        param['pageToken'] = page_token
+                        files = self.service.files().list(**param).execute()
 
+                    results.extend(files['items'])
+                    page_token = files.get('nexPageToken')
+                    if not page_token:
+                        break
+                files = []
+                for result in results:
+                    if not result['labels']['trashed']:
+                        files.append(pods.google.resource(id=result['id'], name=result['title'], mime_type=result['mimeType'], url=result['alternateLink'], drive=self))
+            except(apiclient.errors.HttpError):
+                if self.user_try_again("While listing files in the drive"):
+                    return self.ls()
+                else:
+                    raise
+
+            return files
+        def delete(self, fid):
+            """Delete a resource
+            :param fid: the file id of the resource to delete.
+            :type fid: string"""
+            try:
+                self.service.files().delete(fileId=fid).execute()
+            except(apiclient.errors.HttpError):
+                if self.user_try_again("While trying to delete file " + fid):
+                    self.delete(fid)
+                else:
+                    raise
+
+        def trash(self, fid):
+            """Move resource into the trash.
+            :param fid: the file id of the resource to trash.
+            :type fid: string"""
+            try:
+                self.service.files().trash(fileId=fid).execute()
+            except(apiclient.errors.HttpError):
+                if self.user_try_again("While trying to trash file " + fid):
+                    self.trash(fid)
+                else:
+                    raise
+                
+        def untrash(self, fid):
+            """Move resource out of the trash.
+            :param fid: the file id of the resource to trash.
+            :type fid: string"""
+            try:
+                self.drive.service.files().untrash(fileId=self._id).execute()
+            except(apiclient.errors.HttpError):
+                if self.user_try_again("While trying to move resource " + fid + " from the trash"):
+                    self.untrash(fid)
+                else:
+                    raise
+
+        
         def _repr_html_(self):
             """Create a representation of the google drive for the notebook."""
             files = self.ls()
@@ -102,6 +202,78 @@ if gspread_available:
                 output += file._repr_html_()
                     
             return output
+
+        def get_url_by_id(self, fid):
+            """Get url of the file via the file id.
+            :param fid: the file id.
+            :type fid: string
+            :rtype: string"""
+            try:
+                return self.service.files().get(fileId=fid).execute()['alternateLink']
+            except(apiclient.errors.HttpError):
+                if self.user_try_again("While trying to get the url of file " + fid):
+                    return self.get_url_by_id(fid)
+                else:
+                    raise
+
+        def _details_by_id(self, fid):
+            """Get the details associated with a given file id.
+            :param fid: the file id of the resource.
+            :type fid: string
+            :rtype: dict
+            """
+            try:
+                return self.service.files().get(fileId=self._id).execute()
+            except(apiclient.errors.HttpError):
+                if self.user_try_again("While trying to access the fileDetails of " + fid):
+                    return self.details_by_id(fid)
+                else:
+                    raise
+
+        def update_name_by_id(self, fid, name):
+            """Update name of the resource specified by the file id.
+            :param fid: the file id of the resource to update.
+            :type param: string
+            :param name: the new name for the resource
+            :type name: string
+            """
+            details = self._details_by_id(fid)
+            details['title'] = name
+            try:
+                self.drive.service.files().update(fileId=self._id, body=body).execute()
+            except(apiclient.errors.HttpError):
+                if self.user_try_again("While trying to update the file name of " + fid):
+                    self.update_name_by_id(fid, name)
+                else:
+                    raise
+            self.name = name
+                
+        def get_name_by_id(self, fid):
+            """Get name of the file via the file id.
+            :param fid: the file id.
+            :type fid: string
+            :rtype: string"""
+            try:
+                return self.service.files().get(fileId=fid).execute()['title']
+            except(apiclient.errors.HttpError):
+                if self.user_try_again("While trying to get the name of file " + fid):
+                    return self.get_name_by_id(fid)
+                else:
+                    raise
+                
+        def get_mime_type_by_name(self, name):
+            """Get the mime type of a google resource given its name.
+            :param name: the name of the resource.
+            :type name: string
+            :rtype: string"""
+            try:
+                details=self.service.files().list(q="title='" + name + "'").execute(http=self.http)['items'][0]
+            except(apiclient.errors.HttpError):
+                if self.user_try_again("While trying to get the mime type of file file named " + name):
+                    self.get_mime_type_by_name(name)
+                else:
+                    raise
+            return details['mimeType']
 
         
     class resource:
@@ -118,15 +290,9 @@ if gspread_available:
             if id is None:
                 if name is None:
                     name = "Google Drive Resource"
-                # create a new sheet
-                body = {'mimeType': mime_type,
-                        'title': name}
-                try:
-                    self.drive.service.files().insert(body=body).execute(http=self.drive.http)
-                except(errors.HttpError):
-                    print("Http error")
-
-                self._id=self.drive.service.files().list(q="title='" + name + "'").execute(http=self.drive.http)['items'][0]['id']
+                # create a new resource
+                self._id=self.drive.insert_file(name=name, mime_type=mime_type)
+                self._id=self.drive.get_id_by_name(name=name)
                 self.name = name
                 self.mime_type = mime_type
             else:                
@@ -144,18 +310,18 @@ if gspread_available:
                 else:
                     self.url = url
 
-            
+
 
         def delete(self, empty_bin=False):
             """Delete the file from drive."""
             if empty_bin:
-                self.drive.service.files().delete(fileId=self._id).execute()
+                self.drive.delete(id=self._id)
             else:
-                self.drive.service.files().trash(fileId=self._id).execute()
+                self.drive.trash(id=self._id)
 
-        def undelete(self):
+        def untrash(self):
             """Recover file from the trash (if it's there)."""
-            self.drive.service.files().untrash(fileId=self._id).execute()
+            self.untrash(fid)
 
             
         def share(self, users, share_type='writer', send_notifications=False, email_message=None):
@@ -181,16 +347,28 @@ if gspread_available:
                                                                  'role': share_type
                                                              })
                 batch_request.add(batch_entry, request_id="batch"+str(count))
-
-            batch_request.execute()
+            try:
+                batch_request.execute()
+            except(apiclient.errors.HttpError):
+                if self.drive.user_try_again("While trying to change sharing status of file " + self.url):
+                    self.share(users, share_type, send_notifications, email_message)
+                else:
+                    raise
+            
 
         def share_delete(self, user):
             """
             Remove sharing from a given user.
             """
             permission_id = self._permission_id(user)
-            self.drive.service.permissions().delete(fileId=self._id,
-                                              permissionId=permission_id).execute()
+            try:
+                self.drive.service.permissions().delete(fileId=self._id,
+                                                        permissionId=permission_id).execute()
+            except(apiclient.errors.HttpError):
+                if self.drive.user_try_again("While trying to delete " + user + " from sharing of file " + self.url):
+                    return self.share_delete(user)
+                else:
+                    raise
 
 
         def share_modify(self, user, share_type='reader', send_notifications=False):
@@ -205,20 +383,43 @@ if gspread_available:
                 raise ValueError("Share type should be 'writer', 'reader' or 'owner'")
             
             permission_id = self._permission_id(user)
-            permission = self.drive.service.permissions().get(fileId=self._id, permissionId=permission_id).execute()
+            try:
+                permission = self.drive.service.permissions().get(fileId=self._id, permissionId=permission_id).execute()
+            except(apiclient.errors.HttpError):
+                if self.drive.user_try_again("While trying to modify the sharing status of user " + user + " to type " + share_type + " of file " + self.url):
+                    self.share_modify(user, share_type, send_notifications)
+                else:
+                    raise
             permission['role'] = share_type
-            self.drive.service.permissions().update(fileId=self._id, permissionId=permission_id, body=permission).execute()
+            try:
+                self.drive.service.permissions().update(fileId=self._id, permissionId=permission_id, body=permission).execute()
+            except(apiclient.errors.HttpError):
+                if self.drive.user_try_again("While trying to modify the sharing status of user " + user + " to type " + share_type + " of file " + self.url):
+                    self.share_modify(user, share_type, send_notifications)
+                else:
+                    raise
 
         def _permission_id(self, user):
-             
-            return self.drive.service.permissions().getIdForEmail(email=user).execute()['id']
+            try:
+                return self.drive.service.permissions().getIdForEmail(email=user).execute()['id']
+            except(apiclient.errors.HttpError):
+                if self.drive.user_try_again("While trying to get permissions id from file " + self.url + " for user " + user):
+                    return self._permission_id(user)
+                else:
+                    raise
             
         def share_list(self):
             """
             Provide a list of all users who can access the document in the form of 
             """
-            permissions = self.drive.service.permissions().list(fileId=self._id).execute()
-                
+            try:
+                permissions = self.drive.service.permissions().list(fileId=self._id).execute()
+            except(apiclient.errors.HttpError):
+                if self.drive.user_try_again("While trying to list the share permissions for " + self.url):
+                    return self.share_list()
+                else:
+                    raise
+            
             entries = []
             for permission in permissions['items']:
                 entries.append((permission['emailAddress'], permission['role']))
@@ -228,30 +429,35 @@ if gspread_available:
             """
             Get the revision history of the document from Google Docs.
             """
-            for item in self.drive.service.revisions().list(fileId=self._id).execute()['items']:
+            try:
+                items = self.drive.service.revisions().list(fileId=self._id).execute()['items']
+            except(apiclient.errors.HttpError):
+                if self.drive.user_try_again("While trying to obtain the revision history for " + self.url):
+                    return self.revision_history()
+                else:
+                    raise
+
+            for item in items:
                 print(item['published'], item['selfLink'])
             
         def update_name(self, name):
             """Change the title of the file."""
-            body = self.drive.service.files().get(fileId=self._id).execute()
-            body['title'] = name
-            body = self.drive.service.files().update(fileId=self._id, body=body).execute()
+            body = self.drive.update_name_by_id(fid=self._id, name=name)
             self.name = name
 
         def get_mime_type(self):
             """Get the mime type of the file."""
-
-            details=self.drive.service.files().list(q="title='" + self.name + "'").execute(http=self.drive.http)['items'][0]
-            self.mime_type = details['mimeType']
+            self.mime_type = self.drive.get_mime_type_by_name(self.name)
             return self.mime_type
+        
 
         def get_name(self):
             """Get the title of the file."""
-            self.name = self.drive.service.files().get(fileId=self._id).execute()['title']
+            self.name = self.drive.get_name_by_id(self._id)
             return self.name
 
         def get_url(self):
-            self.url = self.drive.service.files().get(fileId=self._id).execute()['alternateLink']
+            self.url = self.drive.get_url_by_id(self._id)
             return self.url
         
         def update_drive(self, drive):
@@ -281,7 +487,7 @@ if gspread_available:
         :param raw_values: whether to read values rather than the formulae in the spreadsheet (default is False).
         :type raw_values: bool
         """
-        def __init__(self, resource=None, gs_client=None, worksheet_name=None, index_field=None, col_indent=0, na_values=['nan'], dtype = {}, raw_values=False, header=1):
+        def __init__(self, resource=None, gs_client=None, worksheet_name=None, index_field=None, col_indent=0, na_values=['nan', ''], dtype = {}, raw_values=False, header=1):
 
 
             source = 'ODS Gdata Bot'                
@@ -302,14 +508,22 @@ if gspread_available:
                     drive = pods.google.drive(scope=scope)
                     resource.update_drive(drive)
                 self.resource = resource
-                
+
+            
             # Get a Google sheets client
             if gs_client is None:
                 self.gs_client = gspread.authorize(self.resource.drive.credentials)
             else:
                 self.gs_client = gs_client
+            try:
+                self.sheet = self.open_by_key(self.resource._id)
+            except(apiclient.errors.HttpError, gspread.GSpreadException):
+                if self.resource.drive.user_try_again("While trying to open spreadsheet " + self.resource.url):
+                    self.sheet = self.open_by_key(self.resource._id)
+                else:
+                    raise
 
-            self.sheet = self.gs_client.open_by_key(self.resource._id)
+                
 
             if worksheet_name is None:
                 self.worksheet = self.sheet.worksheets()[0]
@@ -322,6 +536,13 @@ if gspread_available:
 #############################################################################
 # Place methods here that are really associated with individual worksheets. #
 #############################################################################
+
+        def open_by_key(self, fid):
+            """"""
+            try:
+                return self.gs_client.open_by_key
+            except(apiclient.errors.HttpError, gspread.GSpreadException):
+                if self.resource.drive.user_try_again("While trying to open spreadsheet " + self.resource.url):
 
         def change_sheet_name(self, title):
             """Change the title of the current worksheet to title."""
@@ -720,7 +941,10 @@ if gspread_available:
 
                     if val is not None and val not in self.na_values:
                         if column in self.dtype.keys():
-                            val = self.dtype[column](val)
+                            try:
+                                val = self.dtype[column](val)
+                            except(ValueError):
+                                val =  gspread.utils.numericise(val)
                         else:
                             val = gspread.utils.numericise(val)
                             
