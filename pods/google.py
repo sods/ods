@@ -519,11 +519,10 @@ if gspread_available:
                 self.sheet = self.open_by_key(self.resource._id)
             except(apiclient.errors.HttpError, gspread.GSpreadException):
                 if self.resource.drive.user_try_again("While trying to open spreadsheet " + self.resource.url):
-                    self.sheet = self.open_by_key(self.resource._id)
+                    self.sheet = self.gs_client.open_by_key(self.resource._id)
                 else:
                     raise
-
-                
+                    
 
             if worksheet_name is None:
                 self.worksheet = self.sheet.worksheets()[0]
@@ -536,13 +535,6 @@ if gspread_available:
 #############################################################################
 # Place methods here that are really associated with individual worksheets. #
 #############################################################################
-
-        def open_by_key(self, fid):
-            """"""
-            try:
-                return self.gs_client.open_by_key
-            except(apiclient.errors.HttpError, gspread.GSpreadException):
-                if self.resource.drive.user_try_again("While trying to open spreadsheet " + self.resource.url):
 
         def change_sheet_name(self, title):
             """Change the title of the current worksheet to title."""
