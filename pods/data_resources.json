@@ -641,5 +641,22 @@
         "urls": [
             "http://www.math.ntnu.no/%7Ehrue/r-inla.org/examples/leukemia/"
         ]
+    },
+    "politics_twitter": {
+        "citation": "Chained Gaussian Processes",
+        "details": "The data holds a large number of tweet id numbers for tweets posted during the run up to the UK general election 2015, and derived sentiment.",
+        "files": [
+            [
+                "labour_raw_ids.csv",
+                "conservative_raw_ids.csv",
+                "greens_raw_ids.csv",
+                "ukip_raw_ids.csv"
+            ]
+        ],
+        "license": null,
+        "size": 7518372,
+        "urls": [
+            "http://127.0.0.1:8000/"
+        ]
     }
 }
