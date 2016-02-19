@@ -1,8 +1,11 @@
 # Copyright 2014 Open Data Science Initiative and other authors. See AUTHORS.txt
 # Licensed under the BSD 3-clause license (see LICENSE.txt)
+from __future__ import print_function
+from __future__ import absolute_import
 
-import csv
 import os
+import sys
+import csv
 import copy
 import numpy as np
 import pylab as pb
@@ -12,7 +15,8 @@ import json
 import re
 
 from .util import download_url
-from config import *
+from .config import *
+from functools import reduce
 
 ipython_available=True
 try:
@@ -26,7 +30,13 @@ try:
 except ImportError:
     pandas_available=False
 
-import sys, urllib2
+if sys.version_info>=(3,0):
+    from urllib.parse import quote
+    from urllib.request import urlopen
+else:
+    from urllib2 import quote
+    from urllib2 import urlopen
+
 
 # Global variables
 data_path = os.path.expanduser(os.path.expandvars(config.get('datasets', 'dir')))
@@ -59,7 +69,10 @@ def prompt_user(prompt):
 
     try:
         print(prompt)
-        choice = raw_input().lower()
+        if sys.version_info>=(3,0):
+            choice = input().lower()
+        else:
+            choice = raw_input().lower()
         # would like to test for which exceptions here
     except:
         print('Stdin is not implemented.')
@@ -126,7 +139,7 @@ def download_data(dataset_name=None):
     if not authorize_download(dataset_name):
         raise Exception("Permission to download data set denied.")
 
-    if dr.has_key('suffices'):
+    if 'suffices' in dr:
         for url, files, suffices in zip(dr['urls'], dr['files'], dr['suffices']):
             for file, suffix in zip(files, suffices):
                 download_url(url=os.path.join(url,file),
@@ -206,11 +219,7 @@ def cmu_urls_files(subj_motions, messages = True):
     return resource
 
 
-
-
-
 # The data sets
-
 def boston_housing(data_set='boston_housing'):
     if not data_available(data_set):
         download_data(data_set)
@@ -285,7 +294,7 @@ def football_data(season='1314', data_set='football_data'):
         return league_dict[string]
 
     def football2num(string):
-        if football_dict.has_key(string):
+        if string in football_dict:
             return football_dict[string]
         else:
             football_dict[string] = len(football_dict)+1
@@ -449,33 +458,33 @@ def google_trends(query_terms=['big data', 'machine learning', 'data science'], 
     file = 'data.csv'
     file_name = os.path.join(dir_path,file)
     if not os.path.exists(file_name) or refresh_data:
-        print "Accessing Google trends to acquire the data. Note that repeated accesses will result in a block due to a google terms of service violation. Failure at this point may be due to such blocks."
+        print("Accessing Google trends to acquire the data. Note that repeated accesses will result in a block due to a google terms of service violation. Failure at this point may be due to such blocks.")
         # quote the query terms.
         quoted_terms = []
         for term in query_terms:
-            quoted_terms.append(urllib2.quote(term))
-        print "Query terms: ", ', '.join(query_terms)
+            quoted_terms.append(quote(term))
+        print("Query terms: ", ', '.join(query_terms))
 
-        print "Fetching query:"
+        print("Fetching query:")
         query = 'http://www.google.com/trends/fetchComponent?q=%s&cid=TIMESERIES_GRAPH_0&export=3' % ",".join(quoted_terms)
 
-        data = urllib2.urlopen(query).read()
-        print "Done."
+        data = urlopen(query).read().decode('utf8')
+        print("Done.")
         # In the notebook they did some data cleaning: remove Javascript header+footer, and translate new Date(....,..,..) into YYYY-MM-DD.
         header = """// Data table response\ngoogle.visualization.Query.setResponse("""
         data = data[len(header):-2]
         data = re.sub('new Date\((\d+),(\d+),(\d+)\)', (lambda m: '"%s-%02d-%02d"' % (m.group(1).strip(), 1+int(m.group(2)), int(m.group(3)))), data)
         timeseries = json.loads(data)
         columns = [k['label'] for k in timeseries['table']['cols']]
-        rows = map(lambda x: [k['v'] for k in x['c']], timeseries['table']['rows'])
+        rows = list(map(lambda x: [k['v'] for k in x['c']], timeseries['table']['rows']))
         df = pd.DataFrame(rows, columns=columns)
         if not os.path.isdir(dir_path):
             os.makedirs(dir_path)
 
         df.to_csv(file_name)
     else:
-        print "Reading cached data for google trends. To refresh the cache set 'refresh_data=True' when calling this function."
-        print "Query terms: ", ', '.join(query_terms)
+        print("Reading cached data for google trends. To refresh the cache set 'refresh_data=True' when calling this function.")
+        print("Query terms: ", ', '.join(query_terms))
 
         df = pd.read_csv(file_name, parse_dates=[0])
 
@@ -525,14 +534,17 @@ def hapmap3(data_set='hapmap3'):
         from pandas import read_pickle, DataFrame
         from sys import stdout
         import bz2
-        import cPickle as pickle
+        if sys.version_info>=(3,0):
+            import pickle
+        else:
+            import cPickle as pickle
     except ImportError as i:
-        raise i, "Need pandas for hapmap dataset, make sure to install pandas (http://pandas.pydata.org/) before loading the hapmap dataset"
+        raise i("Need pandas for hapmap dataset, make sure to install pandas (http://pandas.pydata.org/) before loading the hapmap dataset")
 
     dir_path = os.path.join(data_path,'hapmap3')
     hapmap_file_name = 'hapmap3_r2_b36_fwd.consensus.qc.poly'
     unpacked_files = [os.path.join(dir_path, hapmap_file_name+ending) for ending in ['.ped', '.map']]
-    unpacked_files_exist = reduce(lambda a, b:a and b, map(os.path.exists, unpacked_files))
+    unpacked_files_exist = reduce(lambda a, b:a and b, list(map(os.path.exists, unpacked_files)))
 
     if not unpacked_files_exist and not data_available(data_set):
         download_data(data_set)
@@ -542,13 +554,13 @@ def hapmap3(data_set='hapmap3'):
                                 '.info.pickle',
                                 '.nan.pickle']]
 
-    if not reduce(lambda a,b: a and b, map(os.path.exists, preprocessed_data_paths)):
+    if not reduce(lambda a,b: a and b, list(map(os.path.exists, preprocessed_data_paths))):
         if not overide_manual_authorize and not prompt_user("Preprocessing requires ~25GB "
                             "of memory and can take a (very) long time, continue? [Y/n]"):
-            print "Preprocessing required for further usage."
+            print("Preprocessing required for further usage.")
             return
         status = "Preprocessing data, please be patient..."
-        print status
+        print(status)
         def write_status(message, progress, status):
             stdout.write(" "*len(status)); stdout.write("\r"); stdout.flush()
             status = r"[{perc: <{ll}}] {message: <13s}".format(message=message, ll=20,
@@ -586,7 +598,7 @@ def hapmap3(data_set='hapmap3'):
         snpstr = snpstrnp[:,6:].astype('S1').reshape(snpstrnp.shape[0], -1, 2)
         inan = snpstr[:,:,0] == '0'
         status=write_status('filtering reference alleles...', 55, status)
-        ref = np.array(map(lambda x: np.unique(x)[-2:], snpstr.swapaxes(0,1)[:,:,:]))
+        ref = np.array([np.unique(x)[-2:] for x in snpstr.swapaxes(0,1)[:,:,:]])
         status=write_status('encoding snps...', 70, status)
         # Encode the information for each gene in {-1,0,1}:
         status=write_status('encoding snps...', 73, status)
@@ -616,13 +628,13 @@ def hapmap3(data_set='hapmap3'):
         inandf = DataFrame(index=metadf.index, data=inan, columns=mapnp[:,1])
         inandf.to_pickle(preprocessed_data_paths[2])
         status=write_status('done :)', 100, status)
-        print ''
+        print('')
     else:
-        print "loading snps..."
+        print("loading snps...")
         snpsdf = read_pickle(preprocessed_data_paths[0])
-        print "loading metainfo..."
+        print("loading metainfo...")
         metadf = read_pickle(preprocessed_data_paths[1])
-        print "loading nan entries..."
+        print("loading nan entries...")
         inandf = read_pickle(preprocessed_data_paths[2])
     snps = snpsdf.values
     populations = metadf.population.values.astype('S3')
@@ -731,7 +743,7 @@ def robot_wireless(data_set='robot_wireless'):
     allX = np.zeros((len(times), 2))
     allY[:]=-92.
     strengths={}
-    for address, j in zip(addresses, range(len(addresses))):
+    for address, j in zip(addresses, list(range(len(addresses)))):
         ind = np.nonzero(address==macaddress)
         temp_strengths=strength[ind]
         temp_x=x[ind]
@@ -797,11 +809,11 @@ def ripley_synth(data_set='ripley_prnn_data'):
 """def global_average_temperature(data_set='global_temperature', num_train=1000, refresh_data=False):
     path = os.path.join(data_path, data_set)
     if data_available(data_set) and not refresh_data:
-        print 'Using cached version of the data set, to use latest version set refresh_data to True'
+        print('Using cached version of the data set, to use latest version set refresh_data to True')
     else:
         download_data(data_set)
     data = np.loadtxt(os.path.join(data_path, data_set, 'GLBTS.long.data'))
-    print 'Most recent data observation from month ', data[-1, 1], ' in year ', data[-1, 0]
+    print('Most recent data observation from month ', data[-1, 1], ' in year ', data[-1, 0])
     allX = data[data[:, 3]!=-99.99, 2:3]
     allY = data[data[:, 3]!=-99.99, 3:4]
     X = allX[:num_train, 0:1]
@@ -814,11 +826,11 @@ def mauna_loa(data_set='mauna_loa', num_train=545, refresh_data=False):
     """CO2 concentrations from the Mauna Loa observatory."""
     path = os.path.join(data_path, data_set)
     if data_available(data_set) and not refresh_data:
-        print 'Using cached version of the data set, to use latest version set refresh_data to True'
+        print('Using cached version of the data set, to use latest version set refresh_data to True')
     else:
         download_data(data_set)
     data = np.loadtxt(os.path.join(data_path, data_set, 'co2_mm_mlo.txt'))
-    print 'Most recent data observation from month ', data[-1, 1], ' in year ', data[-1, 0]
+    print('Most recent data observation from month ', data[-1, 1], ' in year ', data[-1, 0])
     allX = data[data[:, 3]!=-99.99, 2:3]
     allY = data[data[:, 3]!=-99.99, 3:4]
     X = allX[:num_train, 0:1]
@@ -837,14 +849,17 @@ def osu_run1(data_set='osu_run1', sample_every=4):
         zip = zipfile.ZipFile(os.path.join(data_path, data_set, 'run1TXT.ZIP'), 'r')
         for name in zip.namelist():
             zip.extract(name, path)
-    import mocap
+    from . import mocap
     Y, connect = mocap.load_text_data('Aug210106', path)
     Y = Y[0:-1:sample_every, :]
     return data_details_return({'Y': Y, 'connect' : connect}, data_set)
 
 def swiss_roll_generated(num_samples=1000, sigma=0.0):
     with open(os.path.join(os.path.dirname(__file__), 'datasets', 'swiss_roll.pickle')) as f:
-        import cPickle as pickle
+        if sys.version_info>=(3,0):
+            import pickle
+        else:
+            import cPickle as pickle
         data = pickle.load(f)
     Na = data['Y'].shape[0]
     perm = np.random.permutation(np.r_[:Na])[:num_samples]
@@ -946,6 +961,39 @@ def toy_linear_1d_classification(seed=default_seed):
     x2 = np.random.normal(3, 5, 20)
     X = (np.r_[x1, x2])[:, None]
     return {'X': X, 'Y':  sample_class(2.*X), 'F': 2.*X, 'seed' : seed}
+
+def airline_delay(data_set='airline_delay', num_train=700000, num_test=100000, seed=default_seed):
+    """Airline delay data used in Gaussian Processes for Big Data by Hensman, Fusi and Lawrence"""
+
+    if not data_available(data_set):
+        download_data(data_set)
+
+    dir_path = os.path.join(data_path, data_set)
+    filename = os.path.join(dir_path, 'filtered_data.pickle')
+
+    # 1. Load the dataset
+    import pandas as pd
+    data = pd.read_pickle(filename)
+
+    # WARNING: removing year
+    data.pop('Year')
+
+    # Get data matrices
+    Yall = data.pop('ArrDelay').values[:,None]
+    Xall = data.values
+
+    # Subset the data (memory!!)
+    all_data = num_train+num_test
+    Xall = Xall[:all_data]
+    Yall = Yall[:all_data]
+
+    # Get testing points
+    np.random.seed(seed=seed)
+    N_shuffled = np.random.permutation(Yall.shape[0])
+    train, test = N_shuffled[num_test:], N_shuffled[:num_test]
+    X, Y = Xall[train], Yall[train]
+    Xtest, Ytest = Xall[test], Yall[test]
+    return data_details_return({'X': X, 'Y': Y, 'Xtest': Xtest, 'Ytest': Ytest, 'seed' : seed, 'info': "Airline delay data used for demonstrating Gaussian processes for big data."}, data_set)
 
 def olivetti_glasses(data_set='olivetti_glasses', num_training=200, seed=default_seed):
     path = os.path.join(data_path, data_set)
@@ -1147,13 +1195,14 @@ def movielens100k(data_set='movielens100k'):
         for name in zip.namelist():
             zip.extract(name, dir_path)
     import pandas as pd
+    encoding = 'latin-1'
     movie_path = os.path.join(data_path, 'movielens100k', 'ml-100k')
-    items = pd.read_csv(os.path.join(movie_path, 'u.item'), index_col = 'index', header=None, sep='|',names=['index', 'title', 'date', 'empty', 'imdb_url', 'unknown', 'Action', 'Adventure', 'Animation', 'Children''s', 'Comedy', 'Crime', 'Documentary', 'Drama', 'Fantasy', 'Film-Noir', 'Horror', 'Musical', 'Mystery', 'Romance', 'Sci-Fi', 'Thriller', 'War', 'Western'])
-    users = pd.read_csv(os.path.join(movie_path, 'u.user'), index_col = 'index', header=None, sep='|', names=['index', 'age', 'sex', 'job', 'id'])
+    items = pd.read_csv(os.path.join(movie_path, 'u.item'), index_col = 'index', header=None, sep='|',names=['index', 'title', 'date', 'empty', 'imdb_url', 'unknown', 'Action', 'Adventure', 'Animation', 'Children''s', 'Comedy', 'Crime', 'Documentary', 'Drama', 'Fantasy', 'Film-Noir', 'Horror', 'Musical', 'Mystery', 'Romance', 'Sci-Fi', 'Thriller', 'War', 'Western'], encoding=encoding)
+    users = pd.read_csv(os.path.join(movie_path, 'u.user'), index_col = 'index', header=None, sep='|', names=['index', 'age', 'sex', 'job', 'id'], encoding=encoding)
     parts = ['u1.base', 'u1.test', 'u2.base', 'u2.test','u3.base', 'u3.test','u4.base', 'u4.test','u5.base', 'u5.test','ua.base', 'ua.test','ub.base', 'ub.test']
     ratings = []
     for part in parts:
-        rate_part = pd.read_csv(os.path.join(movie_path, part), index_col = 'index', header=None, sep='\t', names=['user', 'item', 'rating', 'index'])
+        rate_part = pd.read_csv(os.path.join(movie_path, part), index_col = 'index', header=None, sep='\t', names=['user', 'item', 'rating', 'index'], encoding=encoding)
         rate_part['split'] = part
         ratings.append(rate_part)
     Y = pd.concat(ratings)
@@ -1215,9 +1264,10 @@ def creep_data(data_set='creep_rupture'):
     all_data = np.loadtxt(os.path.join(data_path, data_set, 'taka'))
     y = all_data[:, 1:2].copy()
     features = [0]
-    features.extend(range(2, 31))
+    features.extend(list(range(2, 31)))
     X = all_data[:, features].copy()
     return data_details_return({'X': X, 'y': y}, data_set)
+
 def ceres(data_set='ceres'):
     """Twenty two observations of the Dwarf planet Ceres as observed by Giueseppe Piazzi and published in the September edition of Monatlicher Correspondenz in 1801. These were the measurements used by Gauss to fit a model of the planets orbit through which the planet was recovered three months later."""
     if not data_available(data_set):
@@ -1225,9 +1275,13 @@ def ceres(data_set='ceres'):
     import pandas as pd
     data = pd.read_csv(os.path.join(data_path, data_set, 'ceresData.txt'), index_col = 'Tag', header=None, sep='\t',names=['Tag', 'Mittlere Sonnenzeit', 'Gerade Aufstig in Zeit', 'Gerade Aufstiegung in Graden', 'Nordlich Abweich', 'Geocentrische Laenger', 'Geocentrische Breite', 'Ort der Sonne + 20" Aberration', 'Logar. d. Distanz'], parse_dates=True, dayfirst=False)
     return data_details_return({'data': data}, data_set)
+
 def cifar10_patches(data_set='cifar-10'):
     """The Candian Institute for Advanced Research 10 image data set. Code for loading in this data is taken from this Boris Babenko's blog post, original code available here: http://bbabenko.tumblr.com/post/86756017649/learning-low-level-vision-feautres-in-10-lines-of-code"""
-    import cPickle as pickle
+    if sys.version_info>=(3,0):
+        import pickle
+    else:
+        import cPickle as pickle
     dir_path = os.path.join(data_path, data_set)
     filename = os.path.join(dir_path, 'cifar-10-python.tar.gz')
     if not data_available(data_set):
@@ -1270,10 +1324,12 @@ def cmu_mocap_35_walk_jog(data_set='cmu_mocap'):
     data['info'] = "Walk and jog data from CMU data base subject 35. As used in Tayor, Roweis and Hinton at NIPS 2007, but without their pre-processing (i.e. as used by Lawrence at AISTATS 2007). It consists of " + data['info']
     return data
 
+
+
 def cmu_mocap(subject, train_motions, test_motions=[], sample_every=4, data_set='cmu_mocap'):
     """Load a given subject's training and test motions from the CMU motion capture data."""
     # Load in subject skeleton.
-    import mocap
+    from . import mocap
     subject_dir = os.path.join(data_path, data_set)
 
     # Make sure the data is downloaded.
@@ -1422,14 +1478,14 @@ def politics_twitter(data_set='politics_twitter'):
                 tweet_block_results = api.statuses_lookup(tweet_block_ids, trim_user=True)
                 for tweet in tweet_block_results:
                     data.ix[data['id_str'] == int(tweet.id_str), 'time'] = tweet.created_at
-                
+
                 # Wait so as to stay below the rate limit
                 # Stay on the safe side, presume that collection is instantanious
                 time.sleep(60.0/requests_per_minute + 0.1)
 
                 if block_num % save_freq == 0:
                     data.to_csv(parsed_file_path)
-                
+
             #Now convert times to pandas datetimes
             data['time'] = pd.to_datetime(data['time'])
             #Get rid of non-parsed dates
@@ -1437,5 +1493,7 @@ def politics_twitter(data_set='politics_twitter'):
             data.to_csv(parsed_file_path)
 
         data_dict[party] = data
-    
+
     return data_details_return(data_dict, data_set)
+
+data_load_files = [airline_delay, boston_housing, boxjenkins_airline, brendan_faces, della_gatta_TRP63_gene_expression, epomeo_gpx, football_data, sod1_mouse, spellman_yeast, spellman_yeast_cdc15, lee_yeast_ChIP, fruitfly_tomancak, drosophila_protein, drosophila_knirps, google_trends, hapmap3, oil, leukemia, oil_100, pumadyn, robot_wireless, silhouette, decampos_digits, ripley_synth, mauna_loa, osu_run1, swiss_roll_generated, singlecell, swiss_roll, swiss_roll_1000, isomap_faces, simulation_BGPLVM, toy_rbf_1d, toy_rbf_1d_50, toy_linear_1d_classification, olivetti_glasses, olivetti_faces, xw_pen, download_rogers_girolami_data, olympic_100m_men, olympic_100m_women, olympic_200m_men, olympic_200m_women, olympic_400m_men, olympic_400m_women, olympic_marathon_men, olympic_sprints, movie_collaborative_filter, movie_body_count, movie_body_count_r_classify, movielens100k, crescent_data, creep_data, ceres, cifar10_patches,cmu_mocap_49_balance, cmu_mocap_35_walk_jog, cmu_mocap, politics_twitter]
