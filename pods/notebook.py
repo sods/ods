@@ -1,12 +1,18 @@
 # Copyright 2014 Open Data Science Initiative and other authors. See AUTHORS.txt
 # Licensed under the BSD 3-clause license (see LICENSE.txt)
 
+import IPython
+if int(IPython.__version__[0])>3:
+    from ipywidgets import interact, fixed
+else:
+    from IPython.html.widgets.interaction import interact, fixed        
+from IPython.display import display, HTML
 
 def display_url(target):
     """Displaying URL in an IPython notebook to allow the user to click and check on information. With thanks to Fernando Perez for putting together the implementation!
     :param target: the url to display.
     :type target: string."""
-    from IPython.display import display, HTML
+
     prefix = u"http://" if not target.startswith("http") else u""
     target = prefix + target
     display(HTML(u'<a href="{t}" target=_blank>{t}</a>'.format(t=target)))
@@ -42,9 +48,9 @@ def display_iframe_url(target, **kwargs):
 
     .. seealso:: `iframe_url()` for additional arguments."""
 
-    from IPython.display import display, HTML
     txt = iframe_url(target, **kwargs)
     display(HTML(txt))
+
 
 def display_google_book(id, page, width=700, height=500, **kwargs):
     """Display an embedded version of a Google book.
@@ -55,6 +61,7 @@ def display_google_book(id, page, width=700, height=500, **kwargs):
     url = 'http://books.google.co.uk/books?id={id}&pg=PA{page}&output=embed'.format(id=id, page=page)
     display_iframe_url(url, width=width, height=height, **kwargs)
 
+                  
 def code_toggle(start_show=False, message=None):
     """Toggling on and off code in a notebook. 
     :param start_show: Whether to display the code or not on first load (default is False).
@@ -65,11 +72,10 @@ def code_toggle(start_show=False, message=None):
     The tip that this idea is
     based on is from Damian Kao (http://blog.nextgenetics.net/?e=102)."""
 
-    from IPython.display import display, HTML
     
     html ='<script>\n'
     if message is None:
-        message = u'The raw code for this IPython notebook is by default hidden for easier reading. To toggle on/off the raw code, click <a href="javascript:code_toggle()">here</a>.'
+        message = u'The raw code for this jupyter notebook can be hidden for easier reading.'
     if start_show:
         html += u'code_show=true;\n'
     else:
@@ -85,7 +91,7 @@ def code_toggle(start_show=False, message=None):
 $( document ).ready(code_toggle);
 </script>
 '''
-    html += message
+    html += message + ' To toggle on/off the raw code, click <a href="javascript:code_toggle()">here</a>.' 
     display(HTML(html))
 
 
@@ -99,8 +105,6 @@ def display_prediction(basis, num_basis=4, wlim=(-1.,1.), fig=None, ax=None, xli
     :param wlim: limits for the basis function weights."""
 
     import numpy as np
-    from IPython.html.widgets.interaction import interact, fixed
-    from IPython.display import display
     import pylab as plt
 
     if fig is not None:
@@ -122,7 +126,7 @@ def display_prediction(basis, num_basis=4, wlim=(-1.,1.), fig=None, ax=None, xli
     x = np.zeros((num_points, 1))
     x[:, 0] = np.linspace(xlim[0], xlim[1], num_points)
     param_args = {}
-    for i in xrange(num_basis):
+    for i in range(num_basis):
         lim = list(wlim)
         if i ==0:
             lim[0] += offset
@@ -136,7 +140,7 @@ def display_prediction(basis, num_basis=4, wlim=(-1.,1.), fig=None, ax=None, xli
         return f, Phi
     
     if type(basis) is dict:
-        use_basis = basis[basis.keys()[0]]
+        use_basis = basis[list(basis.keys())[0]]
     else:
         use_basis = basis
     f, Phi = predict_basis(np.zeros((num_basis, 1)),
@@ -149,7 +153,7 @@ def display_prediction(basis, num_basis=4, wlim=(-1.,1.), fig=None, ax=None, xli
 
     predline = ax.plot(x, f, linewidth=2)[0]
     basislines = []
-    for i in xrange(num_basis):
+    for i in range(num_basis):
         basislines.append(ax.plot(x, Phi[:, i], 'r')[0])
 
     ax.set_ylim(ylim)
@@ -157,20 +161,20 @@ def display_prediction(basis, num_basis=4, wlim=(-1.,1.), fig=None, ax=None, xli
 
     def generate_function(basis, num_basis, predline, basislines, basis_args, display_basis, offset, **kwargs):
         w = np.zeros((num_basis, 1))
-        for i in xrange(num_basis):
+        for i in range(num_basis):
             w[i] = kwargs['w_'+ str(i)]
         f, Phi = predict_basis(w, basis, x, num_basis, **basis_args)
         predline.set_xdata(x[:, 0])
         predline.set_ydata(f)
-        for i in xrange(num_basis):
+        for i in range(num_basis):
             basislines[i].set_xdata(x[:, 0])
             basislines[i].set_ydata(Phi[:, i])
 
         if display_basis:
-            for i in xrange(num_basis):
+            for i in range(num_basis):
                 basislines[i].set_alpha(1) # make visible
         else:
-            for i in xrange(num_basis):
+            for i in range(num_basis):
                 basislines[i].set_alpha(0) 
         display(fig)
     if type(basis) is not dict:
@@ -186,3 +190,14 @@ def display_prediction(basis, num_basis=4, wlim=(-1.,1.), fig=None, ax=None, xli
              offset = fixed(offset),
              display_basis = False,
              **param_args)
+
+
+def display_plots(filebase, directory=None, width=700, height=500, **kwargs):
+    """Display a series of plots controlled by sliders. The function relies on Python string format functionality to index through a series of plots."""
+    def show_figure(filebase, directory, **kwargs):
+        """Helper function to load in the relevant plot for display."""
+        filename = filebase.format(**kwargs)
+        if directory is not None:
+            filename = directory + '/' + filename
+        display(HTML("<img src='{filename}'>".format(filename=filename)))
+    interact(show_figure, filebase=fixed(filebase), directory=fixed(directory), **kwargs)

@@ -1,85 +1,322 @@
 # Copyright 2014 Open Data Science Initiative and other authors. See AUTHORS.txt
 # Licensed under the BSD 3-clause license (see LICENSE.txt)
+from __future__ import print_function
+from __future__ import absolute_import
 
-
-import pandas as pd
-import urlparse
+import sys
 import os
-from config import *
+
+# Deal with raw_input in python
+try:
+    input = raw_input
+except NameError:
+    pass
+    
+import pandas as pd
+
+from .config import *
 import numpy as np
 
-import notebook as nb
+from . import notebook as nb
 
-gdata_available=True
+import pods
+
+gspread_available=True
 try:
-    import gdata.docs.client
-    import gdata.spreadsheet.service 
+    import gspread
+    from collections import defaultdict
+    from itertools import chain
+    
+    from oauth2client.client import SignedJwtAssertionCredentials
+    import httplib2
+    # easy_install --upgrade google-api-python-client
+    from apiclient import errors
+    from apiclient.discovery import build
+    from apiclient.http import BatchHttpRequest
+    
 except ImportError:
-    gdata_available=False
+    gspread_available=False
 
-if gdata_available:
-    import atom
+if gspread_available:
+    import json
+    import warnings
+    sheet_mime = 'application/vnd.google-apps.spreadsheet'
+    keyfile = os.path.expanduser(os.path.expandvars(config.get('google docs', 'oauth2_keyfile')))
+
+    class drive:
+        """
+        Class for accessing a google drive and managing files.
+        """
+        def __init__(self, scope=None, credentials=None, http=None, service=None):
+            # Get a google drive API connection.
+            if service is None:
+                if http is None:
+                    if credentials is None:
+                        f = open(os.path.join(keyfile))
+                        self._oauthkey = json.load(f)
+                        f.close()
+                        self.email = self._oauthkey['client_email']
+                        self.key = bytes(self._oauthkey['private_key'], 'UTF-8')
+                        if scope is None:
+                            self.scope = ['https://www.googleapis.com/auth/drive']
+                        else:
+                            self.scope = scope
+                        self.credentials = SignedJwtAssertionCredentials(self.email, self.key, self.scope)
+                    else:
+                        self.credentials = credentials
+                        self.key = None
+                        self.email = None
+                    
+                    http = httplib2.Http()
+                    self.http = self.credentials.authorize(http)
+                else:
+                    self.http = http
+                self.service = build('drive', 'v2', http=self.http)
+            else:
+                self.service = service
+
+        def ls(self):
+            """List all resources on the google drive"""
+            results = []
+            page_token = None
+            while True:
+                param = {}
+                if page_token:
+                    param['pageToken'] = page_token
+                files = self.service.files().list(**param).execute()
+                results.extend(files['items'])
+                page_token = files.get('nexPageToken')
+                if not page_token:
+                    break
+            files = []
+            for result in results:
+                if not result['labels']['trashed']:
+                    files.append(pods.google.resource(id=result['id'], name=result['title'], mime_type=result['mimeType'], url=result['alternateLink'], drive=self))
+            return files
+
+        def _repr_html_(self):
+            """Create a representation of the google drive for the notebook."""
+            files = self.ls()
+            output = '<p><b>Google Drive</b></p>'
+            for file in files:
+                output += file._repr_html_()
+                    
+            return output
+
+        
+    class resource:
+        """Resource found on the google drive.
+        :param id: the google id of the spreadsheet to open (default is None which creates a new spreadsheet).
+        """
+        def __init__(self, name=None, mime_type=None, url=None, id=None, drive=None):
+
+            if drive is None:
+                self.drive=pods.google.drive()
+            else:
+                self.drive = drive
+
+            if id is None:
+                if name is None:
+                    name = "Google Drive Resource"
+                # create a new sheet
+                body = {'mimeType': mime_type,
+                        'title': name}
+                try:
+                    self.drive.service.files().insert(body=body).execute(http=self.drive.http)
+                except(errors.HttpError):
+                    print("Http error")
+
+                self._id=self.drive.service.files().list(q="title='" + name + "'").execute(http=self.drive.http)['items'][0]['id']
+                self.name = name
+                self.mime_type = mime_type
+            else:                
+                self._id=id
+                if name is None:
+                    self.get_name()
+                else:
+                    self.name = name
+                if mime_type is None:
+                    self.get_mime_type()
+                else:
+                    self.mime_type = mime_type
+                if url is None:    
+                    self.get_url()
+                else:
+                    self.url = url
+
+            
+
+        def delete(self, empty_bin=False):
+            """Delete the file from drive."""
+            if empty_bin:
+                self.drive.service.files().delete(fileId=self._id).execute()
+            else:
+                self.drive.service.files().trash(fileId=self._id).execute()
+
+        def undelete(self):
+            """Recover file from the trash (if it's there)."""
+            self.drive.service.files().untrash(fileId=self._id).execute()
+
+            
+        def share(self, users, share_type='writer', send_notifications=False, email_message=None):
+            """
+            Share a document with a given list of users.
+            """
+            if type(users) is str:
+                users = [users]
+            def batch_callback(request_id, response, exception):
+                print("Response for request_id (%s):" % request_id)
+                print(response)
+
+                # Potentially log or re-raise exceptions
+                if exception:
+                    raise exception
+
+            batch_request = BatchHttpRequest(callback=batch_callback)
+            for count, user in enumerate(users):
+                batch_entry = self.drive.service.permissions().insert(fileId=self._id, sendNotificationEmails=send_notifications, emailMessage=email_message,
+                                                             body={
+                                                                 'value': user,
+                                                                 'type': 'user',
+                                                                 'role': share_type
+                                                             })
+                batch_request.add(batch_entry, request_id="batch"+str(count))
+
+            batch_request.execute()
+
+        def share_delete(self, user):
+            """
+            Remove sharing from a given user.
+            """
+            permission_id = self._permission_id(user)
+            self.drive.service.permissions().delete(fileId=self._id,
+                                              permissionId=permission_id).execute()
+
+
+        def share_modify(self, user, share_type='reader', send_notifications=False):
+            """
+            :param user: email of the user to update.
+            :type user: string
+            :param share_type: type of sharing for the given user, type options are 'reader', 'writer', 'owner'
+            :type user: string
+            :param send_notifications: 
+            """
+            if share_type not in ['writer', 'reader', 'owner']:
+                raise ValueError("Share type should be 'writer', 'reader' or 'owner'")
+            
+            permission_id = self._permission_id(user)
+            permission = self.drive.service.permissions().get(fileId=self._id, permissionId=permission_id).execute()
+            permission['role'] = share_type
+            self.drive.service.permissions().update(fileId=self._id, permissionId=permission_id, body=permission).execute()
+
+        def _permission_id(self, user):
+             
+            return self.drive.service.permissions().getIdForEmail(email=user).execute()['id']
+            
+        def share_list(self):
+            """
+            Provide a list of all users who can access the document in the form of 
+            """
+            permissions = self.drive.service.permissions().list(fileId=self._id).execute()
+                
+            entries = []
+            for permission in permissions['items']:
+                entries.append((permission['emailAddress'], permission['role']))
+            return entries
+
+        def revision_history(self):
+            """
+            Get the revision history of the document from Google Docs.
+            """
+            for item in self.drive.service.revisions().list(fileId=self._id).execute()['items']:
+                print(item['published'], item['selfLink'])
+            
+        def update_name(self, name):
+            """Change the title of the file."""
+            body = self.drive.service.files().get(fileId=self._id).execute()
+            body['title'] = name
+            body = self.drive.service.files().update(fileId=self._id, body=body).execute()
+            self.name = name
+
+        def get_mime_type(self):
+            """Get the mime type of the file."""
+
+            details=self.drive.service.files().list(q="title='" + self.name + "'").execute(http=self.drive.http)['items'][0]
+            self.mime_type = details['mimeType']
+            return self.mime_type
+
+        def get_name(self):
+            """Get the title of the file."""
+            self.name = self.drive.service.files().get(fileId=self._id).execute()['title']
+            return self.name
+
+        def get_url(self):
+            self.url = self.drive.service.files().get(fileId=self._id).execute()['alternateLink']
+            return self.url
+        
+        def update_drive(self, drive):
+            """Update the file's drive API service."""
+            self.drive = drive
+
+        def _repr_html_(self):
+            output = '<p><b>{title}</b> at <a href="{url}" target="_blank">this url.</a> ({mime_type})</p>'.format(url=self.url, title=self.name, mime_type=self.mime_type)
+            return output
 
     class sheet():
         """
         Class for interchanging information between google spreadsheets and pandas data frames. The class manages a spreadsheet.
 
-        :param spreadsheet_key: the google key of the spreadsheet to open (default is None which creates a new spreadsheet).
         :param worksheet_name: the worksheet in the spreadsheet to work with (default None which causes Sheet1 to be the name)
         :param title: the title of the spreadsheet (used if the spreadsheet is created for the first time)
-        :param column_indent: the column indent to use in the spreadsheet.
-        :type column_indent: int
-        :param gd_client: the google spreadsheet service client to use (default is NOne which performs a programmatic login)
-        :param docs_client: the google docs login client (default is none which causes a new client login)
-        :param published: whether the google doc underlying the system has been published or not (default: False).
-        :type published: bool
+        :param col_indent: the column indent to use in the spreadsheet.
+        :type col_indent: int
+        :param drive: the google drive client to use (default is None which performs a programmatic login)
+        :param gs_client: the google spread sheet client login (default is none which causes a new client login)
+        :param header: number of header rows in the document.
+        :type header: int
+        :param na_values: additional list containing entry types that are to be considered to be missing data (default is empty list).
+        :type na_values: list
+        :param dtype: Type name or dict of column -> type Data type for data or columns. E.g. {'a': np.float64, 'b': np.int32}
+        :type dtype: dictonary
+        :param raw_values: whether to read values rather than the formulae in the spreadsheet (default is False).
+        :type raw_values: bool
         """
-        def __init__(self, spreadsheet_key=None, worksheet_name=None, title='Google Spreadsheet', column_indent=0, gd_client=None, docs_client=None, published=False):
+        def __init__(self, resource=None, gs_client=None, worksheet_name=None, index_field=None, col_indent=0, na_values=['nan'], dtype = {}, raw_values=False, header=1):
 
-            self.email = config.get('google docs', 'user')
-            self.password = config.get('google docs', 'password')
 
             source = 'ODS Gdata Bot'                
-
+            scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']    
+            self.raw_values = raw_values
+            self.header = header
+            self.index_field = None
+            if type(na_values) is str:
+                na_values = [na_values]
+            self.na_values = na_values
+            self.dtype = dtype
             
-            self.published = published
-
-            if gd_client is None:
-                self.gd_client = gdata.spreadsheet.service.SpreadsheetsService()
-                self.gd_client.email = self.email
-                self.gd_client.password = self.password
-                self.gd_client.source = source
-                self.gd_client.ProgrammaticLogin()
+            if resource is None:
+                drive = pods.google.drive(scope=scope)
+                self.resource = pods.google.resource(drive=drive, name="Google Sheet", mime_type=sheet_mime)
             else:
-                self.gd_client=gd_client
-
-            if docs_client is None:
-                self.docs_client = gdata.docs.client.DocsClient()
-                self.docs_client.client_login(self.email, self.password, source)
-            else:
-                self.docs_client = docs_client
-
-            if spreadsheet_key is None:
-                # need to create the document
-                document = gdata.docs.data.Resource(type='spreadsheet', title=title)
-                self.document = self.docs_client.create_resource(document)
-                self._key = self.document.get_id().split("%3A")[1]
-                # try to ensure that we can set title properly. Not sure why resource is not initially returned.
-                self.document = self._get_resource_feed()
-                self.feed = self._get_worksheet_feed()
-                if worksheet_name is not None:
-                    self.worksheet_name='Sheet1'
-                    self.change_sheet_name(worksheet_name)
-
-            else:
-                # document exists already
-                self._key = spreadsheet_key
-                self.document = self._get_resource_feed()
+                if 'https://spreadsheets.google.com/feeds' not in resource.drive.scope:
+                    drive = pods.google.drive(scope=scope)
+                    resource.update_drive(drive)
+                self.resource = resource
                 
-            self.set_sheet_focus(worksheet_name=worksheet_name)
+            # Get a Google sheets client
+            if gs_client is None:
+                self.gs_client = gspread.authorize(self.resource.drive.credentials)
+            else:
+                self.gs_client = gs_client
 
-            self.column_indent = column_indent
-            self.url = 'https://docs.google.com/spreadsheets/d/' + self._key + '/'
+            self.sheet = self.gs_client.open_by_key(self.resource._id)
+
+            if worksheet_name is None:
+                self.worksheet = self.sheet.worksheets()[0]
+            else:
+                self.worksheet = self.sheet.worksheet(title=worksheet_name)
+            self.col_indent = col_indent
+            self.url = 'https://docs.google.com/spreadsheets/d/' + self.resource._id + '/'
 
 
 #############################################################################
@@ -88,70 +325,61 @@ if gdata_available:
 
         def change_sheet_name(self, title):
             """Change the title of the current worksheet to title."""
-            for entry in self.feed.entry:
-                if self.worksheet_name==entry.title.text:
-                    entry.title=atom.Title(text=title)
-                    self.gd_client.UpdateWorksheet(entry)
-                    self.worksheet_name = title
-                    return
-            raise ValueError, "Can't find worksheet " + self.worksheet_name + " to change the name in Google spreadsheet " + self.url
+            raise NotImplementedError
+            raise ValueError("Can't find worksheet " + self.worksheet_name + " to change the name in Google spreadsheet " + self.url)
                 
 
         def set_sheet_focus(self, worksheet_name):
-            """Set the current worksheet to the given name. If the name doesn't exist then create the sheet using sheet.add_sheet()"""
-            self.update_sheet_list()
+            """Set the current worksheet to the given name. If the name doesn't exist then create the sheet using sheet.add_worksheet()"""
+            self.worksheets = self.sheet.worksheets()
             # if the worksheet is set to None default to first sheet, warn if it's name is not "Sheet1".
+            names = [worksheet.title for worksheet in worksheets]
             if worksheet_name is None:
-                self.worksheet_name = self.feed.entry[0].title.text
-                if len(self.feed.entry)>1 and self.worksheet_name != 'Sheet1':
+                self.worksheet_name = self.worksheets[0].title
+                if len(self.worksheets)>1 and self.worksheet_name != 'Sheet1':
                     print("Warning, multiple worksheets in this spreadsheet and no title specified. Assuming you are requesting the sheet called '{sheetname}'. To surpress this warning, please specify the sheet name.".format(sheetname=self.worksheet_name))
             else:
-                if worksheet_name not in self.id_dict:
+                if worksheet_name not in names:
                     # create new worksheet here.
-                    self.add_sheet(worksheet_name=worksheet_name)
+                    self.sheet.add_worksheet(title=worksheet_name)
                     self.worksheet_name = worksheet_name
                 else:
                     self.worksheet_name = worksheet_name
+                    self.worksheet = self.sheet.set_worksheet(self.worksheet_name)
             # Get list of ids from the spreadsheet
-            self.worksheet_id = self.id_dict[self.worksheet_name]
+            self.worksheet = self.sheet(self.worksheet_name)
 
-        def add_sheet(self, worksheet_name, rows=100, columns=10):
+        def add_sheet(self, worksheet_name, rows=100, cols=10):
             """Add a worksheet. To add and set to the current sheet use set_sheet_focus()."""
-            self.gd_client.AddWorksheet(title=worksheet_name, row_count=rows, col_count=columns, key=self._key)
-            self.update_sheet_list()
+            self.sheet.add_worksheet(title=worksheet_name, rows=rows, cols=cols)
+            self.worksheets = self.sheet.worksheets()
 
-        def write(self, data_frame, header=None, comment=None):
+        def write(self, data_frame, comment=None):
             """
             Write a pandas data frame to a google document. This function will overwrite existing cells, but will not clear them first.
 
             :param data_frame: the data frame to write.
             :type data_frame: pandas.DataFrame
-            :param header: number of header rows in the document.
-            :type header: int
             :param comment: a comment to make at the top of the document (requres header>1
             :type comment: str
             """
             if comment is not None:
-                if header is None:
-                    header=2
-                elif header==1:
-                    raise ValueError, 'Comment will be overwritten by column headers'
+                if self.header==1:
+                    raise ValueError('Comment will be overwritten by column headers')
                 self.write_comment(comment)
-            else:
-                if header is None:
-                    header=1
-            self.write_headers(data_frame, header)
-            self.write_body(data_frame, header)
+                    
+            self.write_headers(data_frame)
+            self.write_body(data_frame)
 
-        def augment(self, data_frame, columns, header=1, comment=None):
+        def augment(self, data_frame, columns, comment=None):
             """
             Augment is a special wrapper function for update that calls it
             with overwrite set to False. Use this command if you only want
             to make changes when the cell in the spreadsheet is empty.
             """
-            self.update(data_frame, columns, header, comment, overwrite=False)
+            self.update(data_frame, columns, comment, overwrite=False)
 
-        def update(self, data_frame, columns=None, header=1, comment=None, overwrite=True):
+        def update(self, data_frame, columns=None, comment=None, overwrite=True):
             """
             Update a google document with a given data frame. The
             update function assumes that the columns of the data_frame and
@@ -166,8 +394,6 @@ if gdata_available:
             :type data_frame: pandas.DataFrame
             :param columns: which columns are updated in the spreadsheet (by default all columns are updated)
             :type columns: list
-            :param hearder_rows: how many rows are in the header (including the column headers). By default there is 1 row. 
-            :type header: int
             :param comment: comment to place in the top row of the header (requires header>1)
             :type comment: str
             :rtype: pandas.DataFrame
@@ -176,372 +402,372 @@ if gdata_available:
 
             """
             if not data_frame.index.is_unique:
-                raise ValueError, "Index for data_frame is not unique in Google spreadsheet " + self.url
-            ss = self.read(header=header)
+                raise ValueError("Index for data_frame is not unique in Google spreadsheet " + self.url)
+            ss = self.read()
             if not ss.index.is_unique:
-                raise ValueError, "Index in google doc is not unique in Google spreadsheet " + self.url
+                raise ValueError("Index in sheet is not unique in Google spreadsheet " + self.url)
             if columns is None:
                 columns = ss.columns
             if (len(set(ss.columns) - set(data_frame.columns))>0 or
                 len(set(data_frame.columns) - set(ss.columns))>0):
                 # TODO: Have a lazy option that doesn't mind this mismatch and accounts for it.
-                raise ValueError, 'There is a mismatch between columns in online spreadsheet and the data frame we are using to update in Google spreadsheet ' + self.url
+                raise ValueError('There is a mismatch between columns in online spreadsheet and the data frame we are using to update in Google spreadsheet ' + self.url)
+
+            
             add_row = []
             remove_row = []
-            update_cell = []
+            update_triples = []
             # Compute necessary changes
             for index in data_frame.index:
                 if index in ss.index:
                     for column in columns:
+                        ss_val = ss[column][index]
+                        df_val = data_frame[column][index]
                         if overwrite:
-                            if not ss[column][index] == data_frame[column][index]:
-                                update_cell.append((index, column))
+                            if not ss_val == df_val:
+                                update_triples.append((index, column, df_val))
                         else:
-                            if ((pd.isnull(ss[column][index]) 
-                                or ss[column][index] == '') 
-                                and not (pd.isnull(data_frame[column][index])
-                                         or data_frame[column][index] == '')):
-                                update_cell.append((index, column))
+                            if ((pd.isnull(ss_val) 
+                                or ss_val == '') 
+                                and not (pd.isnull(df_val)
+                                         or df_val == '')):
+                                update_triples.append((index, column, df_val))
 
                 else:
                     add_row.append(index)
+
             if overwrite:
                 for index in ss.index:
                     if index not in data_frame.index:
                         remove_row.append(index)
 
+            index_to_add = []
+            index_to_rem = []
+            swap_list = []
+                        
+            swap_len = min(len(add_row), len(remove_row))
+            row_change = len(add_row) - len(remove_row)
 
-            row_number = header+1
+            if row_change > 0:
+                index_to_add = add_row[-row_change:]
 
-            self.row_batch_size = 10
-            query = gdata.spreadsheet.service.CellQuery()
-            query.return_empty = "true" 
-            query.min_col = str(self.column_indent+1) 
-            query.max_col = str(len(ss.columns)+1+self.column_indent)
-            query.min_row = str(row_number)
-            query.max_row = str(row_number + self.row_batch_size)
-            cells = self._get_cell_feed(query=query)
+            if row_change < 0:
+                index_to_rem = remove_row[row_change:]
 
-            batchRequest = gdata.spreadsheet.SpreadsheetsCellsFeed()
-            counter = 0
-            row_to_delete = []
-            row_number = 1
-            for index, row in ss.iterrows():
-                if counter>=len(cells.entry):
-                    # Update current block
-                    updated = self.gd_client.ExecuteBatch(batchRequest, cells.GetBatchLink().href)
-                    # pull down new batch of cells.
-                    query.min_row = str(row_number)
-                    query.max_row = str(row_number + self.row_batch_size)
-                    cells = self._get_cell_feed(query=query)
-                    batchRequest = gdata.spreadsheet.SpreadsheetsCellsFeed()
-                    counter = 0
-                current_index = cells.entry[counter].cell.inputValue 
-                row_number = int(cells.entry[counter].cell.row) + 1
-
-                if current_index in remove_row:
-                    v = int(cells.entry[counter].cell.row)-header-1
-                    row_to_delete.append(v)
-                    print("Warning deleting row indexed by '" + current_index + "' from " + cells.entry[counter].cell.row + " currently! Not comprehensively tested. Best guess is that row to delete is " + str(v) + " in Google spreadsheet " + self.url)
-                    ans = raw_input("Delete row (Y/N)?")
-                    if len(ans)==0 or (not ans[0]=='Y' and not ans[0] == 'y'):
-                        raise ValueError, "Not willing to delete row."
-                    counter+=len(row)
-                    continue
+            for add, rem in zip(add_row[:swap_len], remove_row[:swap_len]):
+                swap_list.append((add, rem))
+                
+            cells = []
+            for index,column,val in update_triples:
+                cell = self._cell(index, column)
+                if self.raw_values:
+                    cell.input_value = val
                 else:
-                    counter+=1
-                for current_column, entry in row.iteritems():
-                    if (current_index, current_column) in update_cell:
-                        val = data_frame[current_column][index]
-                        if not pd.isnull(val):
-                            v = []
-                            try:
-                                v = unicode(val)
-                            except UnicodeDecodeError:
-                                v = str(val)
-                            cells.entry[counter].cell.inputValue = v
-                        else:
-                            cells.entry[counter].cell.inputValue = ''
-                        batchRequest.AddUpdate(cells.entry[counter])
-                    counter+=1
-            updated = self.gd_client.ExecuteBatch(batchRequest, cells.GetBatchLink().href)
-            # Delete the rows to be removed.
-            for row in sorted(row_to_delete, reverse=True):
-                print("Delete row ", row)
-                self._delete_row(row)
-            # Insert the rows to be added
-            for index in add_row:
-                self._add_row(index, data_frame.loc[index])
+                    cell.value = val
+                cells.append(cell)
 
-        def _delete_row(self, row_number):
+            for add, rem in swap_list:
+                cells.extend(self._overwrite_row(index=rem,  new_index=add,
+                                                 data_series=data_frame.loc[add]))
+                
+            if index_to_rem:
+                cells.extend(self._delete_rows(index_to_rem))
+            if index_to_add:
+                cells.extend(self._add_rows(data_frame.loc[index_to_add]))
+            
+            self.worksheet.update_cells(cells)
+
+        def _update_row_lookup(self, index):
+            """Update the data series to be used as a look-up to find row associated with each index.
+            :param index: the index names in order from the spreadsheet.
+            :type index: list"""
+            self.row_lookup = pd.Series(range(self.header+1, len(index)+self.header+1), index=index)
+
+        def _update_col_lookup(self, columns):
+            """Update the data series to be used as a look-up to find col associated with each column.
+            :param column: the column names in order from the spreadsheet.
+            :type column: list"""
+            self.col_lookup = pd.Series(range(self.col_indent+1, len(columns)+self.col_indent+1), index=columns)
+
+        def _cell(self, index, column):
+            """Return the cell of the spreadsheet associated with the given index and column."""
+            return self.worksheet.cell(self.row_lookup[index], self.col_lookup[column])
+
+        
+        def _overwrite_row(self, index, new_index, data_series):
+            """Overwrite the given row in a spreadsheet with a data series."""
+            cells = []
+            for column in self.col_lookup.index:
+                cell = self._cell(index, column)
+                if column in data_series.index:
+                    val = data_series[column]
+                elif column == self.index_field:
+                    val = new_index
+                else:
+                    val = None
+                if self.raw_values:
+                    cell.input_value = val
+                else:
+                    cell.value = val
+                cells.append(cell)
+            return cells
+
+        def _delete_rows(self, index):
             """
             Delete a row of the spreadsheet.
-            :param row_number: the row number to be deleted.
-            :type row_number: int"""
-            list_feed = self._get_list_feed(self._key, self.worksheet_id)
-            self.gd_client.DeleteRow(list_feed.entry[row_number])
+            :param index: the row number to be deleted.
+            :type index: index of pd.DataSeries"""
+            if not index:
+                return
+            if type(index) is str:
+                index = [index]
+            minind = self.row_lookup[index].min()
+                
+            start = self.worksheet.get_addr_int(minind,
+                                                self.col_lookup.min())
+            end = self.worksheet.get_addr_int(self.row_lookup.max(),
+                                              self.col_lookup.max())
+            cells = self.worksheet.range(start + ':' + end)
 
-        def _add_row(self, index, data_series):
+            # download existing values
+            data = defaultdict(lambda: defaultdict(str))
+            for cell in cells:
+                if self.raw_values:
+                    val = cell.input_value
+                else:
+                    val = cell.value
+                
+                row = data.setdefault(int(cell.row), defaultdict(str))
+                row[cell.col] = val
+
+            delete_rows = self.row_lookup[index].sort(inplace=False)
+            # Find the ends of the banks to move up
+            end_step = []
+            for i, ind in enumerate(delete_rows.index):
+                if i>0:
+                    end_step.append(self.row_lookup[ind]-i)
+            end_step.append(self.row_lookup.max()-len(index))
+
+            # Move up each bank in turn.
+            for i, ind in enumerate(delete_rows):
+                for cell in cells:
+                    if ((i==0 and cell.row <= end_step[i])
+                        or (i>0 and cell.row <= end_step[i]
+                            and cell.row>=end_step[i-1])):
+                        val = data[cell.row+1+i][cell.col]
+                        if self.raw_values:
+                            cell.input_value = val
+                        else:
+                            cell.value = val
+
+            # Delete exposed rows at bottom
+            for cell in cells:
+                if cell.row > end_step[-1]:
+                    if self.raw_values:
+                        cell.input_value = ''
+                    else:
+                        cell.value = ''
+
+            # Update the row lookups
+            for i, ind in enumerate(delete_rows.index):
+                self.row_lookup[self.row_lookup>self.row_lookup[ind]] -= (i+1)
+                self.row_lookup.drop(ind, inplace=True)
+
+            return cells
+        
+            
+        def _add_rows(self, data_frame):
             """
             Add a row to the spreadsheet.
             :param index: index of the row to be added.
             :type index: str or int (any valid index for a pandas.DataFrame)
             :param data_series: the entries of the row to be added.
-            :type data_series: pandas.Series"""
-            dict = {}
-            dict['index'] = index
-            for column, entry in data_series.iteritems():
-                if not pd.isnull(entry):
-                    val = []
-                    try:
-                        val = unicode(entry)
-                    except UnicodeDecodeError:
-                        val = str(entry)
-                    dict[column] = val
-            self.gd_client.InsertRow(dict, self._key, self.worksheet_id)
+            :type data_frame: pandas.DataFrame"""
 
-
-        def write_comment(self, comment, row=1, column=1):
+            if type(data_frame) is pd.core.series.Series:
+                data_frame = pd.DataFrame(data_frame).T
+            maxind = self.row_lookup.max()
+            for i, ind in enumerate(self.row_lookup.index):
+                self.row_lookup[ind] = maxind+1+i
+            start = self.worksheet.get_addr_int(maxind+1,
+                                                self.col_lookup.min())
+            end = self.worksheet.get_addr_int(maxind+data_frame.shape[0],
+                                              self.col_lookup.max())
+            cells = self.worksheet.range(start + ':' + end)
+            for cell in cells:
+                if cell.value != '':
+                    raise ValueError("Overwriting non-empty cell in spreadsheet")
+                i = cell.row - maxind-1
+                index = data_frame.index[i]
+                j = cell.col - self.col_lookup.min()-1
+                if j < 0:
+                    val = index
+                else:
+                    column = data_frame.columns[j]
+                    val = data_frame[column][index]
+                if self.raw_values:
+                    cell.input_value = val
+                else:
+                    cell.value = val
+            for i, ind in enumerate(data_frame.index):
+                self.row_lookup[ind] = maxind+1+i
+            return cells
+                                
+        def write_comment(self, comment, row=1, col=1):
             """Write a comment in the given cell"""
-            query = gdata.spreadsheet.service.CellQuery()
-            query.return_empty = "true" 
-            query.min_col = str(column) 
-            query.max_col = str(column)
-            query.min_row = str(row)
-            query.max_row = str(row)
-            cells = self._get_cell_feed(query=query)
-            batchRequest = gdata.spreadsheet.SpreadsheetsCellsFeed()
-            cells.entry[0].cell.inputValue = comment
-            batchRequest.AddUpdate(cells.entry[0])
-            updated = self.gd_client.ExecuteBatch(batchRequest, cells.GetBatchLink().href)
+            self.worksheet.update_cell(row, col, comment)
 
-        def write_body(self, data_frame, header):
+        def write_body(self, data_frame, nan_val=''):
             """Write the body of a data frame to a google doc."""
             # query needs to be set large enough to pull down relevant cells of sheet.
-            row_number = header+1
-            self.row_batch_size = 10
+            row_number = self.header
+            start = self.worksheet.get_addr_int(row_number+1,
+                                                self.col_indent+1)
+            end = self.worksheet.get_addr_int(row_number+data_frame.shape[0], len(data_frame.columns)+self.col_indent+1)
+            cells = self.worksheet.range(start + ':' + end)
+            for cell in cells:
+                if cell.col == self.col_indent + 1:
+                    if cell.value != '':
+                        raise ValueError("Non-empty cell be written to in Google sheet.")
+                    # Write index
+                    if self.raw_values:
+                        cell.input_value = data_frame.index[cell.row-self.header-1]
+                    else:
+                        cell.value = data_frame.index[cell.row-self.header-1]
+                else:
+                    column = data_frame.columns[cell.col-self.col_indent-2]
+                    index = data_frame.index[cell.row-self.header-1]
+                    val = data_frame[column][index]
+                    if type(val) is float:
+                        if np.isnan(val):
+                            val = nan_val
+                    if self.raw_values:
+                        cell.input_value = val
+                    else:
+                        cell.value = val
+            self.worksheet.update_cells(cells)
 
-            query = gdata.spreadsheet.service.CellQuery()
-            query.return_empty = "true" 
-            query.min_col = str(self.column_indent+1) 
-            query.max_col = str(len(data_frame.columns)+1+self.column_indent)
-            query.min_row = str(row_number)
-            query.max_row = str(row_number + self.row_batch_size)
-            cells = self._get_cell_feed(query=query)
-            batchRequest = gdata.spreadsheet.SpreadsheetsCellsFeed()
-            counter = 0
-            for index, row in data_frame.iterrows():
-                if counter>=len(cells.entry):
-                    # Update current block
-                    row_number = int(cells.entry[counter-1].cell.row) + 1
-                    updated = self.gd_client.ExecuteBatch(batchRequest, cells.GetBatchLink().href)
-                    # pull down new batch of cells.
-                    query.min_row = str(row_number)
-                    query.max_row = str(row_number + self.row_batch_size)
-                    cells = self._get_cell_feed(query=query)
-                    batchRequest = gdata.spreadsheet.SpreadsheetsCellsFeed()
-                    counter = 0
-                cells.entry[counter].cell.inputValue = str(index)
-                batchRequest.AddUpdate(cells.entry[counter])
-                counter+=1
-                for entry in row:
-                    if not pd.isnull(entry):
-                        val = []
-                        try:
-                            val = unicode(entry)
-                        except UnicodeDecodeError:
-                            val = str(entry)
-                        cells.entry[counter].cell.inputValue = val
-                    batchRequest.AddUpdate(cells.entry[counter])
-                    counter+=1
-            updated = self.gd_client.ExecuteBatch(batchRequest, cells.GetBatchLink().href)
-
-        def write_headers(self, data_frame, header=1):
+        def write_headers(self, data_frame):
             """Write the headers of a data frame to the spreadsheet."""
-            # query needs to be set large enough to pull down relevant cells of sheet.
-            query = gdata.spreadsheet.service.CellQuery()
-            query.return_empty = "true" 
-            query.min_row = str(header)
-            query.max_row = query.min_row
-            query.min_col = str(self.column_indent+1) 
-            query.max_col = str(len(data_frame.columns)+self.column_indent+1) 
 
-            cells = self._get_cell_feed(query=query)
-
-            batchRequest = gdata.spreadsheet.SpreadsheetsCellsFeed()
             index_name = data_frame.index.name 
             if index_name == '' or index_name is None:
                 index_name = 'index'
             headers = [index_name] + list(data_frame.columns)
-            for i, column in enumerate(headers):
-                cells.entry[i].cell.inputValue = column
-                batchRequest.AddUpdate(cells.entry[i])
+            start = self.worksheet.get_addr_int(self.header, self.col_indent+1)
+            end = self.worksheet.get_addr_int(self.header, len(data_frame.columns)+self.col_indent+1)
+            # Select a range
+            cells = self.worksheet.range(start + ':' + end)
+            self._update_col_lookup(headers)
+            for cell, value in zip(cells, headers):
+                if cell.value != '':
+                    raise ValueError("Error over-writing in non empty sheet")
+                cell.value = value
+            # Update in batch
+            return self.worksheet.update_cells(cells)
 
-            return self.gd_client.ExecuteBatch(batchRequest, cells.GetBatchLink().href)
+        def read_headers(self):
+            
+            column_names=self.worksheet.row_values(self.header)[self.col_indent:]
+            self._update_col_lookup(column_names)
 
-        def read(self, names=None, header=1, na_values=[], read_values=False, dtype={}, usecols=None, index_field=None):
+            if self.index_field is None:
+                # Return any column titled index or otherwise the first column
+                index_col_num=next((i for i, column in enumerate(column_names) if column == 'index' or 'Index' or 'INDEX'), 0)
+                self.index_field = column_names[index_col_num]
+            elif self.index_field not in column_names:
+                raise ValueError("Invalid index: " + self.index_field + " not present in sheet header row " + str(self.header) + ".")
+            return column_names
+
+        def read_body(self, use_columns=None):
+            """
+            Read in the body of a google sheet storing entries. 
+
+            :param use_columns: return a subset of the columns.
+            :type use_columns: list
+            """
+            # Find the index column number.
+            if self.index_field in self.col_lookup:
+                index_col_num = self.col_lookup[self.index_field]
+            else:
+                raise ValueError("Column " + self.index_field + " suggested for index not found in header row.")
+                
+                            
+            # Assume the index column is full and count the entries.
+            index = self.worksheet.col_values(index_col_num)[self.header:]
+            self._update_row_lookup(index)
+            
+            num_entries = len(index)
+            start = self.worksheet.get_addr_int(self.header+1,
+                                                self.col_indent+1)
+            end = self.worksheet.get_addr_int(self.header+num_entries,
+                                              self.col_indent
+                                              +len(self.col_lookup.index))
+            body_cells = self.worksheet.range(start + ':' + end)
+
+            data = {}
+            for column in self.col_lookup.index:
+                if not use_columns or column in use_columns:
+                    data[column] = [None for i in range(num_entries)]
+
+            for cell in body_cells:
+                column = self.col_lookup.index[cell.col-self.col_indent-1]
+                if not use_columns or column in use_columns:
+                    if self.raw_values:
+                        val = cell.input_value
+                    else:
+                        val = cell.value
+
+                    if val is not None and val not in self.na_values:
+                        if column in self.dtype.keys():
+                            val = self.dtype[column](val)
+                        else:
+                            val = gspread.utils.numericise(val)
+                            
+                        data[column][cell.row-self.header-1]=val
+            return data
+
+        def read(self, names=None, use_columns=None):
             """
             Read in information from a Google document storing entries. Fields present are defined in 'names'
 
             :param names: list of names to give to the columns (in case they aren't present in the spreadsheet). Default None (for None, the column headers are read from the spreadsheet.
             :type names: list
-            :param header: number of rows to use as header (default is 1).
-            :type header: int
-            :param na_values: additional list containing entry types that are to be considered to be missing data (default is empty list).
-            :type na_values: list
-            :param read_values: whether to read values rather than the formulae in the spreadsheet (default is False).
-            :type read_values: bool
-            :param dtype: Type name or dict of column -> type Data type for data or columns. E.g. {'a': np.float64, 'b': np.int32}
-            :type dtype: dictonary
-            :param usecols: return a subset of the columns.
-            :type usecols: list
+            :param use_columns: return a subset of the columns.
+            :type use_columns: list
             """
 
             # todo: need to check if something is written below the 'table' as this will be read (for example a rogue entry in the row below the last row of the data.
-            entries_dict = {}
-            index_dict = {}
-            cells =  self._get_cell_feed()
-            read_names = False
-            if names is None:
-                read_names = True
-                names = {}
-            for myentry in cells.entry:
-                col = myentry.cell.col
-                row = myentry.cell.row
-                if read_values:
-                    # Compute the evaluated cell entry
-                    value = myentry.cell.value
-                else:
-                    # return a formula if it's present
-                    value = myentry.cell.inputValue
-                if int(row)<header:
-                    continue
-                if int(row)==header:
-                    if read_names:
-                        # Read the column titles for the fields.
-                        fieldname = value.strip()
-                        if fieldname in names.values():
-                            print("ValueError, Field name duplicated in header in spreadsheet name:", self.worksheet_name, "in Google sheet ", self.url)
-                            ans = raw_input('Try and fix the error on the sheet and then return here. Error fixed (Y/N)?')
-                            if ans[0]=='Y' or ans[0] == 'y':
-                                return self.read(names, header, na_values, read_values, dtype, usecols, index_field)
-                            raise ValueError, "Field name duplicated in header in sheet in " + self.worksheet_name + " in Google spreadsheet " + self.url
-                        else:
-                            names[col] = fieldname
-                    continue
+            column_names = self.read_headers()
 
-                if not row in entries_dict:
-                    entries_dict[row] = {}
+            data = self.read_body(use_columns=use_columns)
+            #if len(data[index_field])>len(set(data[index_field])):
+            #    raise ValueError("Invalid index column, entries are not unique")
+            return pd.DataFrame(data).set_index(self.index_field)
 
-                if col in names:
-                    field = names[col]
-                else:
-                    field = col
-
-                if ((index_field is None and field.lower() == 'index') 
-                    or field==index_field):
-                    val = value.strip()
-                    if field in dtype:
-                        index_dict[row] = dtype[field](val)
-                    else:
-                        index_dict[row] = val
-                elif usecols is None or field in usecols:
-                    val = value.strip()
-                    if not val in na_values and val != '':
-                        if field in dtype:
-                            entries_dict[row][field] = dtype[field](val)
-                        else:
-                            try:
-                                a = float(val)
-                            except ValueError:
-                                entries_dict[row][field] = val
-                            else:
-                                try:
-                                    a = int(a)
-                                except ValueError:
-                                    entries_dict[row][field] = a
-                                else:
-                                    if a == int(a):
-                                        entries_dict[row][field] = int(a)
-                                    else:
-                                        entries_dict[row][field] = a
-
-
-
-            entries = []
-            index = []
-            for key in sorted(entries_dict.keys(), key=int):
-                entries.append(entries_dict[key])
-                if len(index_dict)>0:
-                    try:
-                        index.append(index_dict[key])
-                    except KeyError:
-                        print("KeyError, unidentified key in ", self.worksheet_name, " in Google spreadsheet ", self.url)
-                        ans = raw_input('Try and fix the error on the sheet and then return here. Error fixed (Y/N)?')
-                        if ans[0]=='Y' or ans[0] == 'y':
-                            return self.read(names, header, na_values, read_values, dtype, usecols, index_field)
-                        else:
-                            raise KeyError, "Unidentified key in " + self.worksheet_name + " in Google spreadsheet " + self.url
-
-                else:
-                    index.append(int(key)-header)
-
-            if len(index)>0:
-                entries = pd.DataFrame(entries, index=index)
-            else:
-                # this seems to cause problems, but it shouldn't come here now. If no index column is included index defaults to row number - header.
-                entries = pd.DataFrame(entries)
-            if len(names)>0:
-                for field in names.values():
-                    if field not in list(entries.columns) + ['index']:
-                        if usecols is None or field in usecols:
-                            entries[field] = np.NaN
-
-                column_order = []
-                for key in sorted(names, key=int):
-                    if usecols is None or names[key] in usecols:
-                        column_order.append(names[key])
-                if 'index' in column_order:
-                    column_order.remove('index')
-                entries = entries[column_order]
-
-            return entries
-
-#######################################################################
-# Place methods here that are really associated with the spreadsheet. #
-#######################################################################
-
-        def set_title(self, title):
-            """Change the title of the google spreadsheet."""
-            pass
-            #self.document.title = atom.data.Title(text=title)
-            #self.docs_client.update_resource(self.document)
-
-        def get_title(self):
-            """Get the title of the google spreadsheet."""
-            return self.document.title.text
+            #         except KeyError:
+            #             print(("KeyError, unidentified key in ", self.worksheet_name, " in Google spreadsheet ", self.url))
+            #             ans = input('Try and fix the error on the sheet and then return here. Error fixed (Y/N)?')
+            #             if ans[0]=='Y' or ans[0] == 'y':
+            #                 return self.read(names, header, na_values, read_values, dtype, use_columns, index_field)
+            #             else:
+            #                 raise KeyError("Unidentified key in " + self.worksheet_name + " in Google spreadsheet " + self.url)
 
         def delete_sheet(self, worksheet_name):
             """Delete the worksheet with the given name."""
-            if worksheet_name == self.worksheet_name:
-                raise ValueError, "Can't delete the sheet I'm currently pointing to, use set_sheet_focus to change sheet first."
-            for entry in self.feed.entry:
-                if worksheet_name==entry.title.text:
-                    self.gd_client.DeleteWorksheet(entry)
-                    return
-            raise ValueError, "Can't find worksheet " + worksheet_name + " to change the name " + " in Google spreadsheet " + self.url
+            self.sheet.del_worksheet(entry)
 
         def update_sheet_list(self):
-            """Update object with the worksheet feed and the list of worksheet_ids, can only be run once there is a spreadsheet key and a resource feed in place. Needs to be rerun if a worksheet is added."""
-            self.feed = self._get_worksheet_feed()
-            self.id_dict = self.worksheet_ids()
+            """Update object with the worksheet feed and the list of worksheets, can only be run once there is a gspread client (gs_client) in place. Needs to be rerun if a worksheet is added."""
+            self.worksheets = self.sheet._sheet_list
 
         def _repr_html_(self):
-            if self.published: #self.document.published.tag=='published':
+            if self.ispublished(): #self.document.published.tag=='published':
+                output = '<p><b>{title}</b> at <a href="{url}" target="_blank">this url.</a>\n</p>'.format(url=self.url, title=self.get_title())
                 url = self.url + '/pubhtml?widget=true&amp;headers=false' 
-                return nb.iframe_url(url, width=500, height=300)
+                return output + nb.iframe_url(url, width=500, height=300)
             else:
-                output = '<p><b>Google Sheet</b> at <a href="{url}" target="_blank">this url.</a>\n</p>'.format(url=self.url)
+                output = '<p><b>{title}</b> at <a href="{url}" target="_blank">this url.</a>\n</p>'.format(url=self.url, title=self.get_title())
                 return output + self.read()._repr_html_()
                 #return None
             
@@ -550,7 +776,7 @@ if gdata_available:
             """If the IPython notebook is available, and the google
             spreadsheet is published, then the spreadsheet is displayed
             centrally in a box."""
-            if self.published:
+            if self.ispublished():
                 try:
                     from IPython.display import HTML
                     url = self.url + '/pubhtml?widget=true&amp;headers=false' 
@@ -560,42 +786,32 @@ if gdata_available:
                 else:
                     raise
             
-        def worksheet_ids(self):
-            def _id(entry):
-                split = urlparse.urlsplit(entry.id.text)
-                return os.path.basename(split.path)
-            return dict([(entry.title.text, _id(entry)) for entry in self.feed.entry])
+#######################################################################
+# Place methods here that are really associated with the resource. #
+#######################################################################
 
-        def share(self, users, share_type='writer', send_notifications=False):
+        def set_title(self, title):
+            """Change the title of the google spreadsheet."""
+            self.resource.update_name(title)
+            
+        def get_title(self):
+            """Get the title of the google spreadsheet."""
+            return self.resource.get_name()
+
+            
+        def share(self, users, share_type='writer', send_notifications=False, email_message=None):
             """
             Share a document with a given list of users.
             """
-            # share a document with the given list of users.
-            for user in users:
-                acl_entry = gdata.docs.data.AclEntry(
-                    scope=gdata.acl.data.AclScope(value=user, type='user'),
-                    role=gdata.acl.data.AclRole(value=share_type),
-                    )
-                acl2 = self.docs_client.AddAclEntry(self.document, acl_entry, send_notifications=send_notifications)
-                    
-
-        def _get_acl_entry(self, user):
-            """
-            Return the acl entry associated with a given user name.
-            """
-            acl_feed = self._get_acl_feed()
-            for acl_entry in acl_feed.entry:
-                if acl_entry.scope.value == user:
-                    return acl_entry
-            raise ValueError, "User: " + str(user) + " not in the acl feed for this resource" + " in Google spreadsheet " + self.url
-
+            warnings.warn("Sharing should be performed on the drive class.", DeprecationWarning)
+            self.resource.share(users, share_type, send_notifications, email_message)
 
         def share_delete(self, user):
             """
             Remove sharing from a given user.
             """
-            acl_entry = self._get_acl_entry(user)
-            self.docs_client.DeleteAclEntry(acl_entry)
+            warnings.warn("Sharing should be performed on the drive class.", DeprecationWarning)
+            return self.resource.share_delete(user)
 
         def share_modify(self, user, share_type='reader', send_notifications=False):
             """
@@ -605,112 +821,34 @@ if gdata_available:
             :type user: string
             :param send_notifications: 
             """
-            if share_type not in ['writer', 'reader', 'owner']:
-                raise ValueError, "Share type should be 'writer', 'reader' or 'owner'"
+            warnings.warn("Sharing should be performed on the drive class.", DeprecationWarning)
 
-            #acl_entry = self._get_acl_entry(user)# update ACL entry
+            self.resource.share_modify(user, share_type, send_notifications)
+            
 
-            #acl_entry.role.value = share_type
-            # According to Ali Afshar you need to remove the etag (https://groups.google.com/forum/#!msg/google-documents-list-api/eFSmo14nDLA/Oo4SjePHZd8J), can't work out how though!
-            #etag_element = acl_entry.find('etag')
-            #acl_entry.remove(etagelement)
-            #self.docs_client.UpdateAclEntry(acl_entry, sent_notifications=send_notifications)
-            # Hack: delete and re-add.
-            self.share_delete(user)
-            self.share([user], share_type, send_notifications)
-
+        def _permission_id(self, user):
+             
+            return self.resource.service.permissions().getIdForEmail(email=user).execute()['id']
+            
         def share_list(self):
             """
             Provide a list of all users who can access the document in the form of 
             """
-            entries = []
-            acl_feed = self._get_acl_feed()
-            for acl_entry in acl_feed.entry:
-                entries.append((acl_entry.scope.value, acl_entry.role.value))
-            return entries
+            warnings.warn("Sharing should be performed on the drive class.", DeprecationWarning)
+
+            return self.resource.share_list()
 
         def revision_history(self):
             """
             Get the revision history of the document from Google Docs.
             """
-            for entry in self.docs_client.GetResources(limit=55).entry:
-                revisions = self.docs_client.GetRevisions(entry)
-                for revision in revisions.entry:
-                    print(revision.publish, revision.GetPublishLink())
+            warnings.warn("Revision history should be performed on the drive class.", DeprecationWarning)
+            return self.resource.revision_history()
+
+        def ispublished(self):
+            """Find out whether or not the spreadsheet has been published."""
+            return self.resource.drive.service.revisions().list(fileId=self.resource._id).execute()['items'][-1]['published']
+        
 
 
 
-        def _get_feed(self, type, query=None, tries=0, max_tries=10):
-            """
-            Check for exceptions when calling for a group of cells from
-            the google docs API. Retry a maximum number of times (default 10).
-            """
-            try:
-                if type == 'cell':
-                    if query is None:
-                        feed = self.gd_client.GetCellsFeed(self._key, wksht_id=self.worksheet_id)
-                    else:
-                        feed = self.gd_client.GetCellsFeed(self._key, wksht_id=self.worksheet_id, query=query)
-
-                elif type == 'list':
-                    feed = self.gd_client.GetListFeed(self._key, self.worksheet_id)
-                elif type == 'worksheet':
-                    feed = self.gd_client.GetWorksheetsFeed(self._key)
-
-                elif type == 'acl':
-                    feed = self.docs_client.GetAcl(self.document)
-
-                elif type == 'resource':
-                    feed = self.docs_client.GetResourceById(self._key)
-
-            # Sometimes the server doesn't respond. Retry the request.
-            except gdata.service.RequestError, inst:
-                if tries<10:
-                    status = inst[0]['status']
-                    print("Error status: " + str(status) + '<br><br>' + inst[0]['reason'] + '<br><br>' + inst[0]['body'])
-                    if status>499:
-                        print("Try", tries+1, "of", max_tries, "waiting 2 seconds and retrying.")
-                        import sys
-                        sys.stdout.flush()
-                        import time
-                        time.sleep(2)
-                        feed = self._get_feed(type=type, query=query, tries=tries+1)
-                    else:
-                        raise 
-                else:
-                    print("Maximum tries at contacting Google servers exceeded.")
-                    import sys
-                    sys.stdout.flush()
-                    raise
-            return feed
-
-        def _get_cell_feed(self, query=None, tries=0, max_tries=10):
-            """
-            Wrapper for _get_feed() when a cell feed is required.
-            """
-            # problem: if there are only 1000 lines in the spreadsheet and you request more you get this error: 400 Invalid query parameter value for max-row.
-            return self._get_feed(type='cell', query=query, tries=tries, max_tries=max_tries)
-
-        def _get_resource_feed(self, tries=0, max_tries=10):
-            """
-            Wrapper for _get_feed() when a resource is required.
-            """
-            return self._get_feed(type='resource', tries=tries, max_tries=max_tries)
-
-        def _get_list_feed(self, tries=0, max_tries=10):
-            """
-            Wrapper for _get_feed() when a list feed is required.
-            """
-            return self._get_feed(type='list', query=None, tries=tries, max_tries=max_tries)
-
-        def _get_worksheet_feed(self, tries=0, max_tries=10):
-            """
-            Wrapper for _get_feed() when a cell worksheet feed is required.
-            """
-            return self._get_feed(type='worksheet', query=None, tries=tries, max_tries=max_tries)
-
-        def _get_acl_feed(self, tries=0, max_tries=10):
-            """
-            Wrapper for _get_feed() when an acl feed is required.
-            """
-            return self._get_feed(type='acl', query=None, tries=tries, max_tries=max_tries)

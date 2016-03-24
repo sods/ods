@@ -1,4 +1,18 @@
 {
+    "airline_delay": {
+        "citation": "Gaussian Processes for Big Data (In UAI'13). J. Hensman, N. Fusi and N. D. Lawrence",
+        "details": "Flight arrival and departure times for every commercial flight in the USA from January 2008 to April 2008. This dataset contains extensive information about almost 2 million flights, including the delay (in minutes) in reaching the desitnation.",
+        "files": [
+            [
+                "filtered_data.pickle"
+            ]
+        ],
+        "license": null,
+        "size": 180905165,
+        "urls": [
+            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/airline_delay/"
+        ]
+    },
     "ankur_pose_data": {
         "citation": "3D Human Pose from Silhouettes by Relevance Vector Regression (In CVPR'04). A. Agarwal and B. Triggs.",
         "details": "Artificially generated data of silhouettes given poses. Note that the data does not display a left/right ambiguity because across the entire data set one of the arms sticks out more the the other, disambiguating the pose as to which way the individual is facing.",
@@ -8,7 +22,7 @@
             ]
         ],
         "license": null,
-        "size": 1,
+        "size": 2802667,
         "urls": [
             "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/ankur_pose_data/"
         ]

@@ -1,28 +1,35 @@
+from __future__ import absolute_import
 # Copyright 2014 Open Data Science Initiative and other authors. See AUTHORS.txt
 # Licensed under the BSD 3-clause license (see LICENSE.txt)
 
+import os
+import sys
 
 import pandas as pd
-import urlparse
-import os
-from config import *
+if sys.version_info>=(3,0):
+    import urllib.parse as urlparse
+else:
+    import urlparse
+
+from .config import *
+
 import pickle
 import pandas as pd
 import pickle
-import os
 import numpy as np
+
+from . import config
 
 gdata_available=True
 try:
-    import gdata.docs.client
-    import gdata.spreadsheet.service # Requires python-gdata on Ubuntu
+    import gspread
     import pods.google as gl
 except ImportError:
     gdata_available=False
 
 
 if gdata_available:
-    default_class_dir = os.path.expanduser(os.path.expandvars(config.get('class info', 'dir')))
+    default_class_dir = os.path.expanduser(os.path.expandvars(config.config.get('class info', 'dir')))
 
     class distributor():
         """
@@ -35,10 +42,10 @@ if gdata_available:
         :param participant_list: the list of participants to who you want to distribute the documents.
         :type participant_list: either a string (for a filename) or a dictionary specifying a google doc and associated sheet number.
         """
-        def __init__(self, spreadsheet_title='Google Spreadsheet', keys_file=None, participant_list=None, user_sep=',', class_dir=None, suffix=None, worksheet_name=None, gd_client=None, docs_client=None):
+        def __init__(self, spreadsheet_title='Google Spreadsheet', keys_file=None, participant_list=None, user_sep=',', class_dir=None, suffix=None, worksheet_name=None, drive=None, gs_client=None):
 
-            self.gd_client = gd_client
-            self.docs_client = docs_client
+            self.gs_client = gs_client
+            self.drive = drive
 
             self.worksheet_name = worksheet_name
             # suffix to apply to 'handles' if they are non-unique
@@ -62,17 +69,17 @@ if gdata_available:
             if type(participant_list) is dict:
                 # participant list is stored in a google doc
                 if 'spreadsheet_key' in participant_list and 'worksheet_name' in participant_list:
-                    self.participant_sheet = gl.sheet(spreadsheet_key=participant_list['spreadsheet_key'],
+                    resource = gl.resource(id=participant_list['spreadsheet_key'])
+                    self.participant_sheet = gl.sheet(resource=resource,
                                                       worksheet_name=participant_list['worksheet_name'], 
-                                                      gd_client=self.gd_client, 
-                                                      docs_client=self.docs_client)
+                                                      gs_client=self.gs_client)
                     # if gl.sheet had to login, store the details.
-                    self.gd_client = self.participant_sheet.gd_client
-                    self.docs_client = self.participant_sheet.docs_client
+                    self.drive = self.participant_sheet.resource.drive
+                    self.gs_client = self.participant_sheet.gs_client
                     self.users = self.participant_sheet.read()
                     self.users.rename(columns={'Gmail Address': 'Email'}, inplace=True)
                 else:
-                    raise ValueError, "If a the participant list is a dictionary, then it should encode a google doc for the particiant list with fields 'spreadsheet_key' and 'worksheet_name'."
+                    raise ValueError("If a the participant list is a dictionary, then it should encode a google doc for the particiant list with fields 'spreadsheet_key' and 'worksheet_name'.")
 
             elif type(participant_list) is str:
                 # participant list is stored in a csv file.
@@ -80,7 +87,7 @@ if gdata_available:
                 self.users = pd.read_csv(self.participant_list, sep=user_sep)
             
             else:
-                raise ValueError, "Could not determine type of participant list."
+                raise ValueError("Could not determine type of participant list.")
 
             # load spreadsheet keys if they exist.
             if keys_file is None:
@@ -148,25 +155,25 @@ if gdata_available:
             # check if we've already got a spreadsheet for this user, otherwise create one.
 
             if user in self.sheet_keys:
-                sheet = gl.sheet(spreadsheet_key=self.sheet_keys[user], 
+                resource = gl.resource(id=self.sheet_keys[user], drive=self.drive)
+                sheet = gl.sheet(resource=resource, 
                                  worksheet_name=self.worksheet_name,
-                                 gd_client=self.gd_client, 
-                                 docs_client=self.docs_client)
+                                 gs_client=self.gs_client)
                 # if gl.sheet had to login, store the details.
-                self.gd_client = sheet.gd_client
-                self.docs_client = sheet.docs_client
+                self.drive = resource.drive
+                self.gs_client = sheet.gs_client
             else:
                 name = self._get_handle(user)
                 title = self.spreadsheet_title
                 if name is not None:
                     title += ' ' + name
-                sheet = gl.sheet(title=title, 
-                                 gd_client=self.gd_client, 
-                                 docs_client=self.docs_client)
+                resource = gl.resource(drive=self.drive)
+                resource.set_title(title)
+                sheet = gl.sheet(gs_client=self.gs_client, header=2)
                 # if gl.sheet had to login, store the details.
-                self.gd_client = sheet.gd_client
-                self.docs_client = sheet.docs_client
-                self.sheet_keys[user] = sheet._key
+                self.gs_client = sheet.gs_client
+                self.drive = resource.drive
+                self.sheet_keys[user] = resource._id
                 pickle.dump(self.sheet_keys, open(self.keys_file, "wb" ))
             return sheet
 
@@ -180,7 +187,7 @@ if gdata_available:
                     udata = data_frame
                 sheet = self._get_sheet(user)
                 # Write the data to the user's spreadsheet.
-                sheet.write_body(udata, header=header)
+                sheet.write_body(udata)
 
         def write_comment(self, comment, row=1, column=1):
             """Write comments to the users' spreadsheets."""
@@ -189,15 +196,12 @@ if gdata_available:
                 # Write the film data to the user's spreadsheet.
                 sheet.write_comment(comment, row, column)
 
-        def write_headers(self, data_frame, header=None):
-            """Write comments to the users' spreadsheets."""
+        def write_headers(self, data_frame):
+            """Write headers to the users' spreadsheets."""
             for user in self.users.Email:
                 sheet = self._get_sheet(user)
                 # Write the film data to the user's spreadsheet.
-                if header is None:
-                    sheet.write_headers(data_frame)
-                else:
-                    sheet.write_headers(data_frame, header)
+                sheet.write_headers(data_frame)
                 
         def share(self, share_type='writer', send_notifications=False):
             """
@@ -208,8 +212,7 @@ if gdata_available:
                 sheet = self._get_sheet(user)
                 for share in sheet.share_list():
                     if user in share:
-                        # TODO: change sharing here?
-                        #sheet.share_modify(user, share_type, send_notifications=False)
+                        sheet.share_modify(user, share_type, send_notifications=False)
                         return
                 sheet.share([user], share_type, send_notifications)
 
@@ -259,7 +262,7 @@ if gdata_available:
                     sheet = self._get_sheet(user)
                     sheet.write(udata, header=header, comment=comment)
 
-        def update(self, data_frame, columns=None, header=1, comment=None, overwrite=True):
+        def update(self, data_frame, columns=None, comment=None, overwrite=True):
             """
             Update a google document with a given data frame. The
             update function assumes that the columns of the data_frame and
@@ -274,8 +277,6 @@ if gdata_available:
             :type data_frame: pandas.DataFrame
             :param columns: which columns are updated in the spreadsheet (by default all columns are updated)
             :type columns: list
-            :param hearder_rows: how many rows are in the header (including the column headers). By default there is 1 row. 
-            :type header: int
             :param comment: comment to place in the top row of the header (requires header>1)
             :type comment: str
             :rtype: pandas.DataFrame
@@ -289,25 +290,17 @@ if gdata_available:
                     udata = function(data_frame)
                 else:
                     udata = data_frame
-                sheet.update(udata, columns, header, comment, overwrite)
+                sheet.update(udata, columns, comment, overwrite)
 
 
-        def read(self, names=None, header=1, na_values=[], read_values=False, dtype={}, usecols=None):
+        def read(self, names=None, use_columns=None):
             """
             Read in information from distributed Google documents storing entries. Fields present are defined in 'names'
 
             :param names: list of names to give to the columns (in case they aren't present in the spreadsheet). Default None (for None, the column headers are read from the spreadsheet.
             :type names: list
-            :param header: number of rows to use as header (default is 1).
-            :type header: int
-            :param na_values: additional list containing entry types that are to be considered to be missing data (default is empty list).
-            :type na_values: list
-            :param read_values: whether to read values rather than the formulae in the spreadsheet (default is False).
-            :type read_values: bool
-            :param dtype: Type name or dict of column -> type Data type for data or columns. E.g. {'a': np.float64, 'b': np.int32}
-            :type dtype: dictonary
-            :param usecols: return a subset of the columns.
-            :type usecols: list
+            :param use_columns: return a subset of the columns.
+            :type use_columns: list
             :return: a dictionary containing the results from each spreadsheet.
             :rtype: dict
             """
@@ -317,7 +310,7 @@ if gdata_available:
                 handle = self._get_handle(user)
                 while handle in data:
                     handle += self._get_suffix()
-                data[handle] = sheet.read(names, header, na_values, read_values, dtype, usecols)
+                data[handle] = sheet.read(names, use_columns)
             return data
 
 def download(name, course, github='SheffieldML/notebook/master/lab_classes/'):
