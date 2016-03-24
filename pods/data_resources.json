@@ -643,7 +643,7 @@
         ]
     },
     "politics_twitter": {
-        "citation": "Chained Gaussian Processes",
+        "citation": "Saul, A., Hensman, J., Vehtai, A., & Lawrence, N. D. (2016).  Chained Gaussian processes. Proceedings Of the Nineteenth International Conference on Artificial Intelligence and Statistics",
         "details": "The data holds a large number of tweet id numbers for tweets posted during the run up to the UK general election 2015, and derived sentiment.",
         "files": [
             [
