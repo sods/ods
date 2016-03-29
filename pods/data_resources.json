@@ -656,6 +656,34 @@
             "http://www.math.ntnu.no/%7Ehrue/r-inla.org/examples/leukemia/"
         ]
     },
+    "mcycle": {
+        "citation": "Some Aspects of the Spline Smoothing Approach to Non-Parametric Regression Curve Fitting Journal of the Royal Statistical Society. Series B (Methodological), Vol. 47, No. 1. (1985), pp. 1-52, doi:10.2307/2345542 by B. W. Silverman",
+        "details": "Data from a Simulated Motorcycle Accident, http://www-personal.umich.edu/~jizhu/jizhu/wuke/Silverman-JRSSB85.pdf",
+        "files": [
+            [
+                "motor.csv"
+            ]
+        ],
+        "license": null,
+        "size": 1984,
+        "urls": [
+            "http://vincentarelbundock.github.io/Rdatasets/csv/boot"
+        ]
+    },
+    "elevators": {
+        "citation": "",
+        "details": "Experiments of Rui Camacho, obtained from the task of controlling a F16 aircraft, although the target variable and attributes are different from the ailerons domain. In this case the goal variable is related to an action taken on the elevators of the aircraft",
+        "files": [
+            [
+                "elevators.tgz"
+            ]
+        ],
+        "license": null,
+        "size": 327496,
+        "urls": [
+            "http://www.dcc.fc.up.pt/~ltorgo/Regression/"
+        ]
+    },
     "politics_twitter": {
         "citation": "Saul, A., Hensman, J., Vehtai, A., & Lawrence, N. D. (2016).  Chained Gaussian processes. Proceedings Of the Nineteenth International Conference on Artificial Intelligence and Statistics",
         "details": "The data holds a large number of tweet id numbers for tweets posted during the run up to the UK general election 2015, and derived sentiment.",

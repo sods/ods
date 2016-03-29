@@ -1496,4 +1496,44 @@ def politics_twitter(data_set='politics_twitter'):
 
     return data_details_return(data_dict, data_set)
 
-data_load_files = [airline_delay, boston_housing, boxjenkins_airline, brendan_faces, della_gatta_TRP63_gene_expression, epomeo_gpx, football_data, sod1_mouse, spellman_yeast, spellman_yeast_cdc15, lee_yeast_ChIP, fruitfly_tomancak, drosophila_protein, drosophila_knirps, google_trends, hapmap3, oil, leukemia, oil_100, pumadyn, robot_wireless, silhouette, decampos_digits, ripley_synth, mauna_loa, osu_run1, swiss_roll_generated, singlecell, swiss_roll, swiss_roll_1000, isomap_faces, simulation_BGPLVM, toy_rbf_1d, toy_rbf_1d_50, toy_linear_1d_classification, olivetti_glasses, olivetti_faces, xw_pen, download_rogers_girolami_data, olympic_100m_men, olympic_100m_women, olympic_200m_men, olympic_200m_women, olympic_400m_men, olympic_400m_women, olympic_marathon_men, olympic_sprints, movie_collaborative_filter, movie_body_count, movie_body_count_r_classify, movielens100k, crescent_data, creep_data, ceres, cifar10_patches,cmu_mocap_49_balance, cmu_mocap_35_walk_jog, cmu_mocap, politics_twitter]
+def mcycle(data_set='mcycle', seed=default_seed):
+    np.random.seed(seed=seed)
+
+    if not data_available(data_set):
+        download_data(data_set)
+
+    data = pd.read_csv(os.path.join(data_path, data_set, 'motor.csv'))
+
+    X = data['times'].values[:, None]
+    Y = data['accel'].values[:, None]
+
+    return data_details_return({'X': X, 'Y' : Y}, data_set)
+
+def elevators(data_set='elevators', seed=default_seed):
+    np.random.seed(seed=seed)
+
+    if not data_available(data_set):
+        import tarfile
+        download_data(data_set)
+        dir_path = os.path.join(data_path, data_set)
+        # tar = tarfile.TarFile(name=os.path.join(dir_path, 'elevators.tgz'), mode='r')
+        with open(os.path.join(dir_path, 'elevators.tgz'), 'r') as f:
+            tar = tarfile.open(mode='r', fileobj=f)
+            tar.extractall(dir_path)
+    elevator_path = os.path.join(data_path, 'elevators', 'Elevators')
+    elevator_train_path = os.path.join(elevator_path, 'elevators.data')
+    elevator_test_path = os.path.join(elevator_path, 'elevators.test')
+    train_data = pd.read_csv(elevator_train_path)
+    test_data = pd.read_csv(elevator_test_path)
+    data = pd.concat([train_data, test_data])
+
+    # Want to choose test and training data sizes, so just concatenate them together and mix them up
+    data = data.reset_index()
+    data = data.reindex(np.random.permutation(data.index)) # Randomize so test isn't at the end
+
+    X = data.iloc[:, :-1].values
+    Y = data.iloc[:, -1].values[:, None]
+
+    return data_details_return({'X': X, 'Y' : Y}, data_set)
+
+data_load_files = [airline_delay, boston_housing, boxjenkins_airline, brendan_faces, della_gatta_TRP63_gene_expression, epomeo_gpx, football_data, sod1_mouse, spellman_yeast, spellman_yeast_cdc15, lee_yeast_ChIP, fruitfly_tomancak, drosophila_protein, drosophila_knirps, google_trends, hapmap3, oil, leukemia, oil_100, pumadyn, robot_wireless, silhouette, decampos_digits, ripley_synth, mauna_loa, osu_run1, swiss_roll_generated, singlecell, swiss_roll, swiss_roll_1000, isomap_faces, simulation_BGPLVM, toy_rbf_1d, toy_rbf_1d_50, toy_linear_1d_classification, olivetti_glasses, olivetti_faces, xw_pen, download_rogers_girolami_data, olympic_100m_men, olympic_100m_women, olympic_200m_men, olympic_200m_women, olympic_400m_men, olympic_400m_women, olympic_marathon_men, olympic_sprints, movie_collaborative_filter, movie_body_count, movie_body_count_r_classify, movielens100k, crescent_data, creep_data, ceres, cifar10_patches,cmu_mocap_49_balance, cmu_mocap_35_walk_jog, cmu_mocap, politics_twitter, elevators, mcycle]
