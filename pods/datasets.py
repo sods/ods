@@ -1497,12 +1497,12 @@ def politics_twitter(data_set='politics_twitter'):
     return data_details_return(data_dict, data_set)
 
 def mcycle(data_set='mcycle', seed=default_seed):
-    np.random.seed(seed=seed)
-
     if not data_available(data_set):
         download_data(data_set)
 
+    np.random.seed(seed=seed)
     data = pd.read_csv(os.path.join(data_path, data_set, 'motor.csv'))
+    data = data.reindex(np.random.permutation(data.index)) # Randomize so test isn't at the end
 
     X = data['times'].values[:, None]
     Y = data['accel'].values[:, None]
@@ -1510,8 +1510,6 @@ def mcycle(data_set='mcycle', seed=default_seed):
     return data_details_return({'X': X, 'Y' : Y}, data_set)
 
 def elevators(data_set='elevators', seed=default_seed):
-    np.random.seed(seed=seed)
-
     if not data_available(data_set):
         import tarfile
         download_data(data_set)
@@ -1523,10 +1521,11 @@ def elevators(data_set='elevators', seed=default_seed):
     elevator_path = os.path.join(data_path, 'elevators', 'Elevators')
     elevator_train_path = os.path.join(elevator_path, 'elevators.data')
     elevator_test_path = os.path.join(elevator_path, 'elevators.test')
-    train_data = pd.read_csv(elevator_train_path)
-    test_data = pd.read_csv(elevator_test_path)
+    train_data = pd.read_csv(elevator_train_path, header=None)
+    test_data = pd.read_csv(elevator_test_path, header=None)
     data = pd.concat([train_data, test_data])
 
+    np.random.seed(seed=seed)
     # Want to choose test and training data sizes, so just concatenate them together and mix them up
     data = data.reset_index()
     data = data.reindex(np.random.permutation(data.index)) # Randomize so test isn't at the end
