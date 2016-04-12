@@ -58,10 +58,11 @@ def download_url(url, dir_name='.', save_name=None, store_directory=None, messag
             file_size_dl += len(buff)
             f.write(buff)
             sys.stdout.write(" "*(len(status)) + "\r")
-            if file_size:
-                status = r"[{perc: <{ll}}] {dl:7.3f}/{full:.3f}MB".format(dl=file_size_dl/(1048576.),
-                                                                       full=file_size/(1048576.), ll=line_length,
-                                                                       perc="="*int(line_length*float(file_size_dl)/file_size))
+            # If content_length_str was incorrect, we can end up with many too many equals signs, catches this edge case
+            correct_meta = float(file_size_dl)/file_size <= 1.0
+            if file_size and correct_meta:
+                percentage = "="*int(line_length*float(file_size_dl)/file_size)
+                status = r"[{perc: <{ll}}] {dl:7.3f}/{full:.3f}MB".format(dl=file_size_dl/(1048576.), full=file_size/(1048576.), ll=line_length, perc=percentage)
             else:
                 status = r"[{perc: <{ll}}] {dl:7.3f}MB".format(dl=file_size_dl/(1048576.),
                                                                        ll=line_length,

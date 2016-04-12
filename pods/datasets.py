@@ -32,7 +32,7 @@ except ImportError:
 
 if sys.version_info>=(3,0):
     from urllib.parse import quote
-    from urllib.request import urlopen 
+    from urllib.request import urlopen
 else:
     from urllib2 import quote
     from urllib2 import urlopen
@@ -964,7 +964,7 @@ def toy_linear_1d_classification(seed=default_seed):
 
 def airline_delay(data_set='airline_delay', num_train=700000, num_test=100000, seed=default_seed):
     """Airline delay data used in Gaussian Processes for Big Data by Hensman, Fusi and Lawrence"""
-    
+
     if not data_available(data_set):
         download_data(data_set)
 
@@ -1325,7 +1325,7 @@ def cmu_mocap_35_walk_jog(data_set='cmu_mocap'):
     return data
 
 
-    
+
 def cmu_mocap(subject, train_motions, test_motions=[], sample_every=4, data_set='cmu_mocap'):
     """Load a given subject's training and test motions from the CMU motion capture data."""
     # Load in subject skeleton.
@@ -1405,5 +1405,146 @@ def cmu_mocap(subject, train_motions, test_motions=[], sample_every=4, data_set=
         info += ' Data is sub-sampled to every ' + str(sample_every) + ' frames.'
     return data_details_return({'Y': Y, 'lbls' : lbls, 'Ytest': Ytest, 'lblstest' : lblstest, 'info': info, 'skel': skel}, data_set)
 
+def politics_twitter(data_set='politics_twitter'):
+    # Bailout before downloading!
+    import tweepy
+    import pandas as pd
+    import time
+    import progressbar as pb
+    import sys
 
-data_load_files = [airline_delay, boston_housing, boxjenkins_airline, brendan_faces, della_gatta_TRP63_gene_expression, epomeo_gpx, football_data, sod1_mouse, spellman_yeast, spellman_yeast_cdc15, lee_yeast_ChIP, fruitfly_tomancak, drosophila_protein, drosophila_knirps, google_trends, hapmap3, oil, leukemia, oil_100, pumadyn, robot_wireless, silhouette, decampos_digits, ripley_synth, mauna_loa, osu_run1, swiss_roll_generated, singlecell, swiss_roll, swiss_roll_1000, isomap_faces, simulation_BGPLVM, toy_rbf_1d, toy_rbf_1d_50, toy_linear_1d_classification, olivetti_glasses, olivetti_faces, xw_pen, download_rogers_girolami_data, olympic_100m_men, olympic_100m_women, olympic_200m_men, olympic_200m_women, olympic_400m_men, olympic_400m_women, olympic_marathon_men, olympic_sprints, movie_collaborative_filter, movie_body_count, movie_body_count_r_classify, movielens100k, crescent_data, creep_data, ceres, cifar10_patches,cmu_mocap_49_balance, cmu_mocap_35_walk_jog, cmu_mocap]
+    if not data_available(data_set):
+        download_data(data_set)
+
+    # FIXME: Try catch here
+    CONSUMER_KEY = config.get('twitter', 'CONSUMER_KEY')
+    CONSUMER_SECRET = config.get('twitter', 'CONSUMER_SECRET')
+
+    OAUTH_TOKEN = config.get('twitter', 'OAUTH_TOKEN')
+    OAUTH_TOKEN_SECRET = config.get('twitter', 'OAUTH_TOKEN_SECRET')
+
+    # Authenticate
+    auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
+    auth.set_access_token(OAUTH_TOKEN, OAUTH_TOKEN_SECRET)
+
+    # Make tweepy api object, and be carefuly not to abuse the API!
+    api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
+
+    requests_per_minute = int(180.0/15.0)
+    save_freq = 5
+
+    data_dict = {}
+    for party in ['ukip', 'labour', 'conservative', 'greens']:
+        # Load in the twitter data we want to join
+
+        parsed_file_path = os.path.join(data_path, data_set, '{}_twitter_parsed.csv'.format(party))
+        file_already_parsed = False
+        if os.path.isfile(parsed_file_path):
+            print("Data already scraped, loading saved scraped data for {} party".format(party))
+            # Read the data
+            data = pd.read_csv(parsed_file_path)
+            # Check it has been fully parsed (no NATs in time)
+            if data['time'].isnull().sum() == 0:
+                file_already_parsed = True
+
+        if not file_already_parsed:
+            print("Scraping tweet data from ids for the {} party data".format(party))
+            sys.stdout.write("Scraping tweet data from ids for the {} party data".format(party))
+
+            raw_file_path = os.path.join(data_path, data_set, '{}_raw_ids.csv'.format(party))
+            # data = pd.read_csv('./data_download/{}_raw_ids.csv'.format(party))
+            data = pd.read_csv(raw_file_path)
+
+            #Iterate in blocks
+            full_block_size = 100
+            num_blocks = data.shape[0]/full_block_size + 1
+            last_block_size = data.shape[0]%full_block_size
+
+            # Progress bar to give some indication of how long we now need to wait!
+            pbar = pb.ProgressBar(widgets=[
+                    ' [', pb.Timer(), '] ',
+                    pb.Bar(),
+                    ' (', pb.ETA(), ') ',], fd=sys.stdout)
+
+            for block_num in pbar(range(num_blocks)):
+                sys.stdout.flush()
+                # Get a single block of tweets
+                start_ind = block_num*full_block_size
+                if block_num == num_blocks - 1:
+                    # end_ind = start_ind + last_block_size
+                    tweet_block = data.iloc[start_ind:]
+                else:
+                    end_ind = start_ind + full_block_size
+                    tweet_block = data.iloc[start_ind:end_ind]
+
+                # Gather ther actual data, fill out the missing time
+                tweet_block_ids = tweet_block['id_str'].tolist()
+                sucess = False
+                while not sucess:
+                    try:
+                        tweet_block_results = api.statuses_lookup(tweet_block_ids, trim_user=True)
+                        sucess = True
+                    except Exception:
+                        # Something went wrong with our pulling of result. Wait
+                        # for a minute and try again
+                        time.sleep(60.0)
+                for tweet in tweet_block_results:
+                    data.ix[data['id_str'] == int(tweet.id_str), 'time'] = tweet.created_at
+
+                # Wait so as to stay below the rate limit
+                # Stay on the safe side, presume that collection is instantanious
+                time.sleep(60.0/requests_per_minute + 0.1)
+
+                if block_num % save_freq == 0:
+                    data.to_csv(parsed_file_path)
+
+            #Now convert times to pandas datetimes
+            data['time'] = pd.to_datetime(data['time'])
+            #Get rid of non-parsed dates
+            data = data.ix[data['time'].notnull(), :]
+            data.to_csv(parsed_file_path)
+
+        data_dict[party] = data
+
+    return data_details_return(data_dict, data_set)
+
+def mcycle(data_set='mcycle', seed=default_seed):
+    if not data_available(data_set):
+        download_data(data_set)
+
+    np.random.seed(seed=seed)
+    data = pd.read_csv(os.path.join(data_path, data_set, 'motor.csv'))
+    data = data.reindex(np.random.permutation(data.index)) # Randomize so test isn't at the end
+
+    X = data['times'].values[:, None]
+    Y = data['accel'].values[:, None]
+
+    return data_details_return({'X': X, 'Y' : Y}, data_set)
+
+def elevators(data_set='elevators', seed=default_seed):
+    if not data_available(data_set):
+        import tarfile
+        download_data(data_set)
+        dir_path = os.path.join(data_path, data_set)
+        # tar = tarfile.TarFile(name=os.path.join(dir_path, 'elevators.tgz'), mode='r')
+        with open(os.path.join(dir_path, 'elevators.tgz'), 'r') as f:
+            tar = tarfile.open(mode='r', fileobj=f)
+            tar.extractall(dir_path)
+    elevator_path = os.path.join(data_path, 'elevators', 'Elevators')
+    elevator_train_path = os.path.join(elevator_path, 'elevators.data')
+    elevator_test_path = os.path.join(elevator_path, 'elevators.test')
+    train_data = pd.read_csv(elevator_train_path, header=None)
+    test_data = pd.read_csv(elevator_test_path, header=None)
+    data = pd.concat([train_data, test_data])
+
+    np.random.seed(seed=seed)
+    # Want to choose test and training data sizes, so just concatenate them together and mix them up
+    data = data.reset_index()
+    data = data.reindex(np.random.permutation(data.index)) # Randomize so test isn't at the end
+
+    X = data.iloc[:, :-1].values
+    Y = data.iloc[:, -1].values[:, None]
+
+    return data_details_return({'X': X, 'Y' : Y}, data_set)
+
+data_load_files = [airline_delay, boston_housing, boxjenkins_airline, brendan_faces, della_gatta_TRP63_gene_expression, epomeo_gpx, football_data, sod1_mouse, spellman_yeast, spellman_yeast_cdc15, lee_yeast_ChIP, fruitfly_tomancak, drosophila_protein, drosophila_knirps, google_trends, hapmap3, oil, leukemia, oil_100, pumadyn, robot_wireless, silhouette, decampos_digits, ripley_synth, mauna_loa, osu_run1, swiss_roll_generated, singlecell, swiss_roll, swiss_roll_1000, isomap_faces, simulation_BGPLVM, toy_rbf_1d, toy_rbf_1d_50, toy_linear_1d_classification, olivetti_glasses, olivetti_faces, xw_pen, download_rogers_girolami_data, olympic_100m_men, olympic_100m_women, olympic_200m_men, olympic_200m_women, olympic_400m_men, olympic_400m_women, olympic_marathon_men, olympic_sprints, movie_collaborative_filter, movie_body_count, movie_body_count_r_classify, movielens100k, crescent_data, creep_data, ceres, cifar10_patches,cmu_mocap_49_balance, cmu_mocap_35_walk_jog, cmu_mocap, politics_twitter, elevators, mcycle]
