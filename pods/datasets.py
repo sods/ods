@@ -1411,6 +1411,7 @@ def politics_twitter(data_set='politics_twitter'):
     import pandas as pd
     import time
     import progressbar as pb
+    import sys
 
     if not data_available(data_set):
         download_data(data_set)
@@ -1448,6 +1449,8 @@ def politics_twitter(data_set='politics_twitter'):
 
         if not file_already_parsed:
             print("Scraping tweet data from ids for the {} party data".format(party))
+            sys.stdout.write("Scraping tweet data from ids for the {} party data".format(party))
+
             raw_file_path = os.path.join(data_path, data_set, '{}_raw_ids.csv'.format(party))
             # data = pd.read_csv('./data_download/{}_raw_ids.csv'.format(party))
             data = pd.read_csv(raw_file_path)
@@ -1461,9 +1464,10 @@ def politics_twitter(data_set='politics_twitter'):
             pbar = pb.ProgressBar(widgets=[
                     ' [', pb.Timer(), '] ',
                     pb.Bar(),
-                    ' (', pb.ETA(), ') ',])
+                    ' (', pb.ETA(), ') ',], fd=sys.stdout)
 
             for block_num in pbar(range(num_blocks)):
+                sys.stdout.flush()
                 # Get a single block of tweets
                 start_ind = block_num*full_block_size
                 if block_num == num_blocks - 1:
@@ -1475,7 +1479,15 @@ def politics_twitter(data_set='politics_twitter'):
 
                 # Gather ther actual data, fill out the missing time
                 tweet_block_ids = tweet_block['id_str'].tolist()
-                tweet_block_results = api.statuses_lookup(tweet_block_ids, trim_user=True)
+                sucess = False
+                while not sucess:
+                    try:
+                        tweet_block_results = api.statuses_lookup(tweet_block_ids, trim_user=True)
+                        sucess = True
+                    except Exception:
+                        # Something went wrong with our pulling of result. Wait
+                        # for a minute and try again
+                        time.sleep(60.0)
                 for tweet in tweet_block_results:
                     data.ix[data['id_str'] == int(tweet.id_str), 'time'] = tweet.created_at
 
