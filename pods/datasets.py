@@ -873,13 +873,13 @@ def swiss_roll_generated(num_samples=1000, sigma=0.0):
     return {'Y':Y, 't':t, 'colors':c}
 
 
-def singlecell(data_set='singlecell'):
+def singlecell(data_set='guo_qpcr'):
     if not data_available(data_set):
         download_data(data_set)
 
     from pandas import read_csv
     dir_path = os.path.join(data_path, data_set)
-    filename = os.path.join(dir_path, 'singlecell.csv')
+    filename = os.path.join(dir_path, 'guo_qpcr.csv')
     Y = read_csv(filename, header=0, index_col=0)
     genes = Y.columns
     labels = Y.index
