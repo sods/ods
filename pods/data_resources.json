@@ -577,7 +577,7 @@
         "license": "ScienceDirect: http://www.elsevier.com/locate/termsandconditions?utm_source=sciencedirect&utm_medium=link&utm_campaign=terms",
         "size": 233.1,
         "urls": [
-            "https://github.com/sods/ods/tree/master/datasets"
+            "https://raw.githubusercontent.com/sods/ods/master/datasets/"
         ]
     },
     "sod1_mouse": {
