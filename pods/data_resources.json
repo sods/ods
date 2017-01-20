@@ -1,4 +1,18 @@
 {
+    "airline_delay": {
+        "citation": "Gaussian Processes for Big Data (In UAI'13). J. Hensman, N. Fusi and N. D. Lawrence",
+        "details": "Flight arrival and departure times for every commercial flight in the USA from January 2008 to April 2008. This dataset contains extensive information about almost 2 million flights, including the delay (in minutes) in reaching the desitnation.",
+        "files": [
+            [
+                "filtered_data.pickle"
+            ]
+        ],
+        "license": null,
+        "size": 180905165,
+        "urls": [
+            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/airline_delay/"
+        ]
+    },
     "ankur_pose_data": {
         "citation": "3D Human Pose from Silhouettes by Relevance Vector Regression (In CVPR'04). A. Agarwal and B. Triggs.",
         "details": "Artificially generated data of silhouettes given poses. Note that the data does not display a left/right ambiguity because across the entire data set one of the arms sticks out more the the other, disambiguating the pose as to which way the individual is facing.",
@@ -8,7 +22,7 @@
             ]
         ],
         "license": null,
-        "size": 1,
+        "size": 2802667,
         "urls": [
             "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/ankur_pose_data/"
         ]
@@ -552,18 +566,18 @@
             "https://www.dropbox.com/sh/7p6tu1t29idgliq/_XqlH_3nt9/"
         ]
     },
-    "singlecell": {
+    "guo_qpcr": {
         "citation": "Guoji Guo, Mikael Huss, Guo Qing Tong, Chaoyang Wang, Li Li Sun, Neil D. Clarke, Paul Robson, Resolution of Cell Fate Decisions Revealed by Single-Cell Gene Expression Analysis from Zygote to Blastocyst, Developmental Cell, Volume 18, Issue 4, 20 April 2010, Pages 675-685, ISSN 1534-5807, http://dx.doi.org/10.1016/j.devcel.2010.02.012. (http://www.sciencedirect.com/science/article/pii/S1534580710001103) Keywords: DEVBIO",
-        "details": "qPCR TaqMan array single cell experiment in mouse. The data is taken from the early stages of development when the Blastocyst is forming. At the 32 cell stage the data is already separated into the trophectoderm (TE) which goes onto form the placenta and the inner cellular mass (ICM). The ICM further differentiates into the epiblast (EPI)---which gives rise to the endoderm, mesoderm and ectoderm---and the primitive endoderm (PE) which develops into the amniotic sack. Guo et al selected 48 genes for expression measurement. They labelled the resulting cells and their labels are included as an aide to visualization.",
+        "details": "qPCR TaqMan array single cell experiment in mouse. The data is taken from the early stages of development when the Blastocyst is forming. At the 32 cell stage the data is already separated into the trophectoderm (TE) which goes onto form the placenta and the inner cellular mass (ICM). The ICM further differentiates into the epiblast (EPI)---which gives rise to the endoderm, mesoderm and ectoderm---and the primitive endoderm (PE) which develops into the amniotic sack. Guo et al selected 48 genes for expression measurement. They labelled the resulting cells and their labels are included as an aide to visualization. Normalization was done as described in the publication's methods section.",
         "files": [
             [
-                "singlecell.csv"
+                "guo_qpcr.csv"
             ]
         ],
         "license": "ScienceDirect: http://www.elsevier.com/locate/termsandconditions?utm_source=sciencedirect&utm_medium=link&utm_campaign=terms",
         "size": 233.1,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/singlecell/"
+            "https://raw.githubusercontent.com/sods/ods/master/datasets/"
         ]
     },
     "sod1_mouse": {
@@ -640,6 +654,51 @@
         "size": 51276,
         "urls": [
             "http://www.math.ntnu.no/%7Ehrue/r-inla.org/examples/leukemia/"
+        ]
+    },
+    "mcycle": {
+        "citation": "Some Aspects of the Spline Smoothing Approach to Non-Parametric Regression Curve Fitting Journal of the Royal Statistical Society. Series B (Methodological), Vol. 47, No. 1. (1985), pp. 1-52, doi:10.2307/2345542 by B. W. Silverman",
+        "details": "Data from a Simulated Motorcycle Accident, http://www-personal.umich.edu/~jizhu/jizhu/wuke/Silverman-JRSSB85.pdf",
+        "files": [
+            [
+                "motor.csv"
+            ]
+        ],
+        "license": null,
+        "size": 1984,
+        "urls": [
+            "http://vincentarelbundock.github.io/Rdatasets/csv/boot"
+        ]
+    },
+    "elevators": {
+        "citation": "",
+        "details": "Experiments of Rui Camacho, obtained from the task of controlling a F16 aircraft, although the target variable and attributes are different from the ailerons domain. In this case the goal variable is related to an action taken on the elevators of the aircraft",
+        "files": [
+            [
+                "elevators.tgz"
+            ]
+        ],
+        "license": null,
+        "size": 327496,
+        "urls": [
+            "http://www.dcc.fc.up.pt/~ltorgo/Regression/"
+        ]
+    },
+    "politics_twitter": {
+        "citation": "Saul, A., Hensman, J., Vehtai, A., & Lawrence, N. D. (2016).  Chained Gaussian processes. Proceedings Of the Nineteenth International Conference on Artificial Intelligence and Statistics",
+        "details": "The data holds a large number of tweet id numbers for tweets posted during the run up to the UK general election 2015, and derived sentiment.",
+        "files": [
+            [
+                "labour_raw_ids.csv",
+                "conservative_raw_ids.csv",
+                "greens_raw_ids.csv",
+                "ukip_raw_ids.csv"
+            ]
+        ],
+        "license": null,
+        "size": 7518372,
+        "urls": [
+            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/twitter_data/"
         ]
     }
 }

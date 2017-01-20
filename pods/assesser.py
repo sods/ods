@@ -1,7 +1,8 @@
+from __future__ import absolute_import
 import pandas as pd
 import numpy as np
 import json
-from config import config
+from .config import config
 import os
 
 check_mark = '<span style="color:red;">**&#10004;**</span>'
