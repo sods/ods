@@ -16,7 +16,6 @@ import re
 
 from .util import download_url
 from .config import *
-from io import open
 from functools import reduce
 
 ipython_available=True
