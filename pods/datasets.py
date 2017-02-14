@@ -875,7 +875,7 @@ def swiss_roll_generated(num_samples=1000, sigma=0.0):
     return {'Y':Y, 't':t, 'colors':c}
 
 
-def singlecell(data_set='guo_qpcr'):
+def singlecell(data_set='guo_qpcr_2010'):
     if not data_available(data_set):
         download_data(data_set)
 

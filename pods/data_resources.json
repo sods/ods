@@ -566,9 +566,10 @@
             "https://www.dropbox.com/sh/7p6tu1t29idgliq/_XqlH_3nt9/"
         ]
     },
-    "guo_qpcr": {
+    "guo_qpcr_2010": {
         "citation": "Guoji Guo, Mikael Huss, Guo Qing Tong, Chaoyang Wang, Li Li Sun, Neil D. Clarke, Paul Robson, Resolution of Cell Fate Decisions Revealed by Single-Cell Gene Expression Analysis from Zygote to Blastocyst, Developmental Cell, Volume 18, Issue 4, 20 April 2010, Pages 675-685, ISSN 1534-5807, http://dx.doi.org/10.1016/j.devcel.2010.02.012. (http://www.sciencedirect.com/science/article/pii/S1534580710001103) Keywords: DEVBIO",
         "details": "qPCR TaqMan array single cell experiment in mouse. The data is taken from the early stages of development when the Blastocyst is forming. At the 32 cell stage the data is already separated into the trophectoderm (TE) which goes onto form the placenta and the inner cellular mass (ICM). The ICM further differentiates into the epiblast (EPI)---which gives rise to the endoderm, mesoderm and ectoderm---and the primitive endoderm (PE) which develops into the amniotic sack. Guo et al selected 48 genes for expression measurement. They labelled the resulting cells and their labels are included as an aide to visualization. Normalization was done as described in the publication's methods section.",
+        "normalization": "\"All Ct values (Tables S4 and S5) obtained from the BioMark System were con- verted into relative expression levels by subtracting the values from the assumed baseline value of 28. Cells with low or absent endogenous control gene expression levels were removed from analysis ( 10%). The resulting values were at times normalized to the endogenous control by subtracting, for each cell, the average of its Actb and Gapdh expression levels. As the Ct scale is logarithmic (a difference of one Ct corresponds to a doubling of measured transcript), a subtraction of the average of two genes on this scale corresponds to taking the geometric mean on a linear scale. Data shown in Figures 1A–1C, 2A, 3A, 3B, 4A, 5A, and 5D have been normalized against endogenous controls\". We additionally standardize the data gene-by-gene N(0, 1) for each gene across cells.",
         "files": [
             [
                 "guo_qpcr.csv"
