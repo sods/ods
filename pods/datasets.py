@@ -344,6 +344,7 @@ def pmlr(volumes='all', data_set='pmlr'):
             Y+=yaml.load(volume_file)
     if pandas_available:
         Y = pd.DataFrame(Y)
+        Y['published'] = pd.to_datetime(Y['published'])
     return data_details_return({'Y' : Y, 'info' : 'Data is a pandas data frame containing each paper, its abstract, authors, volumes and venue.'}, data_set)
    
         
