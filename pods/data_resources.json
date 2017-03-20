@@ -494,6 +494,20 @@
             "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/stick/"
         ]
     },
+    "pmlr": {
+        "citation": "Proceedings of Machine Learning Research hosted at http://proceedings.mlr.press",
+        "details": "Abstracts from the volumes of the Proceedings of Machine Learning research along with author information and PDF links. When using this data please credit the Proceedings of Machine Learning Research.",
+        "files": [
+            [
+                "proceedings.yaml"
+            ]
+        ],
+        "license": null,
+        "size": 9393,
+        "urls": [
+            "http://proceedings.mlr.press/"
+        ]
+    },
     "pumadyn-32nm": {
         "citation": "Created by Zoubin Ghahramani using the Matlab Robotics Toolbox of Peter Corke. Corke, P. I. (1996). A Robotics Toolbox for MATLAB. IEEE Robotics and Automation Magazine, 3 (1): 24-32.",
         "details": "Pumadyn non linear 32 input data set with moderate noise. See http://www.cs.utoronto.ca/~delve/data/pumadyn/desc.html for details.",

@@ -12,6 +12,7 @@ import pylab as pb
 import scipy.io
 import datetime
 import json
+import yaml
 import re
 
 from .util import download_url
@@ -96,10 +97,17 @@ def prompt_user(prompt):
 
 def data_available(dataset_name=None):
     """Check if the data set is available on the local machine already."""
-    for file_list in data_resources[dataset_name]['files']:
-        for file in file_list:
-            if not os.path.exists(os.path.join(data_path, dataset_name, file)):
-                return False
+    dr = data_resources[dataset_name]
+    if 'dirs' in dr:
+        for dirs, files in zip(dr['dirs'], dr['files']):
+            for dir, file in zip(dirs, files):
+                if not os.path.exists(os.path.join(data_path, dataset_name, dir, file)):
+                    return False
+    else:
+        for file_list in dr['files']:
+            for file in file_list:
+                if not os.path.exists(os.path.join(data_path, dataset_name, file)):
+                    return False
     return True
 
 
@@ -136,11 +144,11 @@ def authorize_download(dataset_name=None):
 
 def download_data(dataset_name=None):
     """Check with the user that the are happy with terms and conditions for the data set, then download it."""
-
+        
     dr = data_resources[dataset_name]
     if not authorize_download(dataset_name):
         raise Exception("Permission to download data set denied.")
-
+    
     if 'suffices' in dr:
         for url, files, suffices in zip(dr['urls'], dr['files'], dr['suffices']):
             for file, suffix in zip(files, suffices):
@@ -148,12 +156,23 @@ def download_data(dataset_name=None):
                              dir_name = data_path,
                              store_directory=dataset_name,
                              suffix=suffix)
+    elif 'dirs' in dr:
+        for url, dirs, files in zip(dr['urls'], dr['dirs'], dr['files']):
+            for file, dir in zip(files, dirs):
+                print(file, dir)
+                download_url(
+                    url=os.path.join(url,dir,file),
+                    dir_name = data_path,
+                    store_directory=os.path.join(dataset_name,dir)
+                    )
     else:
         for url, files in zip(dr['urls'], dr['files']):
             for file in files:
-                download_url(url=os.path.join(url,file),
-                             dir_name = data_path,
-                             store_directory=dataset_name)
+                download_url(
+                    url=os.path.join(url,file),
+                    dir_name = data_path,
+                    store_directory=dataset_name
+                    )
     return True
 
 def data_details_return(data, data_set):
@@ -288,7 +307,47 @@ def epomeo_gpx(data_set='epomeo_gpx', sample_every=4):
             X.set_index(index='seconds', inplace=True)
     return data_details_return({'X' : X, 'info' : 'Data is an array containing time in seconds, latitude, longitude and elevation in that order.'}, data_set)
 
-
+def pmlr(volumes='all', data_set='pmlr'):
+    """Abstracts from the Proceedings of Machine Learning Research"""
+    if not data_available(data_set):
+        download_data(data_set)
+        
+    proceedings_file = open(os.path.join(data_path, data_set, 'proceedings.yaml'), 'r')
+    import yaml
+    proceedings = yaml.load(proceedings_file)
+    
+    # Create a new resources entry for downloading contents of proceedings.
+    data_name_full = 'pmlr_volumes'
+    data_resources[data_name_full] = data_resources[data_set].copy()
+    data_resources[data_name_full]['files'] = []
+    data_resources[data_name_full]['dirs'] = []
+    data_resources[data_name_full]['urls'] = []
+    for entry in proceedings:
+        if volumes=='all' or entry['volume'] in volumes:
+            file = entry['yaml'].split('/')[-1]
+            dir = 'v' + str(entry['volume'])
+            data_resources[data_name_full]['files'].append([file])
+            data_resources[data_name_full]['dirs'].append([dir])
+            data_resources[data_name_full]['urls'].append(data_resources[data_set]['urls'][0])
+    Y = []
+    # Download the volume data
+    if not data_available(data_name_full):
+        download_data(data_name_full)
+    for entry in reversed(proceedings):
+        volume =  entry['volume']
+        if volumes == 'all' or volume in volumes:
+            file = entry['yaml'].split('/')[-1]
+            volume_file = open(os.path.join(
+                data_path, data_name_full,
+                'v'+str(volume), file
+                ), 'r')
+            Y+=yaml.load(volume_file)
+    if pandas_available:
+        Y = pd.DataFrame(Y)
+        Y['published'] = pd.to_datetime(Y['published'])
+    return data_details_return({'Y' : Y, 'info' : 'Data is a pandas data frame containing each paper, its abstract, authors, volumes and venue.'}, data_set)
+   
+        
 def football_data(season='1314', data_set='football_data'):
     """Football data from English games since 1993. This downloads data from football-data.co.uk for the given season. """
     def league2num(string):
