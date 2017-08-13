@@ -621,7 +621,7 @@
         "license": null,
         "size": 800256,
         "urls": [
-            "http://isomap.stanford.edu/"
+            "https://github.com/SheffieldML/GPmat/raw/master/datasets/data/"
         ]
     },
     "three_phase_oil_flow": {

@@ -62,8 +62,22 @@ if not (on_rtd):
     football_dict = json.loads(json_data)
 
 
+permute_data = True
 
 # Some general utilities.
+def permute(num):
+    "Permutation for randomizing data order."
+    if permute_data:
+        return np.random.permutation(num)
+    else:
+        print("Warning not permuting data")
+        return np.arange(num)
+
+def categorical(cats, name='categorical'):
+    """Return a class category that shows the encoding"""
+    import json
+    return 'categorical(' + json.dumps([cats, name]) + ')'
+
 def prompt_user(prompt):
     """Ask user for agreeing to data set licenses."""
     # raw_input returns the empty string for "enter"
@@ -302,9 +316,9 @@ def epomeo_gpx(data_set='epomeo_gpx', sample_every=4):
         data = [[(point.time-datetime.datetime(2013,8,21)).total_seconds(), point.latitude, point.longitude, point.elevation] for point in points]
         X.append(np.asarray(data)[::sample_every, :])
         gpx_file.close()
-        if pandas_available:
-            X = pd.DataFrame(X, columns=['seconds', 'latitude', 'longitude', 'elevation'])
-            X.set_index(index='seconds', inplace=True)
+    if pandas_available:
+        X = pd.DataFrame(X[0], columns=['seconds', 'latitude', 'longitude', 'elevation'])
+        X.set_index(keys='seconds', inplace=True)
     return data_details_return({'X' : X, 'info' : 'Data is an array containing time in seconds, latitude, longitude and elevation in that order.'}, data_set)
 
 def pmlr(volumes='all', data_set='pmlr'):
@@ -352,7 +366,7 @@ def football_data(season='1314', data_set='football_data'):
     """Football data from English games since 1993. This downloads data from football-data.co.uk for the given season. """
     def league2num(string):
         league_dict = {'E0':0, 'E1':1, 'E2': 2, 'E3': 3, 'EC':4}
-        return league_dict[string]
+        return league_dict[string.decode("utf-8")]
 
     def football2num(string):
         if string in football_dict:
@@ -376,8 +390,8 @@ def football_data(season='1314', data_set='football_data'):
         filename = os.path.join(data_path, data_set_season, file)
         # rewrite files removing blank rows.
         writename = os.path.join(data_path, data_set_season, 'temp.csv')
-        input = open(filename, 'rb')
-        output = open(writename, 'wb')
+        input = open(filename, 'r')
+        output = open(writename, 'w')
         writer = csv.writer(output)
         for row in csv.reader(input):
             if any(field.strip() for field in row):
@@ -399,8 +413,7 @@ def sod1_mouse(data_set='sod1_mouse'):
     num_repeats=4
     num_time=4
     num_cond=4
-    X = 1
-    return data_details_return({'X': X, 'Y': Y}, data_set)
+    return data_details_return({'Y': Y}, data_set)
 
 def spellman_yeast(data_set='spellman_yeast'):
     """This is the classic Spellman et al 1998 Yeast Cell Cycle gene expression data that is widely used as a benchmark."""
@@ -486,7 +499,7 @@ def drosophila_knirps(data_set='drosophila_protein'):
     S = np.vstack([x,x])
     inx = np.zeros(leng*2)[:,None]
 
-    inx[leng*2/2:leng*2]=1
+    inx[leng*2//2:leng*2]=1
     X = np.hstack([T,S,inx])
     Y = np.vstack([g,p])
     return data_details_return({'Y': Y, 'X': X}, data_set)
@@ -555,8 +568,10 @@ def google_trends(query_terms=['big data', 'machine learning', 'data science'], 
     X = np.asarray([(row, i) for i in range(terms) for row in df.index])
     Y = np.asarray([[df.ix[row][query_terms[i]]] for i in range(terms) for row in df.index ])
     output_info = columns[1:]
-
-    return data_details_return({'data frame' : df, 'X': X, 'Y': Y, 'query_terms': output_info, 'info': "Data downloaded from google trends with query terms: " + ', '.join(output_info) + '.'}, data_set)
+    cats = {}
+    for i in range(terms):
+        cats[query_terms[i]] = i
+    return data_details_return({'data frame' : df, 'X': X, 'Y': Y, 'query_terms': query_terms, 'info': "Data downloaded from google trends with query terms: " + ', '.join(query_terms) + '.', 'covariates' : ['Date', categorical(cats, 'query_terms')], 'response' : ['normalized interest']}, data_set)
 
 def hapmap3(data_set='hapmap3'):
     """
@@ -757,7 +772,7 @@ def leukemia(data_set='leukemia'):
 def oil_100(seed=default_seed, data_set = 'three_phase_oil_flow'):
     np.random.seed(seed=seed)
     data = oil()
-    indices = np.random.permutation(1000)
+    indices = permute(1000)
     indices = indices[0:100]
     X = data['X'][indices, :]
     Y = data['Y'][indices, :]
@@ -775,7 +790,7 @@ def pumadyn(seed=default_seed, data_set='pumadyn-32nm'):
         tar.close()
     # Data is variance 1, no need to normalize.
     data = np.loadtxt(os.path.join(data_path, data_set, 'pumadyn-32nm', 'Dataset.data.gz'))
-    indices = np.random.permutation(data.shape[0])
+    indices = permute(data.shape[0])
     indicesTrain = indices[0:7168]
     indicesTest = indices[7168:-1]
     indicesTrain.sort(axis=0)
@@ -957,7 +972,7 @@ def swiss_roll(num_samples=3000, data_set='swiss_roll'):
         download_data(data_set)
     mat_data = scipy.io.loadmat(os.path.join(data_path, data_set, 'swiss_roll_data.mat'))
     Y = mat_data['X_data'][:, 0:num_samples].transpose()
-    return data_details_return({'Y': Y, 'X': mat_data['X_data'], 'info': "The first " + str(num_samples) + " points from the swiss roll data of Tennenbaum, de Silva and Langford (2001)."}, data_set)
+    return data_details_return({'Y': Y, 'Full': mat_data['X_data'], 'info': "The first " + str(num_samples) + " points from the swiss roll data of Tennenbaum, de Silva and Langford (2001)."}, data_set)
 
 def isomap_faces(num_samples=698, data_set='isomap_face_data'):
     if not data_available(data_set):
@@ -966,7 +981,7 @@ def isomap_faces(num_samples=698, data_set='isomap_face_data'):
     Y = mat_data['images'][:, 0:num_samples].transpose()
     return data_details_return({'Y': Y, 'poses' : mat_data['poses'], 'lights': mat_data['lights'], 'info': "The first " + str(num_samples) + " points from the face data of Tennenbaum, de Silva and Langford (2001)."}, data_set)
 
-def simulation_BGPLVM():
+def simulation_BGPLVM(data_set='bgplvm_simulation'):
     mat_data = scipy.io.loadmat(os.path.join(data_path, 'BGPLVMSimulation.mat'))
     Y = np.array(mat_data['Y'], dtype=float)
     S = np.array(mat_data['initS'], dtype=float)
@@ -1001,7 +1016,7 @@ def toy_rbf_1d(seed=default_seed, num_samples=500):
 def toy_rbf_1d_50(seed=default_seed):
     np.random.seed(seed=seed)
     data = toy_rbf_1d()
-    indices = np.random.permutation(data['X'].shape[0])
+    indices = permute(data['X'].shape[0])
     indices = indices[0:50]
     indices.sort(axis=0)
     X = data['X'][indices, :]
@@ -1050,11 +1065,13 @@ def airline_delay(data_set='airline_delay', num_train=700000, num_test=100000, s
 
     # Get testing points
     np.random.seed(seed=seed)
-    N_shuffled = np.random.permutation(Yall.shape[0])
+    N_shuffled = permute(Yall.shape[0])
     train, test = N_shuffled[num_test:], N_shuffled[:num_test]
     X, Y = Xall[train], Yall[train]
     Xtest, Ytest = Xall[test], Yall[test]
-    return data_details_return({'X': X, 'Y': Y, 'Xtest': Xtest, 'Ytest': Ytest, 'seed' : seed, 'info': "Airline delay data used for demonstrating Gaussian processes for big data."}, data_set)
+    covariates =  ['month', 'day of month', 'day of week', 'departure time', 'arrival time', 'air time', 'distance to travel', 'age of aircraft / years']
+    response = ['delay']
+    return data_details_return({'X': X, 'Y': Y, 'Xtest': Xtest, 'Ytest': Ytest, 'seed' : seed, 'info': "Airline delay data used for demonstrating Gaussian processes for big data.", 'covariates': covariates, 'response': response}, data_set)
 
 def olivetti_glasses(data_set='olivetti_glasses', num_training=200, seed=default_seed):
     path = os.path.join(data_path, data_set)
@@ -1064,7 +1081,7 @@ def olivetti_glasses(data_set='olivetti_glasses', num_training=200, seed=default
     y = np.where(y=='y',1,0).reshape(-1,1)
     faces = scipy.io.loadmat(os.path.join(path, 'olivettifaces.mat'))['faces'].T
     np.random.seed(seed=seed)
-    index = np.random.permutation(faces.shape[0])
+    index = permute(faces.shape[0])
     X = faces[index[:num_training],:]
     Xtest = faces[index[num_training:],:]
     Y = y[index[:num_training],:]
@@ -1309,7 +1326,8 @@ Data set formed from a mixture of four Gaussians. In each class two of the Gauss
     X = np.vstack((Xparts[0], Xparts[1], Xparts[2], Xparts[3]))
 
     Y = np.vstack((np.ones((num_data_part[0] + num_data_part[1], 1)), -np.ones((num_data_part[2] + num_data_part[3], 1))))
-    return {'X':X, 'Y':Y, 'info': "Two separate classes of data formed approximately in the shape of two crescents."}
+    cats = {'negative': -1, 'positive': 1}
+    return {'X':X, 'Y':Y, 'info': "Two separate classes of data formed approximately in the shape of two crescents.", 'response': [categorical(cats, 'class')]}
 
 def creep_data(data_set='creep_rupture'):
     """Brun and Yoshida's metal creep rupture data."""
@@ -1327,7 +1345,9 @@ def creep_data(data_set='creep_rupture'):
     features = [0]
     features.extend(list(range(2, 31)))
     X = all_data[:, features].copy()
-    return data_details_return({'X': X, 'y': y}, data_set)
+    cats = {'furnace cooling': 0, 'air cooling': 1, 'oil cooling': 2, 'water quench': 3}
+    attributes = ['Lifetime / hours', 'Temperature / Kelvin', 'Carbon / wt%', 'Silicon / wt%', 'Manganese / wt%', 'Phosphorus / wt%', 'Sulphur / wt%', 'Chromium / wt%', 'Molybdenum / wt%', 'Tungsten / wt%', 'Nickel / wt%', 'Copper / wt%', 'Vanadium / wt%', 'Niobium / wt%', 'Nitrogen / wt%', 'Aluminium / wt%', 'Boron / wt%', 'Cobalt / wt%', 'Tantalum / wt%', 'Oxygen / wt%', 'Normalising temperature / Kelvin', 'Normalising time / hours', categorical(cats, 'Cooling rate of normalisation'), 'Tempering temperature / Kelvin', 'Tempering time / hours', categorical(cats, 'Cooling rate of tempering'), 'Annealing temperature / Kelvin', 'Annealing time / hours', categorical(cats, 'Cooling rate of annealing'), 'Rhenium / wt%']
+    return data_details_return({'X': X, 'Y': y, 'covariates' : attributes, 'response': ['Rupture stress / MPa']}, data_set)
 
 def ceres(data_set='ceres'):
     """Twenty two observations of the Dwarf planet Ceres as observed by Giueseppe Piazzi and published in the September edition of Monatlicher Correspondenz in 1801. These were the measurements used by Gauss to fit a model of the planets orbit through which the planet was recovered three months later."""
@@ -1575,12 +1595,12 @@ def mcycle(data_set='mcycle', seed=default_seed):
 
     np.random.seed(seed=seed)
     data = pd.read_csv(os.path.join(data_path, data_set, 'motor.csv'))
-    data = data.reindex(np.random.permutation(data.index)) # Randomize so test isn't at the end
+    data = data.reindex(permute(data.shape[0])) # Randomize so test isn't at the end
 
     X = data['times'].values[:, None]
     Y = data['accel'].values[:, None]
 
-    return data_details_return({'X': X, 'Y' : Y}, data_set)
+    return data_details_return({'X': X, 'Y' : Y, 'covariates' : ['times'], 'response' : ['acceleration']}, data_set)
 
 def elevators(data_set='elevators', seed=default_seed):
     if not data_available(data_set):
@@ -1601,7 +1621,7 @@ def elevators(data_set='elevators', seed=default_seed):
     np.random.seed(seed=seed)
     # Want to choose test and training data sizes, so just concatenate them together and mix them up
     data = data.reset_index()
-    data = data.reindex(np.random.permutation(data.index)) # Randomize so test isn't at the end
+    data = data.reindex(permute(data.index)) # Randomize so test isn't at the end
 
     X = data.iloc[:, :-1].values
     Y = data.iloc[:, -1].values[:, None]
