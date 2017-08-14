@@ -59,7 +59,7 @@ if not (on_rtd):
     path = os.path.join(os.path.dirname(__file__), 'football_teams.json')
     from io import open as iopen
     json_data=iopen(path,encoding='utf-8').read()
-    football_dict = json.loads(json_data)
+    football_dict = json.loads(json_data, encoding='utf-8')
 
 
 permute_data = True
@@ -73,10 +73,30 @@ def permute(num):
         print("Warning not permuting data")
         return np.arange(num)
 
+def integer(name):
+    """Return a class category that forces integer"""
+    return 'integer(' + name + ')'
+    
 def categorical(cats, name='categorical'):
     """Return a class category that shows the encoding"""
     import json
+    ks = list(cats)
+    for key in ks:
+        if isinstance(key, bytes):
+            cats[key.decode('utf-8')] = cats.pop(key)
     return 'categorical(' + json.dumps([cats, name]) + ')'
+
+def datenum(name='date', format='%Y-%m-%d'):
+    """Return a date category with format"""
+    return 'datenum(' + name + ',' + format +')'
+
+def timestamp(name='date', format='%Y-%m-%d'):
+    """Return a date category with format"""
+    return 'timestamp(' + name + ',' + format +')'
+
+def decimalyear(name='date', format='%Y-%m-%d'):
+    """Return a date category with format"""
+    return 'decimalyear(' + name + ',' + format +')'
 
 def prompt_user(prompt):
     """Ask user for agreeing to data set licenses."""
@@ -275,7 +295,7 @@ def boxjenkins_airline(data_set='boxjenkins_airline', num_train=96):
     Xtest = data[num_train:, 0:1]
     Ytest = data[num_train:, 1:2]
 
-    return data_details_return({'X': X, 'Y': Y, 'Xtest': Xtest, 'Ytest': Ytest, 'info': "Montly airline passenger data from Box & Jenkins 1976."}, data_set)
+    return data_details_return({'X': X, 'Y': Y, 'Xtest': Xtest, 'Ytest': Ytest, 'covariates' : [decimalyear('year')], 'response' : ['AirPassengers'], 'info': "Monthly airline passenger data from Box & Jenkins 1976."}, data_set)
 
 def brendan_faces(data_set='brendan_faces'):
     if not data_available(data_set):
@@ -362,19 +382,27 @@ def pmlr(volumes='all', data_set='pmlr'):
     return data_details_return({'Y' : Y, 'info' : 'Data is a pandas data frame containing each paper, its abstract, authors, volumes and venue.'}, data_set)
    
         
-def football_data(season='1314', data_set='football_data'):
+def football_data(season='1617', data_set='football_data'):
     """Football data from English games since 1993. This downloads data from football-data.co.uk for the given season. """
+    league_dict = {'E0':0, 'E1':1, 'E2': 2, 'E3': 3, 'EC':4}
     def league2num(string):
-        league_dict = {'E0':0, 'E1':1, 'E2': 2, 'E3': 3, 'EC':4}
-        return league_dict[string.decode("utf-8")]
+        if isinstance(string, bytes):
+            string = string.decode('utf-8')
+        return league_dict[string]
 
     def football2num(string):
+        if isinstance(string, bytes):
+            string = string.decode('utf-8')
         if string in football_dict:
             return football_dict[string]
         else:
             football_dict[string] = len(football_dict)+1
             return len(football_dict)+1
 
+    def datestr2num(s):
+        import datetime
+        from matplotlib.dates import date2num
+        return date2num(datetime.datetime.strptime(s.decode('utf-8'),'%d/%m/%y'))
     data_set_season = data_set + '_' + season
     data_resources[data_set_season] = copy.deepcopy(data_resources[data_set])
     data_resources[data_set_season]['urls'][0]+=season + '/'
@@ -386,11 +414,12 @@ def football_data(season='1314', data_set='football_data'):
     data_resources[data_set_season]['files'] = [files]
     if not data_available(data_set_season):
         download_data(data_set_season)
+    start = True
     for file in reversed(files):
         filename = os.path.join(data_path, data_set_season, file)
         # rewrite files removing blank rows.
         writename = os.path.join(data_path, data_set_season, 'temp.csv')
-        input = open(filename, 'r')
+        input = open(filename, encoding='ISO-8859-1')
         output = open(writename, 'w')
         writer = csv.writer(output)
         for row in csv.reader(input):
@@ -398,10 +427,15 @@ def football_data(season='1314', data_set='football_data'):
                 writer.writerow(row)
         input.close()
         output.close()
-        table = np.loadtxt(writename,skiprows=1, usecols=(0, 1, 2, 3, 4, 5), converters = {0: league2num, 1: pb.datestr2num, 2:football2num, 3:football2num}, delimiter=',')
-        X = table[:, :4]
-        Y = table[:, 4:]
-    return data_details_return({'X': X, 'Y': Y}, data_set)
+        table = np.loadtxt(writename,skiprows=1, usecols=(0, 1, 2, 3, 4, 5), converters = {0: league2num, 1: datestr2num, 2:football2num, 3:football2num}, delimiter=',')
+        if start:
+            X = table[:, :4]
+            Y = table[:, 4:]
+            start=False
+        else:
+            X = np.append(X, table[:, :4], axis=0)
+            Y = np.append(Y, table[:, 4:], axis=0)
+    return data_details_return({'X': X, 'Y': Y, 'covariates': [categorical(league_dict, 'league'), datenum('match_day'), categorical(football_dict, 'home team'), categorical(football_dict, 'away team')], 'response': [integer('home score'), integer('away score')]}, data_set)
 
 def sod1_mouse(data_set='sod1_mouse'):
     if not data_available(data_set):
@@ -565,13 +599,14 @@ def google_trends(query_terms=['big data', 'machine learning', 'data science'], 
     columns = df.columns
     terms = len(query_terms)
     import datetime
-    X = np.asarray([(row, i) for i in range(terms) for row in df.index])
+    from matplotlib.dates import date2num
+    X = np.asarray([(date2num(datetime.datetime.strptime(df.ix[row]['Date'], '%Y-%m-%d')), i) for i in range(terms) for row in df.index])
     Y = np.asarray([[df.ix[row][query_terms[i]]] for i in range(terms) for row in df.index ])
     output_info = columns[1:]
     cats = {}
     for i in range(terms):
         cats[query_terms[i]] = i
-    return data_details_return({'data frame' : df, 'X': X, 'Y': Y, 'query_terms': query_terms, 'info': "Data downloaded from google trends with query terms: " + ', '.join(query_terms) + '.', 'covariates' : ['Date', categorical(cats, 'query_terms')], 'response' : ['normalized interest']}, data_set)
+    return data_details_return({'data frame' : df, 'X': X, 'Y': Y, 'query_terms': query_terms, 'info': "Data downloaded from google trends with query terms: " + ', '.join(query_terms) + '.', 'covariates' : [datenum('date'), categorical(cats, 'query_terms')], 'response' : ['normalized interest']}, data_set)
 
 def hapmap3(data_set='hapmap3'):
     """
@@ -807,7 +842,7 @@ def robot_wireless(data_set='robot_wireless'):
         download_data(data_set)
     file_name = os.path.join(data_path, data_set, 'uw-floor.txt')
     all_time = np.genfromtxt(file_name, usecols=(0))
-    macaddress = np.genfromtxt(file_name, usecols=(1), dtype='string')
+    macaddress = np.genfromtxt(file_name, usecols=(1), dtype=str)
     x = np.genfromtxt(file_name, usecols=(2))
     y = np.genfromtxt(file_name, usecols=(3))
     strength = np.genfromtxt(file_name, usecols=(4))
@@ -816,7 +851,7 @@ def robot_wireless(data_set='robot_wireless'):
     addresses.sort()
     times.sort()
     allY = np.zeros((len(times), len(addresses)))
-    allX = np.zeros((len(times), 2))
+    allX = np.zeros((len(times), 3))
     allY[:]=-92.
     strengths={}
     for address, j in zip(addresses, list(range(len(addresses)))):
@@ -831,8 +866,9 @@ def robot_wireless(data_set='robot_wireless'):
                 ind2 = np.nonzero(vals)
                 i = np.nonzero(time==times)
                 allY[i, j] = temp_strengths[ind2]
-                allX[i, 0] = temp_x[ind2]
-                allX[i, 1] = temp_y[ind2]
+                allX[i, 0] = time
+                allX[i, 1] = temp_x[ind2]
+                allX[i, 2] = temp_y[ind2]
     allY = (allY + 85.)/15.
 
     X = allX[0:215, :]
@@ -840,7 +876,7 @@ def robot_wireless(data_set='robot_wireless'):
 
     Xtest = allX[215:, :]
     Ytest = allY[215:, :]
-    return data_details_return({'X': X, 'Y': Y, 'Xtest': Xtest, 'Ytest': Ytest, 'addresses' : addresses, 'times' : times}, data_set)
+    return data_details_return({'X': X, 'Y': Y, 'Xtest': Xtest, 'Ytest': Ytest, 'addresses' : addresses, 'times' : times, 'covariates': [timestamp('time', '%H:%M:%S.%f'), 'X', 'Y'], 'response': addresses}, data_set)
 
 def silhouette(data_set='ankur_pose_data'):
     """Ankur Agarwal and Bill Trigg's silhoutte data."""
@@ -913,7 +949,7 @@ def mauna_loa(data_set='mauna_loa', num_train=545, refresh_data=False):
     Xtest = allX[num_train:, 0:1]
     Y = allY[:num_train, 0:1]
     Ytest = allY[num_train:, 0:1]
-    return data_details_return({'X': X, 'Y': Y, 'Xtest': Xtest, 'Ytest': Ytest, 'info': "Mauna Loa data with " + str(num_train) + " values used as training points."}, data_set)
+    return data_details_return({'X': X, 'Y': Y, 'Xtest': Xtest, 'Ytest': Ytest, 'covariates': [decimalyear('year', '%Y-%m')], 'response': ['CO2/ppm'], 'info': "Mauna Loa data with " + str(num_train) + " values used as training points."}, data_set)
 
 
 def osu_run1(data_set='osu_run1', sample_every=4):
@@ -1036,7 +1072,7 @@ def toy_linear_1d_classification(seed=default_seed):
     x1 = np.random.normal(-3, 5, 20)
     x2 = np.random.normal(3, 5, 20)
     X = (np.r_[x1, x2])[:, None]
-    return {'X': X, 'Y':  sample_class(2.*X), 'F': 2.*X, 'seed' : seed}
+    return {'X': X, 'Y':  sample_class(2.*X), 'F': 2.*X, 'covariates' : ['X'], 'response': [categorical({'positive': 1, 'negative': -1})],'seed' : seed}
 
 def airline_delay(data_set='airline_delay', num_train=700000, num_test=100000, seed=default_seed):
     """Airline delay data used in Gaussian Processes for Big Data by Hensman, Fusi and Lawrence"""
@@ -1133,7 +1169,10 @@ def olympic_100m_men(data_set='rogers_girolami_data'):
 
     X = olympic_data[:, 0][:, None]
     Y = olympic_data[:, 1][:, None]
-    return data_details_return({'X': X, 'Y': Y, 'info': "Olympic sprint times for 100 m men from 1896 until 2008. Example is from Rogers and Girolami's First Course in Machine Learning."}, data_set)
+    return data_details_return({'X': X, 'Y': Y,
+                                'covariates' : [decimalyear('year', '%Y')],
+                                'response' : ['time'],
+                                 'info': "Olympic sprint times for 100 m men from 1896 until 2008. Example is from Rogers and Girolami's First Course in Machine Learning."}, data_set)
 
 def olympic_100m_women(data_set='rogers_girolami_data'):
     download_rogers_girolami_data()
@@ -1141,7 +1180,10 @@ def olympic_100m_women(data_set='rogers_girolami_data'):
 
     X = olympic_data[:, 0][:, None]
     Y = olympic_data[:, 1][:, None]
-    return data_details_return({'X': X, 'Y': Y, 'info': "Olympic sprint times for 100 m women from 1896 until 2008. Example is from Rogers and Girolami's First Course in Machine Learning."}, data_set)
+    return data_details_return({'X': X, 'Y': Y,
+                                'covariates' : [decimalyear('year', '%Y')],
+                                'response' : ['time'],
+                                 'info': "Olympic sprint times for 100 m women from 1896 until 2008. Example is from Rogers and Girolami's First Course in Machine Learning."}, data_set)
 
 def olympic_200m_women(data_set='rogers_girolami_data'):
     download_rogers_girolami_data()
@@ -1157,7 +1199,10 @@ def olympic_200m_men(data_set='rogers_girolami_data'):
 
     X = olympic_data[:, 0][:, None]
     Y = olympic_data[:, 1][:, None]
-    return data_details_return({'X': X, 'Y': Y, 'info': "Male 200 m winning times for women from 1896 until 2008. Data is from Rogers and Girolami's First Course in Machine Learning."}, data_set)
+    return data_details_return({'X': X, 'Y': Y,
+                                'covariates' : [decimalyear('year', '%Y')],
+                                'response' : ['time'],
+                                 'info': "Male 200 m winning times for women from 1896 until 2008. Data is from Rogers and Girolami's First Course in Machine Learning."}, data_set)
 
 def olympic_400m_women(data_set='rogers_girolami_data'):
     download_rogers_girolami_data()
@@ -1165,7 +1210,10 @@ def olympic_400m_women(data_set='rogers_girolami_data'):
 
     X = olympic_data[:, 0][:, None]
     Y = olympic_data[:, 1][:, None]
-    return data_details_return({'X': X, 'Y': Y, 'info': "Olympic 400 m winning times for women until 2008. Data is from Rogers and Girolami's First Course in Machine Learning."}, data_set)
+    return data_details_return({'X': X, 'Y': Y,
+                                'covariates' : [decimalyear('year', '%Y')],
+                                'response' : ['time'],
+                                 'info': "Olympic 400 m winning times for women until 2008. Data is from Rogers and Girolami's First Course in Machine Learning."}, data_set)
 
 def olympic_400m_men(data_set='rogers_girolami_data'):
     download_rogers_girolami_data()
@@ -1173,7 +1221,10 @@ def olympic_400m_men(data_set='rogers_girolami_data'):
 
     X = olympic_data[:, 0][:, None]
     Y = olympic_data[:, 1][:, None]
-    return data_details_return({'X': X, 'Y': Y, 'info': "Male 400 m winning times for women until 2008. Data is from Rogers and Girolami's First Course in Machine Learning."}, data_set)
+    return data_details_return({'X': X, 'Y': Y,
+                                'covariates' : [decimalyear('year', '%Y')],
+                                'response' : ['time'],
+                                'info': "Male 400 m winning times for women until 2008. Data is from Rogers and Girolami's First Course in Machine Learning."}, data_set)
 
 def olympic_marathon_men(data_set='olympic_marathon_men'):
     if not data_available(data_set):
@@ -1181,12 +1232,17 @@ def olympic_marathon_men(data_set='olympic_marathon_men'):
     olympics = np.genfromtxt(os.path.join(data_path, data_set, 'olympicMarathonTimes.csv'), delimiter=',')
     X = olympics[:, 0:1]
     Y = olympics[:, 1:2]
-    return data_details_return({'X': X, 'Y': Y}, data_set)
+    return data_details_return({'X': X,
+                                'Y': Y,
+                                'covariates' : [decimalyear('year', '%Y')],
+                                'response' : ['time'],
+                                }, data_set)
 
 def olympic_sprints(data_set='rogers_girolami_data'):
     """All olympics sprint winning times for multiple output prediction."""
     X = np.zeros((0, 2))
     Y = np.zeros((0, 1))
+    cats = {}
     for i, dataset in enumerate([olympic_100m_men,
                               olympic_100m_women,
                               olympic_200m_men,
@@ -1198,12 +1254,15 @@ def olympic_sprints(data_set='rogers_girolami_data'):
         time = data['Y']
         X = np.vstack((X, np.hstack((year, np.ones_like(year)*i))))
         Y = np.vstack((Y, time))
+        cats[dataset.__name__] = i
     data['X'] = X
     data['Y'] = Y
     data['info'] = "Olympics sprint event winning for men and women to 2008. Data is from Rogers and Girolami's First Course in Machine Learning."
     return data_details_return({
         'X': X,
         'Y': Y,
+        'covariates' : [decimalyear('year', '%Y'), categorical(cats, 'event')],
+        'response' : ['time'],
         'info': "Olympics sprint event winning for men and women to 2008. Data is from Rogers and Girolami's First Course in Machine Learning.",
         'output_info': {
           0:'100m Men',
@@ -1607,10 +1666,16 @@ def elevators(data_set='elevators', seed=default_seed):
         import tarfile
         download_data(data_set)
         dir_path = os.path.join(data_path, data_set)
-        # tar = tarfile.TarFile(name=os.path.join(dir_path, 'elevators.tgz'), mode='r')
-        with open(os.path.join(dir_path, 'elevators.tgz'), 'r') as f:
-            tar = tarfile.open(mode='r', fileobj=f)
-            tar.extractall(dir_path)
+        tar = tarfile.open(name=os.path.join(dir_path, 'elevators.tgz'))
+        tar.extractall(dir_path)
+        tar.close()
+        # print(tar)
+        # print(dir_path)
+        # with open(os.path.join(dir_path, 'elevators.tgz'), 'r') as f:
+        #     print('here')
+        #     tar = tarfile.open(mode='r', fileobj=f)
+        #     print(tar)
+        #     tar.extractall(dir_path)
     elevator_path = os.path.join(data_path, 'elevators', 'Elevators')
     elevator_train_path = os.path.join(elevator_path, 'elevators.data')
     elevator_test_path = os.path.join(elevator_path, 'elevators.test')
@@ -1621,7 +1686,7 @@ def elevators(data_set='elevators', seed=default_seed):
     np.random.seed(seed=seed)
     # Want to choose test and training data sizes, so just concatenate them together and mix them up
     data = data.reset_index()
-    data = data.reindex(permute(data.index)) # Randomize so test isn't at the end
+    data = data.reindex(permute(data.shape[0])) # Randomize so test isn't at the end
 
     X = data.iloc[:, :-1].values
     Y = data.iloc[:, -1].values[:, None]
