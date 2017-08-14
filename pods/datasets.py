@@ -15,6 +15,13 @@ import json
 import yaml
 import re
 
+import logging
+
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s %(levelname)s %(message)s',
+                    filename='/tmp/sods.log',
+                    filemode='w')
+
 from .util import download_url
 from .config import *
 from functools import reduce
@@ -70,7 +77,7 @@ def permute(num):
     if permute_data:
         return np.random.permutation(num)
     else:
-        print("Warning not permuting data")
+        logging.warning("Warning not permuting data")
         return np.arange(num)
 
 def integer(name):
@@ -98,7 +105,7 @@ def decimalyear(name='date', format='%Y-%m-%d'):
     """Return a date category with format"""
     return 'decimalyear(' + name + ',' + format +')'
 
-def prompt_user(prompt):
+def prompt_stdin(prompt):
     """Ask user for agreeing to data set licenses."""
     # raw_input returns the empty string for "enter"
     yes = set(['yes', 'y'])
@@ -126,9 +133,33 @@ def prompt_user(prompt):
     else:
         print("Your response was a " + choice)
         print("Please respond with 'yes', 'y' or 'no', 'n'")
-        #return prompt_user()
 
 
+def clear_cache(dataset_name=None):
+    """Remove a data set from the cache"""
+    dr = data_resources[dataset_name]
+    if 'dirs' in dr:
+        for dirs, files in zip(dr['dirs'], dr['files']):
+            for dir, file in zip(dirs, files):
+                path = os.path.join(data_path, dataset_name, dir, file)
+                if os.path.exists(path):
+                    logging.info("clear_cache: removing " + path)
+                    os.unlink(path)
+            for dir in dirs:
+                path = os.path.join(data_path, dataset_name, dir)
+                if os.path.exists(path):
+                    logging.info("clear_cache: remove directory " + path)
+                    os.rmdir(path)
+        
+    else:
+        for file_list in dr['files']:
+            for file in file_list:
+                path = os.path.join(data_path, dataset_name, file)
+                if os.path.exists(path):
+                    logging.info("clear_cache: remove " + path)
+                    os.unlink(path)
+        
+        
 def data_available(dataset_name=None):
     """Check if the data set is available on the local machine already."""
     dr = data_resources[dataset_name]
@@ -145,7 +176,7 @@ def data_available(dataset_name=None):
     return True
 
 
-def authorize_download(dataset_name=None):
+def authorize_download(dataset_name=None, prompt=prompt_stdin):
     """Check with the user that the are happy with terms and conditions for the data set."""
     print('Acquiring resource: ' + dataset_name)
     # TODO, check resource is in dictionary!
@@ -174,14 +205,14 @@ def authorize_download(dataset_name=None):
             print('You must also agree to the following license:')
             print(dr['license'])
             print('')
-        return prompt_user('Do you wish to proceed with the download? [yes/no]')
+        return prompt('Do you wish to proceed with the download? [yes/no]')
 
 
-def download_data(dataset_name=None):
+def download_data(dataset_name=None, prompt=prompt_stdin):
     """Check with the user that the are happy with terms and conditions for the data set, then download it."""
         
     dr = data_resources[dataset_name]
-    if not authorize_download(dataset_name):
+    if not authorize_download(dataset_name, prompt=prompt):
         raise Exception("Permission to download data set denied.")
     
     if 'suffices' in dr:
@@ -326,7 +357,6 @@ def df2arff(df, dataset_name, pods_data):
 def to_arff(dataset, **kwargs):
     """Take a pods data set and write it as an ARFF file"""
     pods_data = dataset(**kwargs)
-    print(kwargs)
     vals = list(kwargs.values())
     for i, v in enumerate(vals):
         if isinstance(v, list):
@@ -818,7 +848,7 @@ def hapmap3(data_set='hapmap3'):
                                 '.nan.pickle']]
 
     if not reduce(lambda a,b: a and b, list(map(os.path.exists, preprocessed_data_paths))):
-        if not overide_manual_authorize and not prompt_user("Preprocessing requires ~25GB "
+        if not overide_manual_authorize and not prompt("Preprocessing requires ~25GB "
                             "of memory and can take a (very) long time, continue? [Y/n]"):
             print("Preprocessing required for further usage.")
             return
@@ -1548,7 +1578,6 @@ def creep_data(data_set='creep_rupture'):
         path = os.path.join(data_path, data_set)
         tar_file = os.path.join(path, 'creeprupt.tar')
         tar = tarfile.open(tar_file)
-        print('Extracting file.')
         tar.extractall(path=path)
         tar.close()
     all_data = np.loadtxt(os.path.join(data_path, data_set, 'taka'))
@@ -1821,13 +1850,7 @@ def elevators(data_set='elevators', seed=default_seed):
         tar = tarfile.open(name=os.path.join(dir_path, 'elevators.tgz'))
         tar.extractall(dir_path)
         tar.close()
-        # print(tar)
-        # print(dir_path)
-        # with open(os.path.join(dir_path, 'elevators.tgz'), 'r') as f:
-        #     print('here')
-        #     tar = tarfile.open(mode='r', fileobj=f)
-        #     print(tar)
-        #     tar.extractall(dir_path)
+
     elevator_path = os.path.join(data_path, 'elevators', 'Elevators')
     elevator_train_path = os.path.join(elevator_path, 'elevators.data')
     elevator_test_path = os.path.join(elevator_path, 'elevators.test')
