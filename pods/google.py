@@ -539,7 +539,7 @@ if gspread_available:
                 
                 row = data.setdefault(int(cell.row), defaultdict(str))
                 row[cell.col] = val
-
+            # FutureWarning: sort is deprecated, use sort_values(inplace=True) for INPLACE sorting
             delete_rows = self.row_lookup[index].sort(inplace=False)
             # Find the ends of the banks to move up
             end_step = []
