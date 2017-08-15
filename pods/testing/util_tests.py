@@ -43,3 +43,19 @@ def test_graceful_failure_fake_url():
 def test_graceful_failure_bogus_file():
     pods.util.download_url(bogus_file)
         
+
+import filecmp
+import unittest
+
+class UtilTests(unittest.TestCase):
+
+    def test_download_url(self):
+        """Test the download url"""
+        filename='util.py'
+        download_name = 'tmp.py'
+        # Download the file to current directory
+        pods.util.download_url('https://raw.githubusercontent.com/sods/ods/master/pods/'+filename, dir_name='.', save_name=download_name)
+        # Get path of original module
+        path = os.path.dirname(pods.__file__)
+        # Compare files
+        self.assertTrue(filecmp.cmp(os.path.join(path, filename),download_name))
