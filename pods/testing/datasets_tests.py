@@ -59,7 +59,7 @@ class DatasetTester(unittest.TestCase):
 class DatasetsTests(unittest.TestCase):
 
     def download_data(self, dataset_name):
-        """Test the data download."""
+        """datasets_tests: Test the data download."""
         pods.datasets.clear_cache(dataset_name)
         self.assertFalse(pods.datasets.data_available(dataset_name))
         with mock.patch(user_input, return_value='Y'):
@@ -72,7 +72,7 @@ class DatasetsTests(unittest.TestCase):
         tester.checkdims()
 
     def test_prompt_stdin(self):
-        """Test the prompt input checking code"""
+        """datasets_tests: Test the prompt input checking code"""
         for v in positive_return_values:
             with mock.patch(user_input, return_value=v):
                 self.assertTrue(pods.datasets.prompt_stdin("Do you pass?"))     
@@ -82,25 +82,25 @@ class DatasetsTests(unittest.TestCase):
                 self.assertFalse(pods.datasets.prompt_stdin("Do you fail?"))
 
     def test_authorize_download(self):
-        """Test the download authorization code."""
+        """datasets_tests: Test the download authorization code."""
         with mock.patch(user_input, return_value='Y'):
             for dataset_name in dataset_selection:
                 self.assertTrue(pods.datasets.authorize_download(dataset_name))
 
     def test_clear_cache(self):
-        """Test the clearing of the data cache for a data set"""
+        """datasets_tests: Test the clearing of the data cache for a data set"""
         for dataset_name in dataset_selection:
             print("Remove data", dataset_name)
             pods.datasets.clear_cache(dataset_name)
             self.assertFalse(pods.datasets.data_available(dataset_name))
 
     def test_data_downloads(self):
-        """Test the data tdownload."""
+        """datasets_tests: Test the data download."""
         for dataset_name in dataset_selection:
             yield self.download_data, dataset_name
 
     def test_data(self):
-        """Test the data that has been downloaded."""
+        """datasets_tests: Test the data that has been downloaded."""
         for data_f in dataset_funcs:
             yield self.data_check, data_f
 
