@@ -83,15 +83,20 @@ def permute(num):
 def integer(name):
     """Return a class category that forces integer"""
     return 'integer(' + name + ')'
-    
-def categorical(cats, name='categorical'):
+
+def json_object(name='object'):
+    """Returns a json object for general storage"""
+    import json
+    return 'jsonobject' + name + ''
+
+def discrete(cats, name='discrete'):
     """Return a class category that shows the encoding"""
     import json
     ks = list(cats)
     for key in ks:
         if isinstance(key, bytes):
             cats[key.decode('utf-8')] = cats.pop(key)
-    return 'categorical(' + json.dumps([cats, name]) + ')'
+    return 'discrete(' + json.dumps([cats, name]) + ')'
 
 def datenum(name='date', format='%Y-%m-%d'):
     """Return a date category with format"""
@@ -100,6 +105,10 @@ def datenum(name='date', format='%Y-%m-%d'):
 def timestamp(name='date', format='%Y-%m-%d'):
     """Return a date category with format"""
     return 'timestamp(' + name + ',' + format +')'
+
+def datetime64_(name='date', format='%Y-%m-%d'):
+    """Return a date category with format"""
+    return 'datetime64(' + name + ',' + format +')'
 
 def decimalyear(name='date', format='%Y-%m-%d'):
     """Return a date category with format"""
@@ -260,9 +269,9 @@ def df2arff(df, dataset_name, pods_data):
     d['attributes'] = []
     for atr in df.columns:
         if isinstance(atr, str):
-            if len(atr)>12 and atr[:12] == 'categorical(':
+            if len(atr)>8 and atr[:9] == 'discrete(':
                 import json
-                elements = json.loads(atr[12:-1])
+                elements = json.loads(atr[9:-1])
                 d['attributes'].append((tidy_field(elements[1]),
                                          list(elements[0].keys())))
                 mask = {}
@@ -292,10 +301,14 @@ def df2arff(df, dataset_name, pods_data):
                     for value in values:
                         new.append(np.datetime64(datetime.datetime.fromtimestamp(value)))
                     return np.asarray(new)
-                from matplotlib.dates import num2date
                 elements = atr[10:-1].split(',')
                 d['attributes'].append((elements[0] + '_datenum_' + java_simple_date(elements[1]), 'STRING'))
                 df[atr] = timestamp2date(df[atr].values) #
+                df[atr] = df[atr].dt.strftime(elements[1])
+                continue
+            if len(atr)>10 and atr[:11]=='datetime64(':
+                elements = atr[11:-1].split(',')
+                d['attributes'].append((elements[0] + '_datenum_' + java_simple_date(elements[1]), 'STRING'))
                 df[atr] = df[atr].dt.strftime(elements[1])
                 continue
             if len(atr)>11 and atr[:12]=='decimalyear(':
@@ -328,7 +341,10 @@ def df2arff(df, dataset_name, pods_data):
                 type_assigned=True
                 break
         if not type_assigned:
-            raise Exception('Unknown column type!')
+            import json
+            d['attributes'].append((field+'_json', 'STRING'))
+            df[atr] = df[atr].apply(json.dumps)
+
     d['data'] = []
     for ind, row in df.iterrows():
         d['data'].append(list(row))
@@ -561,6 +577,16 @@ def pmlr(volumes='all', data_set='pmlr'):
     if pandas_available:
         Y = pd.DataFrame(Y)
         Y['published'] = pd.to_datetime(Y['published'])
+        #Y.columns.values[4] = json_object('authors')
+        #Y.columns.values[7] = json_object('editors')
+        Y['issued'] = Y['issued'].apply(lambda x: np.datetime64(datetime.datetime(*x['date-parts'])))
+        Y['author'] = Y['author'].apply(lambda x: [str(author['given']) + ' ' + str(author['family']) for author in x])
+        Y['editor'] = Y['editor'].apply(lambda x: [str(editor['given']) + ' ' + str(editor['family']) for editor in x])
+        columns = list(Y.columns)
+        columns[14] = datetime64_('published')
+        columns[11] = datetime64_('issued')
+        Y.columns = columns
+        
     return data_details_return({'Y' : Y, 'info' : 'Data is a pandas data frame containing each paper, its abstract, authors, volumes and venue.'}, data_set)
    
         
@@ -617,7 +643,7 @@ def football_data(season='1617', data_set='football_data'):
         else:
             X = np.append(X, table[:, :4], axis=0)
             Y = np.append(Y, table[:, 4:], axis=0)
-    return data_details_return({'X': X, 'Y': Y, 'covariates': [categorical(league_dict, 'league'), datenum('match_day'), categorical(football_dict, 'home team'), categorical(football_dict, 'away team')], 'response': [integer('home score'), integer('away score')]}, data_set)
+    return data_details_return({'X': X, 'Y': Y, 'covariates': [discrete(league_dict, 'league'), datenum('match_day'), discrete(football_dict, 'home team'), discrete(football_dict, 'away team')], 'response': [integer('home score'), integer('away score')]}, data_set)
 
 def sod1_mouse(data_set='sod1_mouse'):
     if not data_available(data_set):
@@ -788,7 +814,7 @@ def google_trends(query_terms=['big data', 'machine learning', 'data science'], 
     cats = {}
     for i in range(terms):
         cats[query_terms[i]] = i
-    return data_details_return({'data frame' : df, 'X': X, 'Y': Y, 'query_terms': query_terms, 'info': "Data downloaded from google trends with query terms: " + ', '.join(query_terms) + '.', 'covariates' : [datenum('date'), categorical(cats, 'query_terms')], 'response' : ['normalized interest']}, data_set)
+    return data_details_return({'data frame' : df, 'X': X, 'Y': Y, 'query_terms': query_terms, 'info': "Data downloaded from google trends with query terms: " + ', '.join(query_terms) + '.', 'covariates' : [datenum('date'), discrete(cats, 'query_terms')], 'response' : ['normalized interest']}, data_set)
 
 def hapmap3(data_set='hapmap3'):
     """
@@ -1254,7 +1280,7 @@ def toy_linear_1d_classification(seed=default_seed):
     x1 = np.random.normal(-3, 5, 20)
     x2 = np.random.normal(3, 5, 20)
     X = (np.r_[x1, x2])[:, None]
-    return {'X': X, 'Y':  sample_class(2.*X), 'F': 2.*X, 'covariates' : ['X'], 'response': [categorical({'positive': 1, 'negative': -1})],'seed' : seed}
+    return {'X': X, 'Y':  sample_class(2.*X), 'F': 2.*X, 'covariates' : ['X'], 'response': [discrete({'positive': 1, 'negative': -1})],'seed' : seed}
 
 def airline_delay(data_set='airline_delay', num_train=700000, num_test=100000, seed=default_seed):
     """Airline delay data used in Gaussian Processes for Big Data by Hensman, Fusi and Lawrence"""
@@ -1443,7 +1469,7 @@ def olympic_sprints(data_set='rogers_girolami_data'):
     return data_details_return({
         'X': X,
         'Y': Y,
-        'covariates' : [decimalyear('year', '%Y'), categorical(cats, 'event')],
+        'covariates' : [decimalyear('year', '%Y'), discrete(cats, 'event')],
         'response' : ['time'],
         'info': "Olympics sprint event winning for men and women to 2008. Data is from Rogers and Girolami's First Course in Machine Learning.",
         'output_info': {
@@ -1568,7 +1594,7 @@ Data set formed from a mixture of four Gaussians. In each class two of the Gauss
 
     Y = np.vstack((np.ones((num_data_part[0] + num_data_part[1], 1)), -np.ones((num_data_part[2] + num_data_part[3], 1))))
     cats = {'negative': -1, 'positive': 1}
-    return {'X':X, 'Y':Y, 'info': "Two separate classes of data formed approximately in the shape of two crescents.", 'response': [categorical(cats, 'class')]}
+    return {'X':X, 'Y':Y, 'info': "Two separate classes of data formed approximately in the shape of two crescents.", 'response': [discrete(cats, 'class')]}
 
 def creep_data(data_set='creep_rupture'):
     """Brun and Yoshida's metal creep rupture data."""
@@ -1586,7 +1612,7 @@ def creep_data(data_set='creep_rupture'):
     features.extend(list(range(2, 31)))
     X = all_data[:, features].copy()
     cats = {'furnace cooling': 0, 'air cooling': 1, 'oil cooling': 2, 'water quench': 3}
-    attributes = ['Lifetime / hours', 'Temperature / Kelvin', 'Carbon / wt%', 'Silicon / wt%', 'Manganese / wt%', 'Phosphorus / wt%', 'Sulphur / wt%', 'Chromium / wt%', 'Molybdenum / wt%', 'Tungsten / wt%', 'Nickel / wt%', 'Copper / wt%', 'Vanadium / wt%', 'Niobium / wt%', 'Nitrogen / wt%', 'Aluminium / wt%', 'Boron / wt%', 'Cobalt / wt%', 'Tantalum / wt%', 'Oxygen / wt%', 'Normalising temperature / Kelvin', 'Normalising time / hours', categorical(cats, 'Cooling rate of normalisation'), 'Tempering temperature / Kelvin', 'Tempering time / hours', categorical(cats, 'Cooling rate of tempering'), 'Annealing temperature / Kelvin', 'Annealing time / hours', categorical(cats, 'Cooling rate of annealing'), 'Rhenium / wt%']
+    attributes = ['Lifetime / hours', 'Temperature / Kelvin', 'Carbon / wt%', 'Silicon / wt%', 'Manganese / wt%', 'Phosphorus / wt%', 'Sulphur / wt%', 'Chromium / wt%', 'Molybdenum / wt%', 'Tungsten / wt%', 'Nickel / wt%', 'Copper / wt%', 'Vanadium / wt%', 'Niobium / wt%', 'Nitrogen / wt%', 'Aluminium / wt%', 'Boron / wt%', 'Cobalt / wt%', 'Tantalum / wt%', 'Oxygen / wt%', 'Normalising temperature / Kelvin', 'Normalising time / hours', discrete(cats, 'Cooling rate of normalisation'), 'Tempering temperature / Kelvin', 'Tempering time / hours', discrete(cats, 'Cooling rate of tempering'), 'Annealing temperature / Kelvin', 'Annealing time / hours', discrete(cats, 'Cooling rate of annealing'), 'Rhenium / wt%']
     return data_details_return({'X': X, 'Y': y, 'covariates' : attributes, 'response': ['Rupture stress / MPa']}, data_set)
 
 def ceres(data_set='ceres'):

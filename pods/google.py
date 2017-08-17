@@ -24,18 +24,30 @@ import pods
 gspread_available=True
 try:
     import gspread
+except ImportError:
+    gspread_available=False
+
+new_oauth2client = False
+if gspread_available:
     from collections import defaultdict
     from itertools import chain
     
-    from oauth2client.client import SignedJwtAssertionCredentials
+    # See this change: https://github.com/google/oauth2client/issues/401
+    try:
+        from oauth2client.service_account import ServiceAccountCredentials
+        new_oauth2client = True
+    except ImportError:
+        try:
+            from oauth2client.client import SignedJwtAssertionCredentials
+        except ImportError:
+            gspread_available=False
+
     import httplib2
     # easy_install --upgrade google-api-python-client
     from apiclient import errors
     from apiclient.discovery import build
     from apiclient.http import BatchHttpRequest
     
-except ImportError:
-    gspread_available=False
 
 if gspread_available:
     import json
@@ -61,7 +73,13 @@ if gspread_available:
                             self.scope = ['https://www.googleapis.com/auth/drive']
                         else:
                             self.scope = scope
-                        self.credentials = SignedJwtAssertionCredentials(self.email, self.key, self.scope)
+
+                        if new_oauth2client:
+                            self.credentials = ServiceAccountCredentials.from_json_keyfile_name(os.path.join(keyfile), self.scope)
+                            #self.credentials = ServiceAccountCredentials.from_p12_keyfile(self.email, self.keyos.path.join(keyfile), self.scope)
+                        else:
+                            self.credentials = SignedJwtAssertionCredentials(self.email, self.key, self.scope)
+                            
                     else:
                         self.credentials = credentials
                         self.key = None
@@ -539,8 +557,7 @@ if gspread_available:
                 
                 row = data.setdefault(int(cell.row), defaultdict(str))
                 row[cell.col] = val
-            # FutureWarning: sort is deprecated, use sort_values(inplace=True) for INPLACE sorting
-            delete_rows = self.row_lookup[index].sort(inplace=False)
+            delete_rows = self.row_lookup[index].sort_values(inplace=False)
             # Find the ends of the banks to move up
             end_step = []
             for i, ind in enumerate(delete_rows.index):
