@@ -5,6 +5,7 @@ from __future__ import absolute_import
 
 import sys
 import os
+import re
 
 # Deal with raw_input in python
 try:
@@ -30,37 +31,74 @@ except ImportError:
 new_oauth2client = False
 if gspread_available:
     from collections import defaultdict
-    from itertools import chain
-    
-    # See this change: https://github.com/google/oauth2client/issues/401
-    try:
-        from oauth2client.service_account import ServiceAccountCredentials
-        new_oauth2client = True
-    except ImportError:
-        try:
-            from oauth2client.client import SignedJwtAssertionCredentials
-        except ImportError:
-            gspread_available=False
 
+api_available = True
+try:
+    # See this change: https://github.com/google/oauth2client/issues/401
+    from oauth2client.service_account import ServiceAccountCredentials
+    new_oauth2client = True
+except ImportError:
+    try:
+        from oauth2client.client import SignedJwtAssertionCredentials
+    except ImportError:
+        api_available = False
+
+try:
     import httplib2
     # easy_install --upgrade google-api-python-client
     from apiclient import errors
     from apiclient.discovery import build
     from apiclient.http import BatchHttpRequest
+    from googleapiclient import sample_tools
+    from googleapiclient import discovery
+    import types
+except ImportError:
+    api_available = False
     
-
-if gspread_available:
+if api_available:
+    query_filters = []
+    query_filters.append({'name': 'traffic_goals',
+                     'dimensions': ['source', 'medium'],
+                     'metrics': ['sessions', 'goal1Starts', 'goal1Completions',
+                                 'goalStartsAll', 'goalCompletionsAll', 'goalValueAll'],
+                     'sort': ['-goalCompletionsAll'],
+                     'docstr': "This query returns data for the first and all goals defined, sorted by total goal completions in descending order."})
+    query_filters.append({'name': 'page_hits',
+                 'dimensions': ['pagePath'],
+                 'metrics': ['pageviews'],
+                 'sort': ['-pageviews'],
+                 'filters': 'ga:pagePath!@index.html;ga:pagePath!@faq.html;ga:pagePath!@spec.html',
+                 'docstr':"This query retuns the number of page hits"})
+    for i in range(4):
+        n = str(i+1)
+        query_filters.append({'name':"goal" + n + "_completion",
+                                'dimensions': ['goalCompletionLocation'],
+                                'metrics': ['goal' + n + 'Completions'],
+                                'sort': ['-goal' + n + 'Completions'],
+                                'filters': None,
+                                'docstr': "This query retuns the number of goal " + n + "1 completions."})
+    query_filters.append({'name': 'mobile_traffic',
+                          'dimensions': ['mobileDeviceInfo'],
+                          'metrics': ['sessions','pageviews','sessionDuration'],
+                          'segment': 'gaid::-14',
+                          'sort': ['-pageviews'],
+                          'docstr': """This query returns some information about sessions which occurred from mobile devices. Note that "Mobile Traffic" is defined using the default segment ID -14."""})
+    query_filters.append({'name': 'referring_sites',
+                          'dimensions': ['source'],
+                          'metrics': ['pageviews', 'sessionDuration', 'exits'],
+                          'filters': 'ga:medium==referral',
+                          'sort': ['-pageviews']})
+    
     import json
     import warnings
     sheet_mime = 'application/vnd.google-apps.spreadsheet'
-    keyfile = os.path.expanduser(os.path.expandvars(config.get('google docs', 'oauth2_keyfile')))
+    keyfile = os.path.expanduser(os.path.expandvars(config.get('google', 'oauth2_keyfile')))
+    table_id = os.path.expandvars(config.get('google', 'analytics_table'))
 
-    class drive:
-        """
-        Class for accessing a google drive and managing files.
-        """
+    class google_service:
+        """Base class for accessing a google service"""
+            # Get a google API connection.
         def __init__(self, scope=None, credentials=None, http=None, service=None):
-            # Get a google drive API connection.
             if service is None:
                 if http is None:
                     if credentials is None:
@@ -69,29 +107,153 @@ if gspread_available:
                         f.close()
                         self.email = self._oauthkey['client_email']
                         self.key = bytes(self._oauthkey['private_key'], 'UTF-8')
-                        if scope is None:
-                            self.scope = ['https://www.googleapis.com/auth/drive']
-                        else:
-                            self.scope = scope
+                        self.scope = scope
 
                         if new_oauth2client:
                             self.credentials = ServiceAccountCredentials.from_json_keyfile_name(os.path.join(keyfile), self.scope)
                             #self.credentials = ServiceAccountCredentials.from_p12_keyfile(self.email, self.keyos.path.join(keyfile), self.scope)
                         else:
                             self.credentials = SignedJwtAssertionCredentials(self.email, self.key, self.scope)
-                            
+
                     else:
                         self.credentials = credentials
                         self.key = None
                         self.email = None
-                    
+
                     http = httplib2.Http()
                     self.http = self.credentials.authorize(http)
                 else:
                     self.http = http
-                self.service = build('drive', 'v2', http=self.http)
             else:
                 self.service = service
+
+    def gqf_(name=None, docstr=None, dimensions=None, metrics=None, sort=None, filters=None, segment=None):
+        """Generate query functions for different dimensions and metrics"""
+        def fun(self):
+            def prefix(string):
+                if string[0] == '-':
+                    return '-ga:' + string[1:]
+                else:
+                    return 'ga:' + string
+
+            def preplist(str_list):
+                if str_list is None:
+                    return None
+                if isinstance(str_list, str):
+                    return str_list
+                new_list = []
+                for v in str_list:
+                    new_list.append(prefix(v))
+                return ','.join(new_list)
+
+            self._dimensions = preplist(dimensions)
+            self._metrics = preplist(metrics)
+            self._sort = preplist(sort)
+            self._filters = preplist(filters)
+            self._segment = preplist(segment)
+            self.raw_query()
+            result = self._query.execute()
+
+            columns = []
+            for c in result['columnHeaders']:
+                name = re.sub('(.)([A-Z][a-z]+?)', r'\1 \2', c['name'][3:])
+                name = name[0].upper() + name[1:]
+                columns.append(name)
+            df = pd.DataFrame(result['rows'], columns=columns)
+
+            for c, col in zip(result['columnHeaders'], columns):
+                if c['dataType'] == 'INTEGER':
+                    df[[col]] = df[[col]].astype(int)
+            return df
+
+        if name is not None:
+            fun.__name__ = name
+        if docstr is not None:
+            fun.__doc__ = docstr
+        return fun
+
+    class analytics(google_service):
+        """
+        Class for accessing google analytics and analyzing data.
+        """
+        def __init__(self, scope=None, credentials=None, http=None, service=None, table_id=None):
+            if scope is None:
+                scope = ['https://www.googleapis.com/auth/analytics.readonly']
+            google_service.__init__(self, scope=scope, credentials=credentials,
+                                    http=http, service=service)
+            if service is None:
+                self.service = build('analytics', 'v3', http=self.http)
+
+            if table_id is None:
+                # Table_id is found on Admin:View under google analytics page
+                table_id = os.path.expandvars(config.get('google', 'analytics_table'))
+            self._table_id = table_id
+            self._start_date = '30daysAgo' #2017-07-01'
+            self._end_date = 'yesterday' #2017-08-01'
+
+            self._start_index = 1
+            self._max_results = 100
+
+            self._dimensions = 'ga:pagePath'
+            self._metrics = 'ga:pageviews'
+
+            self._filters=None 
+            self._segment=None
+            self._sort = None
+
+            # Auto create the query functions
+            for query in query_filters:
+                self.__dict__[query['name']]=types.MethodType(gqf_(**query), self)
+
+        def set_start_date(self, date):
+            """Set the start date for queries"""
+            self._start_date = date
+
+        def set_end_date(self, date):
+            """Set the end date for queries"""
+            self._end_date = date
+
+        def set_max_results(self, max_results):
+            """Set maximum results to return for queries"""
+            self._max_results = max_results
+
+        def set_start_index(self, start_index):
+            """Set start index of results to return for queries"""
+            self._start_index = start_index
+
+
+        def dataframe_query(self):
+            self.raw_query().execute()
+
+
+        def raw_query(self):
+          """Builds a query object to retrieve data from the Core Reporting API."""
+          # Use this to explore: https://ga-dev-tools.appspot.com/query-explorer/
+          # And this as reference: https://developers.google.com/analytics/devguides/reporting/core/v3/reference
+          self._query = self.service.data().ga().get(
+              ids= self._table_id,
+              start_date=self._start_date,
+              end_date=self._end_date,
+              metrics=self._metrics,
+              dimensions=self._dimensions,
+              sort=self._sort,
+              filters=self._filters,
+              start_index=str(self._start_index),
+              max_results=str(self._max_results),
+              segment=self._segment)
+
+if gspread_available and api_available:
+    class drive(google_service):
+        """
+        Class for accessing a google drive and managing files.
+        """
+        def __init__(self, scope=None, credentials=None, http=None, service=None):
+            if scope is None:
+                scope = ['https://www.googleapis.com/auth/drive']
+            google_service.__init__(self, scope=scope, credentials=credentials,
+                                    http=http, service=service)
+            if service is None:
+                self.service = build('drive', 'v2', http=self.http)
 
         def ls(self):
             """List all resources on the google drive"""
@@ -118,10 +280,10 @@ if gspread_available:
             output = '<p><b>Google Drive</b></p>'
             for file in files:
                 output += file._repr_html_()
-                    
+
             return output
 
-        
+
     class resource:
         """Resource found on the google drive.
         :param id: the google id of the spreadsheet to open (default is None which creates a new spreadsheet).
@@ -162,7 +324,7 @@ if gspread_available:
                 else:
                     self.url = url
 
-            
+
 
         def delete(self, empty_bin=False):
             """Delete the file from drive."""
@@ -175,7 +337,7 @@ if gspread_available:
             """Recover file from the trash (if it's there)."""
             self.drive.service.files().untrash(fileId=self._id).execute()
 
-            
+
         def share(self, users, share_type='writer', send_notifications=False, email_message=None):
             """
             Share a document with a given list of users.
@@ -221,22 +383,22 @@ if gspread_available:
             """
             if share_type not in ['writer', 'reader', 'owner']:
                 raise ValueError("Share type should be 'writer', 'reader' or 'owner'")
-            
+
             permission_id = self._permission_id(user)
             permission = self.drive.service.permissions().get(fileId=self._id, permissionId=permission_id).execute()
             permission['role'] = share_type
             self.drive.service.permissions().update(fileId=self._id, permissionId=permission_id, body=permission).execute()
 
         def _permission_id(self, user):
-             
+
             return self.drive.service.permissions().getIdForEmail(email=user).execute()['id']
-            
+
         def share_list(self):
             """
             Provide a list of all users who can access the document in the form of 
             """
             permissions = self.drive.service.permissions().list(fileId=self._id).execute()
-                
+
             entries = []
             for permission in permissions['items']:
                 entries.append((permission['emailAddress'], permission['role']))
@@ -248,7 +410,7 @@ if gspread_available:
             """
             for item in self.drive.service.revisions().list(fileId=self._id).execute()['items']:
                 print(item['published'], item['selfLink'])
-            
+
         def update_name(self, name):
             """Change the title of the file."""
             body = self.drive.service.files().get(fileId=self._id).execute()
@@ -271,7 +433,7 @@ if gspread_available:
         def get_url(self):
             self.url = self.drive.service.files().get(fileId=self._id).execute()['alternateLink']
             return self.url
-        
+
         def update_drive(self, drive):
             """Update the file's drive API service."""
             self.drive = drive
@@ -311,7 +473,7 @@ if gspread_available:
                 na_values = [na_values]
             self.na_values = na_values
             self.dtype = dtype
-            
+
             if resource is None:
                 drive = pods.google.drive(scope=scope)
                 self.resource = pods.google.resource(drive=drive, name="Google Sheet", mime_type=sheet_mime)
@@ -320,7 +482,7 @@ if gspread_available:
                     drive = pods.google.drive(scope=scope)
                     resource.update_drive(drive)
                 self.resource = resource
-                
+
             # Get a Google sheets client
             if gs_client is None:
                 self.gs_client = gspread.authorize(self.resource.drive.credentials)
@@ -345,13 +507,13 @@ if gspread_available:
             """Change the title of the current worksheet to title."""
             raise NotImplementedError
             raise ValueError("Can't find worksheet " + self.worksheet_name + " to change the name in Google spreadsheet " + self.url)
-                
+
 
         def set_sheet_focus(self, worksheet_name):
             """Set the current worksheet to the given name. If the name doesn't exist then create the sheet using sheet.add_worksheet()"""
             self.worksheets = self.sheet.worksheets()
             # if the worksheet is set to None default to first sheet, warn if it's name is not "Sheet1".
-            names = [worksheet.title for worksheet in worksheets]
+            names = [worksheet.title for worksheet in self.worksheets]
             if worksheet_name is None:
                 self.worksheet_name = self.worksheets[0].title
                 if len(self.worksheets)>1 and self.worksheet_name != 'Sheet1':
@@ -363,9 +525,9 @@ if gspread_available:
                     self.worksheet_name = worksheet_name
                 else:
                     self.worksheet_name = worksheet_name
-                    self.worksheet = self.sheet.set_worksheet(self.worksheet_name)
+                    #self.worksheet = self.sheet.set_worksheet(self.worksheet_name)
             # Get list of ids from the spreadsheet
-            self.worksheet = self.sheet(self.worksheet_name)
+            self.worksheet = self.sheet.worksheet(self.worksheet_name)
 
         def add_sheet(self, worksheet_name, rows=100, cols=10):
             """Add a worksheet. To add and set to the current sheet use set_sheet_focus()."""
@@ -385,7 +547,7 @@ if gspread_available:
                 if self.header==1:
                     raise ValueError('Comment will be overwritten by column headers')
                 self.write_comment(comment)
-                    
+
             self.write_headers(data_frame)
             self.write_body(data_frame)
 
@@ -431,7 +593,7 @@ if gspread_available:
                 # TODO: Have a lazy option that doesn't mind this mismatch and accounts for it.
                 raise ValueError('There is a mismatch between columns in online spreadsheet and the data frame we are using to update in Google spreadsheet ' + self.url)
 
-            
+
             add_row = []
             remove_row = []
             update_triples = []
@@ -462,7 +624,7 @@ if gspread_available:
             index_to_add = []
             index_to_rem = []
             swap_list = []
-                        
+
             swap_len = min(len(add_row), len(remove_row))
             row_change = len(add_row) - len(remove_row)
 
@@ -474,7 +636,7 @@ if gspread_available:
 
             for add, rem in zip(add_row[:swap_len], remove_row[:swap_len]):
                 swap_list.append((add, rem))
-                
+
             cells = []
             for index,column,val in update_triples:
                 cell = self._cell(index, column)
@@ -487,12 +649,12 @@ if gspread_available:
             for add, rem in swap_list:
                 cells.extend(self._overwrite_row(index=rem,  new_index=add,
                                                  data_series=data_frame.loc[add]))
-                
+
             if index_to_rem:
                 cells.extend(self._delete_rows(index_to_rem))
             if index_to_add:
                 cells.extend(self._add_rows(data_frame.loc[index_to_add]))
-            
+
             self.worksheet.update_cells(cells)
 
         def _update_row_lookup(self, index):
@@ -511,7 +673,7 @@ if gspread_available:
             """Return the cell of the spreadsheet associated with the given index and column."""
             return self.worksheet.cell(self.row_lookup[index], self.col_lookup[column])
 
-        
+
         def _overwrite_row(self, index, new_index, data_series):
             """Overwrite the given row in a spreadsheet with a data series."""
             cells = []
@@ -540,7 +702,7 @@ if gspread_available:
             if type(index) is str:
                 index = [index]
             minind = self.row_lookup[index].min()
-                
+
             start = self.worksheet.get_addr_int(minind,
                                                 self.col_lookup.min())
             end = self.worksheet.get_addr_int(self.row_lookup.max(),
@@ -554,7 +716,7 @@ if gspread_available:
                     val = cell.input_value
                 else:
                     val = cell.value
-                
+
                 row = data.setdefault(int(cell.row), defaultdict(str))
                 row[cell.col] = val
             delete_rows = self.row_lookup[index].sort_values(inplace=False)
@@ -591,8 +753,8 @@ if gspread_available:
                 self.row_lookup.drop(ind, inplace=True)
 
             return cells
-        
-            
+
+
         def _add_rows(self, data_frame):
             """
             Add a row to the spreadsheet.
@@ -629,7 +791,7 @@ if gspread_available:
             for i, ind in enumerate(data_frame.index):
                 self.row_lookup[ind] = maxind+1+i
             return cells
-                                
+
         def write_comment(self, comment, row=1, col=1):
             """Write a comment in the given cell"""
             self.worksheet.update_cell(row, col, comment)
@@ -684,7 +846,7 @@ if gspread_available:
             return self.worksheet.update_cells(cells)
 
         def read_headers(self):
-            
+
             column_names=self.worksheet.row_values(self.header)[self.col_indent:]
             self._update_col_lookup(column_names)
 
@@ -708,12 +870,12 @@ if gspread_available:
                 index_col_num = self.col_lookup[self.index_field]
             else:
                 raise ValueError("Column " + self.index_field + " suggested for index not found in header row.")
-                
-                            
+
+
             # Assume the index column is full and count the entries.
             index = self.worksheet.col_values(index_col_num)[self.header:]
             self._update_row_lookup(index)
-            
+
             num_entries = len(index)
             start = self.worksheet.get_addr_int(self.header+1,
                                                 self.col_indent+1)
@@ -740,7 +902,7 @@ if gspread_available:
                             val = self.dtype[column](val)
                         else:
                             val = gspread.utils.numericise(val)
-                            
+
                         data[column][cell.row-self.header-1]=val
             return data
 
@@ -787,7 +949,7 @@ if gspread_available:
                 output = '<p><b>{title}</b> at <a href="{url}" target="_blank">this url.</a>\n</p>'.format(url=self.url, title=self.get_title())
                 return output + self.read()._repr_html_()
                 #return None
-            
+
 
         def show(self, width=400, height=200):
             """If the IPython notebook is available, and the google
@@ -802,7 +964,7 @@ if gspread_available:
                     print(ds.url)
                 else:
                     raise
-            
+
 #######################################################################
 # Place methods here that are really associated with the resource. #
 #######################################################################
@@ -810,12 +972,12 @@ if gspread_available:
         def set_title(self, title):
             """Change the title of the google spreadsheet."""
             self.resource.update_name(title)
-            
+
         def get_title(self):
             """Get the title of the google spreadsheet."""
             return self.resource.get_name()
 
-            
+
         def share(self, users, share_type='writer', send_notifications=False, email_message=None):
             """
             Share a document with a given list of users.
@@ -841,12 +1003,12 @@ if gspread_available:
             warnings.warn("Sharing should be performed on the drive class.", DeprecationWarning)
 
             self.resource.share_modify(user, share_type, send_notifications)
-            
+
 
         def _permission_id(self, user):
-             
+
             return self.resource.service.permissions().getIdForEmail(email=user).execute()['id']
-            
+
         def share_list(self):
             """
             Provide a list of all users who can access the document in the form of 
@@ -865,7 +1027,7 @@ if gspread_available:
         def ispublished(self):
             """Find out whether or not the spreadsheet has been published."""
             return self.resource.drive.service.revisions().list(fileId=self.resource._id).execute()['items'][-1]['published']
-        
+
 
 
 

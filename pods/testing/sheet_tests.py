@@ -5,7 +5,7 @@ import numpy as np
 
 test_user = 'opendsi.sheffield@gmail.com' 
 
-if pods.google.gspread_available:
+if pods.google.gspread_available and pods.google.api_available:
     class Test_drive:
         def __init__(self):
             pass
@@ -25,11 +25,11 @@ if pods.google.gspread_available:
 
         # Google drive tests
         def test_other_credentials(self):
-            """google_tests: Test opening drive by sharing credentials"""
+            """sheet_tests: Test opening drive by sharing credentials"""
             d = pods.google.drive(credentials=self.drive.credentials)
 
         def test_existing_service(self):
-            """google_tests: Test opening drive with existing service"""
+            """sheet_tests: Test opening drive with existing service"""
             d = pods.google.drive(service=self.drive.service, http=self.drive.http)
 
         def resource_listed(self, resource):
@@ -67,49 +67,49 @@ if pods.google.gspread_available:
             ok_(not found_share, msg="Share found in listing")
 
         def test_ls(self):
-            """google_tests: Test that ls is working."""
+            """sheet_tests: Test that ls is working."""
             self.resource_listed(self.resource_one)
             self.resource_listed(self.resource_two)
             self.resource_listed(self.sheet.resource)
 
         def test_create_sheet(self):
-            """google_tests: Test codes ability to create sheets from existing resource."""
+            """sheet_tests: Test code's ability to create sheets from existing resource."""
             s = pods.google.sheet(resource=self.resource_one)
 
         def test_delete(self):
-            """google_tests: Test that a file can be deleted and undeleted (using trash)"""
+            """sheet_tests: Test that a file can be deleted and undeleted (using trash)"""
             self.resource_one.delete()
             self.resource_not_listed(self.resource_one)
             self.resource_one.undelete()
             self.resource_listed(self.resource_one)
 
         def test_share(self):
-            """google_tests: Test that resource can be shared."""
+            """sheet_tests: Test that resource can be shared."""
             self.resource_one.share(test_user)
             self.share_listed(self.resource_one, test_user, 'writer')
             self.resource_one.share_delete(test_user)
             self.share_not_listed(self.resource_one, test_user)
 
         def test_share_modify(self):
-            """google_tests: Test that sharing status can be changed."""
+            """sheet_tests: Test that sharing status can be changed."""
             self.resource_two.share(test_user)
             self.share_listed(self.resource_two, test_user, 'writer')
             self.resource_two.share_modify(test_user, 'reader')
             self.share_listed(self.resource_two, test_user, 'reader')
 
         def test_name_change(self):
-            """google_tests: Test that the name of the file on google drive can be changed."""
+            """sheet_tests: Test that the name of the file on google drive can be changed."""
             new_name = "Testing Name 2"
             self.resource_one.update_name(new_name)
             eq_(new_name, self.resource_one.get_name(), msg="Name change has failed to take effect")
 
 
         def test_mime_type(self):
-            """google_tests: Test that mime_type of file is correct."""
+            """sheet_tests: Test that mime_type of file is correct."""
             eq_(self.sheet.resource.get_mime_type(), pods.google.sheet_mime, msg="Mime type of google spread sheet does not match expectation.")
 
     class Test_sheet():
-        """google_tests: Class for testing google spreadsheet functionality."""
+        """sheet_tests: Class for testing google spreadsheet functionality."""
 
         @classmethod
         def setup_class(cls):
@@ -142,7 +142,7 @@ if pods.google.gspread_available:
             
         @classmethod
         def teardown_class(cls):
-            """google_tests: Delete of the sheets created for the tests."""
+            """sheet_tests: Delete of the sheets created for the tests."""
             cls.sheet_one.resource.delete(empty_bin=True)
             cls.sheet_two.resource.delete(empty_bin=True)
             cls.sheet_three.resource.delete(empty_bin=True)
@@ -152,7 +152,7 @@ if pods.google.gspread_available:
             cls.update_sheet_four.resource.delete(empty_bin=True)
             
         def read_sheet(self, sheet, df):
-            """google_tests: Test reading."""
+            """sheet_tests: Test reading."""
             df2 = sheet.read()
             eq_(df2.shape[0], df.shape[0], "Rows of read data frame do not match.")
             eq_(df2.shape[1], df.shape[1], "Columns of read data frame do not match.")
@@ -165,24 +165,24 @@ if pods.google.gspread_available:
 
 
         def test_read(self):
-            """google_tests: Test reading started at origin."""
+            """sheet_tests: Test reading started at origin."""
             print("Test reading of sheet started at origin.")
             self.read_sheet(self.sheet_two, self.data['Y'])
 
         def test_read_indented(self):
-            """google_tests: Test reading of indented and headered sheet."""
+            """sheet_tests: Test reading of indented and headered sheet."""
             print("Test reading of sheet offset from origin.")
             self.read_sheet(self.sheet_three, self.data['Y'])
             
         def test_drop(self):
-            """google_tests: Test dropping of rows from sheet."""
+            """sheet_tests: Test dropping of rows from sheet."""
             print("Test dropping of rows from sheet.")
             data_three = self.data_two.drop(['c', 'e'])
             self.update_sheet.update(data_three)
             self.read_sheet(self.update_sheet, data_three)
 
         def test_drop_swap(self):
-            """google_tests: Test dropping and replacing with other rows."""
+            """sheet_tests: Test dropping and replacing with other rows."""
             print("Test dropping and replacing with other rows.")
             data_three = self.data_two.drop(['c', 'e'])            
             data_three.loc['barry'] = ['bat', 'ball', np.nan]
@@ -191,7 +191,7 @@ if pods.google.gspread_available:
             self.read_sheet(self.update_sheet_two, data_three)
 
         def test_add(self):
-            """google_tests: Test adding of rows to sheet."""
+            """sheet_tests: Test adding of rows to sheet."""
             print("Test adding of rows to sheet.")
             data_three = self.data_two.copy()            
             data_three.loc['barry'] = ['bat', 'ball', np.nan]
@@ -200,7 +200,7 @@ if pods.google.gspread_available:
             self.read_sheet(self.update_sheet_three, data_three)
 
         def test_update(self):
-            """google_tests: Test updating of elements in sheet."""
+            """sheet_tests: Test updating of elements in sheet."""
             print("Test updating of elements in sheet.")
             data_three = self.data_two.copy()            
             data_three['flea']['f'] = 'United'
