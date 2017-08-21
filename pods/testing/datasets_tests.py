@@ -1,9 +1,10 @@
 import unittest
 import numpy as np
 import pods
+import types
 import mock
 import sys
-
+from pods.datasets import *
 #pods.datasets.overide_manual_authorize=True
 
 if sys.version_info>=(3,0):
@@ -11,21 +12,93 @@ if sys.version_info>=(3,0):
 else:
     user_input = '__builtin__.raw_input'
 
+dataset_helpers = ['authorize_download',
+                   'clear_cache',
+                   'data_available',
+                   'download_rogers_girolami_data',
+                   'downloard_url',
+                   'data_details_return',
+                   'download_data',
+                   'download_url',
+                   'list',
+                   'urlopen',
+                   'prompt_user',
+                   'cmu_mocap',
+                   'cmu_urls_files',
+                   'datenum',
+                   'decimalyear',
+                   'permute',
+                   'categorical',
+                   'quote',
+                   'timestamp',
+                   'swiss_roll_generated',
+                   'prompt_stdin']
+
+def list_datasets(module):
+    """List all available datasets names and calling functions."""
+    import types
+    l = []
+    for a in dir(module):
+        func = module.__dict__.get(a)
+        if a not in dataset_helpers:
+            if isinstance(func, types.FunctionType):
+                l.append((a, func))
+    return l  
+
 
 positive_return_values = ['Y', 'y', 'Yes', 'YES', 'yes', 'yEs']
 negative_return_values = ['N', 'n', 'No', 'NO', 'no', 'nO', 'eggs']
+
+dataset_test = []
+for name, func in list_datasets(pods.datasets):
+    dataset_test.append({'dataset_name' : name,
+                         'dataset_function' : func,
+                         'arg' : None,
+                         'docstr' : func.__doc__})
 
 dataset_selection = ['robot_wireless',
                      'creep_rupture',
                      'olympic_marathon_men',
                      'xw_pen',
                      'ripley_prnn_data']
+                      
+
+def gtf_(dataset_name, dataset_function, arg=None, docstr=None):
+    """Generate test function for testing the given data set."""
+    def test_function(self):
+        with mock.patch(user_input, 'Y'):
+            if arg is None:
+                tester = DatasetTester(dataset_function)
+            else:
+                tester = DatasetTester(dataset_function, arg)
+            tester.checkdims()
+    
+    test_function.__name__ = 'test_' + dataset_name
+    test_function.__doc__ = 'datasets_test: Test function ' + func.__name__
+    if docstr is not None:
+        test_function.__doc__ += '\n' + docstr
+    return test_function
 
 dataset_funcs = [pods.datasets.robot_wireless,
                  pods.datasets.google_trends,
                  pods.datasets.xw_pen,
                  pods.datasets.epomeo_gpx]
 
+def test_dataset_tests():
+    """Auto create dataset test functions."""
+    for dataset in dataset_test:
+        base_funcname = 'test_' + dataset['dataset_name']
+        funcname = base_funcname
+        #i = 1
+        #while(funcname in self.__dict__.keys()):
+        #    funcname = base_funcname +str(i)
+        #    i += 1
+        test_function = gtf_(**dataset)
+        test_function.__name__ = funcname
+        #self.__dict__[funcname]=types.MethodType(test_function, self)
+        yield test_function, dataset
+
+        
 class DatasetTester(unittest.TestCase):
     """
     This class is the base class we use for testing a dataset.
@@ -36,10 +109,12 @@ class DatasetTester(unittest.TestCase):
         self.name = name
         self.dataset = dataset
         self.kwargs = kwargs
-        self.d = self.dataset(**self.kwargs)
+        with mock.patch(user_input, return_value='Y'):
+            self.d = self.dataset(**self.kwargs)
         self.ks = self.d.keys()
         
     def checkdims(self):
+        """Check the dimensions of the data in the dataset"""
         if 'Y' in self.ks and 'X' in self.ks:
             self.assertTrue(self.d['X'].shape[0]==self.d['Y'].shape[0])
         if 'Ytest' in self.ks and 'Xtest' in self.ks:
@@ -55,8 +130,26 @@ class DatasetTester(unittest.TestCase):
         if 'response' in self.ks and 'Y' in self.ks:
             self.assertTrue(len(self.d['response'])==self.d['Y'].shape[1])
 
+    def checkstats(self):
+        pass
+
 
 class DatasetsTests(unittest.TestCase):
+
+    def __init__(self, *args, **kwargs):
+        super(DatasetsTests, self).__init__(*args, **kwargs)
+        # Auto create the test functions
+        for dataset in dataset_test:
+            """Auto create dataset test functions."""
+            base_funcname = 'test_' + dataset['dataset_name']
+            funcname = base_funcname
+            i = 1
+            while(funcname in self.__dict__.keys()):
+                funcname = base_funcname +str(i)
+                i += 1
+            test_function = gtf_(**dataset)
+            test_function.__name__ = funcname
+            self.__dict__[funcname]=types.MethodType(test_function, self)
 
     def download_data(self, dataset_name):
         """datasets_tests: Test the data download."""
@@ -105,11 +198,6 @@ class DatasetsTests(unittest.TestCase):
             yield self.data_check, data_f
 
 
-    # def test_google_trends(self):
-    #     f = pods.datasets.google_trends
-    #     with mock.patch(user_input, 'Y'):
-    #         tester = DatasetTester(f)
-    #     tester.checkdims()
 
            
 
