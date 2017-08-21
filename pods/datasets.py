@@ -816,160 +816,6 @@ def google_trends(query_terms=['big data', 'machine learning', 'data science'], 
         cats[query_terms[i]] = i
     return data_details_return({'data frame' : df, 'X': X, 'Y': Y, 'query_terms': query_terms, 'info': "Data downloaded from google trends with query terms: " + ', '.join(query_terms) + '.', 'covariates' : [datenum('date'), discrete(cats, 'query_terms')], 'response' : ['normalized interest']}, data_set)
 
-def hapmap3(data_set='hapmap3'):
-    """
-    The HapMap phase three SNP dataset - 1184 samples out of 11 populations.
-
-    SNP_matrix (A) encoding [see Paschou et all. 2007 (PCA-Correlated SNPs...)]:
-    Let (B1,B2) be the alphabetically sorted bases, which occur in the j-th SNP, then
-
-          /  1, iff SNPij==(B1,B1)
-    Aij = |  0, iff SNPij==(B1,B2)
-          \ -1, iff SNPij==(B2,B2)
-
-    The SNP data and the meta information (such as iid, sex and phenotype) are
-    stored in the dataframe datadf, index is the Individual ID,
-    with following columns for metainfo:
-
-        * family_id   -> Family ID
-        * paternal_id -> Paternal ID
-        * maternal_id -> Maternal ID
-        * sex         -> Sex (1=male; 2=female; other=unknown)
-        * phenotype   -> Phenotype (-9, or 0 for unknown)
-        * population  -> Population string (e.g. 'ASW' - 'YRI')
-        * rest are SNP rs (ids)
-
-    More information is given in infodf:
-
-        * Chromosome:
-            - autosomal chromosemes                -> 1-22
-            - X    X chromosome                    -> 23
-            - Y    Y chromosome                    -> 24
-            - XY   Pseudo-autosomal region of X    -> 25
-            - MT   Mitochondrial                   -> 26
-        * Relative Positon (to Chromosome) [base pairs]
-    """
-    try:
-        from pandas import read_pickle, DataFrame
-        from sys import stdout
-        import bz2
-        if sys.version_info>=(3,0):
-            import pickle
-        else:
-            import cPickle as pickle
-    except ImportError as i:
-        raise i("Need pandas for hapmap dataset, make sure to install pandas (http://pandas.pydata.org/) before loading the hapmap dataset")
-
-    dir_path = os.path.join(data_path,'hapmap3')
-    hapmap_file_name = 'hapmap3_r2_b36_fwd.consensus.qc.poly'
-    unpacked_files = [os.path.join(dir_path, hapmap_file_name+ending) for ending in ['.ped', '.map']]
-    unpacked_files_exist = reduce(lambda a, b:a and b, list(map(os.path.exists, unpacked_files)))
-
-    if not unpacked_files_exist and not data_available(data_set):
-        download_data(data_set)
-
-    preprocessed_data_paths = [os.path.join(dir_path,hapmap_file_name + file_name) for file_name in \
-                               ['.snps.pickle',
-                                '.info.pickle',
-                                '.nan.pickle']]
-
-    if not reduce(lambda a,b: a and b, list(map(os.path.exists, preprocessed_data_paths))):
-        if not overide_manual_authorize and not prompt("Preprocessing requires ~25GB "
-                            "of memory and can take a (very) long time, continue? [Y/n]"):
-            print("Preprocessing required for further usage.")
-            return
-        status = "Preprocessing data, please be patient..."
-        print(status)
-        def write_status(message, progress, status):
-            stdout.write(" "*len(status)); stdout.write("\r"); stdout.flush()
-            status = r"[{perc: <{ll}}] {message: <13s}".format(message=message, ll=20,
-                                                               perc="="*int(20.*progress/100.))
-            stdout.write(status); stdout.flush()
-            return status
-        if not unpacked_files_exist:
-            status=write_status('unpacking...', 0, '')
-            curr = 0
-            for newfilepath in unpacked_files:
-                if not os.path.exists(newfilepath):
-                    filepath = newfilepath + '.bz2'
-                    file_size = os.path.getsize(filepath)
-                    with open(newfilepath, 'wb') as new_file, open(filepath, 'rb') as f:
-                        decomp = bz2.BZ2Decompressor()
-                        file_processed = 0
-                        buffsize = 100 * 1024
-                        for data in iter(lambda : f.read(buffsize), b''):
-                            new_file.write(decomp.decompress(data))
-                            file_processed += len(data)
-                            status=write_status('unpacking...', curr+12.*file_processed/(file_size), status)
-                curr += 12
-                status=write_status('unpacking...', curr, status)
-                os.remove(filepath)
-        status=write_status('reading .ped...', 25, status)
-        # Preprocess data:
-        snpstrnp = np.loadtxt(unpacked_files[0], dtype=str)
-        status=write_status('reading .map...', 33, status)
-        mapnp = np.loadtxt(unpacked_files[1], dtype=str)
-        status=write_status('reading relationships.txt...', 42, status)
-        # and metainfo:
-        infodf = DataFrame.from_csv(os.path.join(dir_path,'./relationships_w_pops_121708.txt'), header=0, sep='\t')
-        infodf.set_index('IID', inplace=1)
-        status=write_status('filtering nan...', 45, status)
-        snpstr = snpstrnp[:,6:].astype('S1').reshape(snpstrnp.shape[0], -1, 2)
-        inan = snpstr[:,:,0] == '0'
-        status=write_status('filtering reference alleles...', 55, status)
-        ref = np.array([np.unique(x)[-2:] for x in snpstr.swapaxes(0,1)[:,:,:]])
-        status=write_status('encoding snps...', 70, status)
-        # Encode the information for each gene in {-1,0,1}:
-        status=write_status('encoding snps...', 73, status)
-        snps = (snpstr==ref[None,:,:])
-        status=write_status('encoding snps...', 76, status)
-        snps = (snps*np.array([1,-1])[None,None,:])
-        status=write_status('encoding snps...', 78, status)
-        snps = snps.sum(-1)
-        status=write_status('encoding snps...', 81, status)
-        snps = snps.astype('i8')
-        status=write_status('marking nan values...', 88, status)
-        # put in nan values (masked as -128):
-        snps[inan] = -128
-        status=write_status('setting up meta...', 94, status)
-        # get meta information:
-        metaheader = np.r_[['family_id', 'iid', 'paternal_id', 'maternal_id', 'sex', 'phenotype']]
-        metadf = DataFrame(columns=metaheader, data=snpstrnp[:,:6])
-        metadf.set_index('iid', inplace=1)
-        metadf = metadf.join(infodf.population)
-        metadf.to_pickle(preprocessed_data_paths[1])
-        # put everything together:
-        status=write_status('setting up snps...', 96, status)
-        snpsdf = DataFrame(index=metadf.index, data=snps, columns=mapnp[:,1])
-        with open(preprocessed_data_paths[0], 'wb') as f:
-            pickle.dump(f, snpsdf, protocoll=-1)
-        status=write_status('setting up snps...', 98, status)
-        inandf = DataFrame(index=metadf.index, data=inan, columns=mapnp[:,1])
-        inandf.to_pickle(preprocessed_data_paths[2])
-        status=write_status('done :)', 100, status)
-        print('')
-    else:
-        print("loading snps...")
-        snpsdf = read_pickle(preprocessed_data_paths[0])
-        print("loading metainfo...")
-        metadf = read_pickle(preprocessed_data_paths[1])
-        print("loading nan entries...")
-        inandf = read_pickle(preprocessed_data_paths[2])
-    snps = snpsdf.values
-    populations = metadf.population.values.astype('S3')
-    hapmap = dict(name=data_set,
-                  description='The HapMap phase three SNP dataset - '
-                  '1184 samples out of 11 populations. inan is a '
-                  'boolean array, containing wheather or not the '
-                  'given entry is nan (nans are masked as '
-                  '-128 in snps).',
-                  snpsdf=snpsdf,
-                  metadf=metadf,
-                  snps=snps,
-                  inan=inandf.values,
-                  inandf=inandf,
-                  populations=populations)
-    return hapmap
 
 def oil(data_set='three_phase_oil_flow'):
     """The three phase oil data from Bishop and James (1993)."""
@@ -1225,15 +1071,6 @@ def isomap_faces(num_samples=698, data_set='isomap_face_data'):
     Y = mat_data['images'][:, 0:num_samples].transpose()
     return data_details_return({'Y': Y, 'poses' : mat_data['poses'], 'lights': mat_data['lights'], 'info': "The first " + str(num_samples) + " points from the face data of Tennenbaum, de Silva and Langford (2001)."}, data_set)
 
-def simulation_BGPLVM(data_set='bgplvm_simulation'):
-    mat_data = scipy.io.loadmat(os.path.join(data_path, 'BGPLVMSimulation.mat'))
-    Y = np.array(mat_data['Y'], dtype=float)
-    S = np.array(mat_data['initS'], dtype=float)
-    mu = np.array(mat_data['initMu'], dtype=float)
-    #return data_details_return({'S': S, 'Y': Y, 'mu': mu}, data_set)
-    return {'Y': Y, 'S': S,
-            'mu' : mu,
-            'info': "Simulated test dataset generated in MATLAB to compare BGPLVM between python and MATLAB"}
 
 def toy_rbf_1d(seed=default_seed, num_samples=500):
     """
@@ -1316,21 +1153,6 @@ def airline_delay(data_set='airline_delay', num_train=700000, num_test=100000, s
     covariates =  ['month', 'day of month', 'day of week', 'departure time', 'arrival time', 'air time', 'distance to travel', 'age of aircraft / years']
     response = ['delay']
     return data_details_return({'X': X, 'Y': Y, 'Xtest': Xtest, 'Ytest': Ytest, 'seed' : seed, 'info': "Airline delay data used for demonstrating Gaussian processes for big data.", 'covariates': covariates, 'response': response}, data_set)
-
-def olivetti_glasses(data_set='olivetti_glasses', num_training=200, seed=default_seed):
-    path = os.path.join(data_path, data_set)
-    if not data_available(data_set):
-        download_data(data_set)
-    y = np.load(os.path.join(path, 'has_glasses.np'))
-    y = np.where(y=='y',1,0).reshape(-1,1)
-    faces = scipy.io.loadmat(os.path.join(path, 'olivettifaces.mat'))['faces'].T
-    np.random.seed(seed=seed)
-    index = permute(faces.shape[0])
-    X = faces[index[:num_training],:]
-    Xtest = faces[index[num_training:],:]
-    Y = y[index[:num_training],:]
-    Ytest = y[index[num_training:]]
-    return data_details_return({'X': X, 'Y': Y, 'Xtest': Xtest, 'Ytest': Ytest, 'seed' : seed, 'info': "ORL Faces with labels identifiying who is wearing glasses and who isn't. Data is randomly partitioned according to given seed. Presence or absence of glasses was labelled by James Hensman."}, 'olivetti_faces')
 
 def olivetti_faces(data_set='olivetti_faces'):
     path = os.path.join(data_path, data_set)
@@ -1481,17 +1303,6 @@ def olympic_sprints(data_set='rogers_girolami_data'):
           5:'400m Women'}
         }, data_set)
 
-def movie_collaborative_filter(data_set='movie_collaborative_filter', date='2014-10-06'):
-    """Data set of movie ratings as generated live in class by students."""
-    download_data(data_set)
-    from pandas import read_csv
-    dir_path = os.path.join(data_path, data_set)
-    filename = os.path.join(dir_path, 'film-death-counts-Python.csv')
-    Y = read_csv(filename)
-    return data_details_return({'Y': Y, 'info' : "Data set of movie ratings as summarized from Google doc spreadheets of students in class.",
-                                }, data_set)
-
-
 def movie_body_count(data_set='movie_body_count'):
     """Data set of movies and body count for movies scraped from www.MovieBodyCounts.com created by Simon Garnier and Randy Olson for exploring differences between Python and R."""
     if not data_available(data_set):
@@ -1626,33 +1437,6 @@ def ceres(data_set='ceres'):
     data = pd.read_csv(os.path.join(data_path, data_set, 'ceresData.txt'), index_col = 'Tag', header=None, sep='\t',names=['Tag', 'Mittlere Sonnenzeit', 'Gerade Aufstig in Zeit', 'Gerade Aufstiegung in Graden', 'Nordlich Abweich', 'Geocentrische Laenger', 'Geocentrische Breite', 'Ort der Sonne + 20" Aberration', 'Logar. d. Distanz'], parse_dates=True, dayfirst=False)
     return data_details_return({'data': data}, data_set)
 
-def cifar10_patches(data_set='cifar-10'):
-    """The Candian Institute for Advanced Research 10 image data set. Code for loading in this data is taken from this Boris Babenko's blog post, original code available here: http://bbabenko.tumblr.com/post/86756017649/learning-low-level-vision-feautres-in-10-lines-of-code"""
-    if sys.version_info>=(3,0):
-        import pickle
-    else:
-        import cPickle as pickle
-    dir_path = os.path.join(data_path, data_set)
-    filename = os.path.join(dir_path, 'cifar-10-python.tar.gz')
-    if not data_available(data_set):
-        import tarfile
-        download_data(data_set)
-        # This code is from Boris Babenko's blog post.
-        # http://bbabenko.tumblr.com/post/86756017649/learning-low-level-vision-feautres-in-10-lines-of-code
-        tfile = tarfile.open(filename, 'r:gz')
-        tfile.extractall(dir_path)
-
-    with open(os.path.join(dir_path, 'cifar-10-batches-py','data_batch_1'),'rb') as f:
-        data = pickle.load(f)
-
-    images = data['data'].reshape((-1,3,32,32)).astype('float32')/255
-    images = np.rollaxis(images, 1, 4)
-    patches = np.zeros((0,5,5,3))
-    for x in range(0,32-5,5):
-        for y in range(0,32-5,5):
-            patches = np.concatenate((patches, images[:,x:x+5,y:y+5,:]), axis=0)
-    patches = patches.reshape((patches.shape[0],-1))
-    return data_details_return({'Y': patches, "info" : "32x32 pixel patches extracted from the CIFAR-10 data by Boris Babenko to demonstrate k-means features."}, data_set)
 
 def cmu_mocap_49_balance(data_set='cmu_mocap'):
     """Load CMU subject 49's one legged balancing motion that was used by Alvarez, Luengo and Lawrence at AISTATS 2009."""
@@ -1755,108 +1539,6 @@ def cmu_mocap(subject, train_motions, test_motions=[], sample_every=4, data_set=
         info += ' Data is sub-sampled to every ' + str(sample_every) + ' frames.'
     return data_details_return({'Y': Y, 'lbls' : lbls, 'Ytest': Ytest, 'lblstest' : lblstest, 'info': info, 'skel': skel}, data_set)
 
-def politics_twitter(data_set='politics_twitter'):
-    # Bailout before downloading!
-    import tweepy
-    import pandas as pd
-    import time
-    import progressbar as pb
-    import sys
-
-    if not data_available(data_set):
-        download_data(data_set)
-
-    # FIXME: Try catch here
-    CONSUMER_KEY = config.get('twitter', 'CONSUMER_KEY')
-    CONSUMER_SECRET = config.get('twitter', 'CONSUMER_SECRET')
-
-    OAUTH_TOKEN = config.get('twitter', 'OAUTH_TOKEN')
-    OAUTH_TOKEN_SECRET = config.get('twitter', 'OAUTH_TOKEN_SECRET')
-
-    # Authenticate
-    auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
-    auth.set_access_token(OAUTH_TOKEN, OAUTH_TOKEN_SECRET)
-
-    # Make tweepy api object, and be carefuly not to abuse the API!
-    api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
-
-    requests_per_minute = int(180.0/15.0)
-    save_freq = 5
-
-    data_dict = {}
-    for party in ['ukip', 'labour', 'conservative', 'greens']:
-        # Load in the twitter data we want to join
-
-        parsed_file_path = os.path.join(data_path, data_set, '{}_twitter_parsed.csv'.format(party))
-        file_already_parsed = False
-        if os.path.isfile(parsed_file_path):
-            print("Data already scraped, loading saved scraped data for {} party".format(party))
-            # Read the data
-            data = pd.read_csv(parsed_file_path)
-            # Check it has been fully parsed (no NATs in time)
-            if data['time'].isnull().sum() == 0:
-                file_already_parsed = True
-
-        if not file_already_parsed:
-            print("Scraping tweet data from ids for the {} party data".format(party))
-            sys.stdout.write("Scraping tweet data from ids for the {} party data".format(party))
-
-            raw_file_path = os.path.join(data_path, data_set, '{}_raw_ids.csv'.format(party))
-            # data = pd.read_csv('./data_download/{}_raw_ids.csv'.format(party))
-            data = pd.read_csv(raw_file_path)
-
-            #Iterate in blocks
-            full_block_size = 100
-            num_blocks = data.shape[0]/full_block_size + 1
-            last_block_size = data.shape[0]%full_block_size
-
-            # Progress bar to give some indication of how long we now need to wait!
-            pbar = pb.ProgressBar(widgets=[
-                    ' [', pb.Timer(), '] ',
-                    pb.Bar(),
-                    ' (', pb.ETA(), ') ',], fd=sys.stdout)
-
-            for block_num in pbar(range(num_blocks)):
-                sys.stdout.flush()
-                # Get a single block of tweets
-                start_ind = block_num*full_block_size
-                if block_num == num_blocks - 1:
-                    # end_ind = start_ind + last_block_size
-                    tweet_block = data.iloc[start_ind:]
-                else:
-                    end_ind = start_ind + full_block_size
-                    tweet_block = data.iloc[start_ind:end_ind]
-
-                # Gather ther actual data, fill out the missing time
-                tweet_block_ids = tweet_block['id_str'].tolist()
-                sucess = False
-                while not sucess:
-                    try:
-                        tweet_block_results = api.statuses_lookup(tweet_block_ids, trim_user=True)
-                        sucess = True
-                    except Exception:
-                        # Something went wrong with our pulling of result. Wait
-                        # for a minute and try again
-                        time.sleep(60.0)
-                for tweet in tweet_block_results:
-                    data.ix[data['id_str'] == int(tweet.id_str), 'time'] = tweet.created_at
-
-                # Wait so as to stay below the rate limit
-                # Stay on the safe side, presume that collection is instantanious
-                time.sleep(60.0/requests_per_minute + 0.1)
-
-                if block_num % save_freq == 0:
-                    data.to_csv(parsed_file_path)
-
-            #Now convert times to pandas datetimes
-            data['time'] = pd.to_datetime(data['time'])
-            #Get rid of non-parsed dates
-            data = data.ix[data['time'].notnull(), :]
-            data.to_csv(parsed_file_path)
-
-        data_dict[party] = data
-
-    return data_details_return(data_dict, data_set)
 
 def mcycle(data_set='mcycle', seed=default_seed):
     if not data_available(data_set):
@@ -1897,4 +1579,327 @@ def elevators(data_set='elevators', seed=default_seed):
 
     return data_details_return({'X': X, 'Y' : Y}, data_set)
 
-data_load_files = [airline_delay, boston_housing, boxjenkins_airline, brendan_faces, della_gatta_TRP63_gene_expression, epomeo_gpx, football_data, sod1_mouse, spellman_yeast, spellman_yeast_cdc15, lee_yeast_ChIP, fruitfly_tomancak, drosophila_protein, drosophila_knirps, google_trends, hapmap3, oil, leukemia, oil_100, pumadyn, robot_wireless, silhouette, decampos_digits, ripley_synth, mauna_loa, osu_run1, swiss_roll_generated, singlecell, swiss_roll, swiss_roll_1000, isomap_faces, simulation_BGPLVM, toy_rbf_1d, toy_rbf_1d_50, toy_linear_1d_classification, olivetti_glasses, olivetti_faces, xw_pen, download_rogers_girolami_data, olympic_100m_men, olympic_100m_women, olympic_200m_men, olympic_200m_women, olympic_400m_men, olympic_400m_women, olympic_marathon_men, olympic_sprints, movie_collaborative_filter, movie_body_count, movie_body_count_r_classify, movielens100k, crescent_data, creep_data, ceres, cifar10_patches,cmu_mocap_49_balance, cmu_mocap_35_walk_jog, cmu_mocap, politics_twitter, elevators, mcycle]
+if False:
+
+    def hapmap3(data_set='hapmap3'):
+        """
+        The HapMap phase three SNP dataset - 1184 samples out of 11 populations.
+
+        SNP_matrix (A) encoding [see Paschou et all. 2007 (PCA-Correlated SNPs...)]:
+        Let (B1,B2) be the alphabetically sorted bases, which occur in the j-th SNP, then
+
+              /  1, iff SNPij==(B1,B1)
+        Aij = |  0, iff SNPij==(B1,B2)
+              \ -1, iff SNPij==(B2,B2)
+
+        The SNP data and the meta information (such as iid, sex and phenotype) are
+        stored in the dataframe datadf, index is the Individual ID,
+        with following columns for metainfo:
+
+            * family_id   -> Family ID
+            * paternal_id -> Paternal ID
+            * maternal_id -> Maternal ID
+            * sex         -> Sex (1=male; 2=female; other=unknown)
+            * phenotype   -> Phenotype (-9, or 0 for unknown)
+            * population  -> Population string (e.g. 'ASW' - 'YRI')
+            * rest are SNP rs (ids)
+
+        More information is given in infodf:
+
+            * Chromosome:
+                - autosomal chromosemes                -> 1-22
+                - X    X chromosome                    -> 23
+                - Y    Y chromosome                    -> 24
+                - XY   Pseudo-autosomal region of X    -> 25
+                - MT   Mitochondrial                   -> 26
+            * Relative Positon (to Chromosome) [base pairs]
+        """
+        try:
+            from pandas import read_pickle, DataFrame
+            from sys import stdout
+            import bz2
+            if sys.version_info>=(3,0):
+                import pickle
+            else:
+                import cPickle as pickle
+        except ImportError as i:
+            raise i("Need pandas for hapmap dataset, make sure to install pandas (http://pandas.pydata.org/) before loading the hapmap dataset")
+
+        dir_path = os.path.join(data_path,'hapmap3')
+        hapmap_file_name = 'hapmap3_r2_b36_fwd.consensus.qc.poly'
+        unpacked_files = [os.path.join(dir_path, hapmap_file_name+ending) for ending in ['.ped', '.map']]
+        unpacked_files_exist = reduce(lambda a, b:a and b, list(map(os.path.exists, unpacked_files)))
+
+        if not unpacked_files_exist and not data_available(data_set):
+            download_data(data_set)
+
+        preprocessed_data_paths = [os.path.join(dir_path,hapmap_file_name + file_name) for file_name in \
+                                   ['.snps.pickle',
+                                    '.info.pickle',
+                                    '.nan.pickle']]
+
+        if not reduce(lambda a,b: a and b, list(map(os.path.exists, preprocessed_data_paths))):
+            if not overide_manual_authorize and not prompt_stdin("Preprocessing requires ~25GB "
+                                "of memory and can take a (very) long time, continue? [Y/n]"):
+                print("Preprocessing required for further usage.")
+                return
+            status = "Preprocessing data, please be patient..."
+            print(status)
+            def write_status(message, progress, status):
+                stdout.write(" "*len(status)); stdout.write("\r"); stdout.flush()
+                status = r"[{perc: <{ll}}] {message: <13s}".format(message=message, ll=20,
+                                                                   perc="="*int(20.*progress/100.))
+                stdout.write(status); stdout.flush()
+                return status
+            if not unpacked_files_exist:
+                status=write_status('unpacking...', 0, '')
+                curr = 0
+                for newfilepath in unpacked_files:
+                    if not os.path.exists(newfilepath):
+                        filepath = newfilepath + '.bz2'
+                        file_size = os.path.getsize(filepath)
+                        with open(newfilepath, 'wb') as new_file, open(filepath, 'rb') as f:
+                            decomp = bz2.BZ2Decompressor()
+                            file_processed = 0
+                            buffsize = 100 * 1024
+                            for data in iter(lambda : f.read(buffsize), b''):
+                                new_file.write(decomp.decompress(data))
+                                file_processed += len(data)
+                                status=write_status('unpacking...', curr+12.*file_processed/(file_size), status)
+                    curr += 12
+                    status=write_status('unpacking...', curr, status)
+                    os.remove(filepath)
+            status=write_status('reading .ped...', 25, status)
+            # Preprocess data:
+            snpstrnp = np.loadtxt(unpacked_files[0], dtype=str)
+            status=write_status('reading .map...', 33, status)
+            mapnp = np.loadtxt(unpacked_files[1], dtype=str)
+            status=write_status('reading relationships.txt...', 42, status)
+            # and metainfo:
+            infodf = DataFrame.from_csv(os.path.join(dir_path,'./relationships_w_pops_121708.txt'), header=0, sep='\t')
+            infodf.set_index('IID', inplace=1)
+            status=write_status('filtering nan...', 45, status)
+            snpstr = snpstrnp[:,6:].astype('S1').reshape(snpstrnp.shape[0], -1, 2)
+            inan = snpstr[:,:,0] == '0'
+            status=write_status('filtering reference alleles...', 55, status)
+            ref = np.array([np.unique(x)[-2:] for x in snpstr.swapaxes(0,1)[:,:,:]])
+            status=write_status('encoding snps...', 70, status)
+            # Encode the information for each gene in {-1,0,1}:
+            status=write_status('encoding snps...', 73, status)
+            snps = (snpstr==ref[None,:,:])
+            status=write_status('encoding snps...', 76, status)
+            snps = (snps*np.array([1,-1])[None,None,:])
+            status=write_status('encoding snps...', 78, status)
+            snps = snps.sum(-1)
+            status=write_status('encoding snps...', 81, status)
+            snps = snps.astype('i8')
+            status=write_status('marking nan values...', 88, status)
+            # put in nan values (masked as -128):
+            snps[inan] = -128
+            status=write_status('setting up meta...', 94, status)
+            # get meta information:
+            metaheader = np.r_[['family_id', 'iid', 'paternal_id', 'maternal_id', 'sex', 'phenotype']]
+            metadf = DataFrame(columns=metaheader, data=snpstrnp[:,:6])
+            metadf.set_index('iid', inplace=1)
+            metadf = metadf.join(infodf.population)
+            metadf.to_pickle(preprocessed_data_paths[1])
+            # put everything together:
+            status=write_status('setting up snps...', 96, status)
+            snpsdf = DataFrame(index=metadf.index, data=snps, columns=mapnp[:,1])
+            with open(preprocessed_data_paths[0], 'wb') as f:
+                pickle.dump(f, snpsdf, protocoll=-1)
+            status=write_status('setting up snps...', 98, status)
+            inandf = DataFrame(index=metadf.index, data=inan, columns=mapnp[:,1])
+            inandf.to_pickle(preprocessed_data_paths[2])
+            status=write_status('done :)', 100, status)
+            print('')
+        else:
+            print("loading snps...")
+            snpsdf = read_pickle(preprocessed_data_paths[0])
+            print("loading metainfo...")
+            metadf = read_pickle(preprocessed_data_paths[1])
+            print("loading nan entries...")
+            inandf = read_pickle(preprocessed_data_paths[2])
+        snps = snpsdf.values
+        populations = metadf.population.values.astype('S3')
+        hapmap = dict(name=data_set,
+                      description='The HapMap phase three SNP dataset - '
+                      '1184 samples out of 11 populations. inan is a '
+                      'boolean array, containing wheather or not the '
+                      'given entry is nan (nans are masked as '
+                      '-128 in snps).',
+                      snpsdf=snpsdf,
+                      metadf=metadf,
+                      snps=snps,
+                      inan=inandf.values,
+                      inandf=inandf,
+                      populations=populations)
+        return hapmap
+
+    def olivetti_glasses(data_set='olivetti_glasses', num_training=200, seed=default_seed):
+        path = os.path.join(data_path, data_set)
+        if not data_available(data_set):
+            download_data(data_set)
+        y = np.load(os.path.join(path, 'has_glasses.np'))
+        y = np.where(y=='y',1,0).reshape(-1,1)
+        faces = scipy.io.loadmat(os.path.join(path, 'olivettifaces.mat'))['faces'].T
+        np.random.seed(seed=seed)
+        index = permute(faces.shape[0])
+        X = faces[index[:num_training],:]
+        Xtest = faces[index[num_training:],:]
+        Y = y[index[:num_training],:]
+        Ytest = y[index[num_training:]]
+        return data_details_return({'X': X, 'Y': Y, 'Xtest': Xtest, 'Ytest': Ytest, 'seed' : seed, 'info': "ORL Faces with labels identifiying who is wearing glasses and who isn't. Data is randomly partitioned according to given seed. Presence or absence of glasses was labelled by James Hensman."}, 'olivetti_faces')
+
+    def simulation_BGPLVM(data_set='bgplvm_simulation'):
+        mat_data = scipy.io.loadmat(os.path.join(data_path, 'BGPLVMSimulation.mat'))
+        Y = np.array(mat_data['Y'], dtype=float)
+        S = np.array(mat_data['initS'], dtype=float)
+        mu = np.array(mat_data['initMu'], dtype=float)
+        #return data_details_return({'S': S, 'Y': Y, 'mu': mu}, data_set)
+        return {'Y': Y, 'S': S,
+                'mu' : mu,
+                'info': "Simulated test dataset generated in MATLAB to compare BGPLVM between python and MATLAB"}
+
+    def politics_twitter(data_set='politics_twitter'):
+        # Bailout before downloading!
+        import tweepy
+        import pandas as pd
+        import time
+        import progressbar as pb
+        import sys
+
+        if not data_available(data_set):
+            download_data(data_set)
+
+        # FIXME: Try catch here
+        CONSUMER_KEY = config.get('twitter', 'CONSUMER_KEY')
+        CONSUMER_SECRET = config.get('twitter', 'CONSUMER_SECRET')
+
+        OAUTH_TOKEN = config.get('twitter', 'OAUTH_TOKEN')
+        OAUTH_TOKEN_SECRET = config.get('twitter', 'OAUTH_TOKEN_SECRET')
+
+        # Authenticate
+        auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
+        auth.set_access_token(OAUTH_TOKEN, OAUTH_TOKEN_SECRET)
+
+        # Make tweepy api object, and be carefuly not to abuse the API!
+        api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
+
+        requests_per_minute = int(180.0/15.0)
+        save_freq = 5
+
+        data_dict = {}
+        for party in ['ukip', 'labour', 'conservative', 'greens']:
+            # Load in the twitter data we want to join
+
+            parsed_file_path = os.path.join(data_path, data_set, '{}_twitter_parsed.csv'.format(party))
+            file_already_parsed = False
+            if os.path.isfile(parsed_file_path):
+                print("Data already scraped, loading saved scraped data for {} party".format(party))
+                # Read the data
+                data = pd.read_csv(parsed_file_path)
+                # Check it has been fully parsed (no NATs in time)
+                if data['time'].isnull().sum() == 0:
+                    file_already_parsed = True
+
+            if not file_already_parsed:
+                print("Scraping tweet data from ids for the {} party data".format(party))
+                sys.stdout.write("Scraping tweet data from ids for the {} party data".format(party))
+
+                raw_file_path = os.path.join(data_path, data_set, '{}_raw_ids.csv'.format(party))
+                # data = pd.read_csv('./data_download/{}_raw_ids.csv'.format(party))
+                data = pd.read_csv(raw_file_path)
+
+                #Iterate in blocks
+                full_block_size = 100
+                num_blocks = data.shape[0]/full_block_size + 1
+                last_block_size = data.shape[0]%full_block_size
+
+                # Progress bar to give some indication of how long we now need to wait!
+                pbar = pb.ProgressBar(widgets=[
+                        ' [', pb.Timer(), '] ',
+                        pb.Bar(),
+                        ' (', pb.ETA(), ') ',], fd=sys.stdout)
+
+                for block_num in pbar(range(num_blocks)):
+                    sys.stdout.flush()
+                    # Get a single block of tweets
+                    start_ind = block_num*full_block_size
+                    if block_num == num_blocks - 1:
+                        # end_ind = start_ind + last_block_size
+                        tweet_block = data.iloc[start_ind:]
+                    else:
+                        end_ind = start_ind + full_block_size
+                        tweet_block = data.iloc[start_ind:end_ind]
+
+                    # Gather ther actual data, fill out the missing time
+                    tweet_block_ids = tweet_block['id_str'].tolist()
+                    sucess = False
+                    while not sucess:
+                        try:
+                            tweet_block_results = api.statuses_lookup(tweet_block_ids, trim_user=True)
+                            sucess = True
+                        except Exception:
+                            # Something went wrong with our pulling of result. Wait
+                            # for a minute and try again
+                            time.sleep(60.0)
+                    for tweet in tweet_block_results:
+                        data.ix[data['id_str'] == int(tweet.id_str), 'time'] = tweet.created_at
+
+                    # Wait so as to stay below the rate limit
+                    # Stay on the safe side, presume that collection is instantanious
+                    time.sleep(60.0/requests_per_minute + 0.1)
+
+                    if block_num % save_freq == 0:
+                        data.to_csv(parsed_file_path)
+
+                #Now convert times to pandas datetimes
+                data['time'] = pd.to_datetime(data['time'])
+                #Get rid of non-parsed dates
+                data = data.ix[data['time'].notnull(), :]
+                data.to_csv(parsed_file_path)
+
+            data_dict[party] = data
+
+        return data_details_return(data_dict, data_set)
+
+    def cifar10_patches(data_set='cifar-10'):
+        """The Candian Institute for Advanced Research 10 image data set. Code for loading in this data is taken from this Boris Babenko's blog post, original code available here: http://bbabenko.tumblr.com/post/86756017649/learning-low-level-vision-feautres-in-10-lines-of-code"""
+        if sys.version_info>=(3,0):
+            import pickle
+        else:
+            import cPickle as pickle
+        dir_path = os.path.join(data_path, data_set)
+        filename = os.path.join(dir_path, 'cifar-10-python.tar.gz')
+        if not data_available(data_set):
+            import tarfile
+            download_data(data_set)
+            # This code is from Boris Babenko's blog post.
+            # http://bbabenko.tumblr.com/post/86756017649/learning-low-level-vision-feautres-in-10-lines-of-code
+            tfile = tarfile.open(filename, 'r:gz')
+            tfile.extractall(dir_path)
+
+        with open(os.path.join(dir_path, 'cifar-10-batches-py','data_batch_1'),'rb') as f:
+            data = pickle.load(f)
+
+        images = data['data'].reshape((-1,3,32,32)).astype('float32')/255
+        images = np.rollaxis(images, 1, 4)
+        patches = np.zeros((0,5,5,3))
+        for x in range(0,32-5,5):
+            for y in range(0,32-5,5):
+                patches = np.concatenate((patches, images[:,x:x+5,y:y+5,:]), axis=0)
+        patches = patches.reshape((patches.shape[0],-1))
+        return data_details_return({'Y': patches, "info" : "32x32 pixel patches extracted from the CIFAR-10 data by Boris Babenko to demonstrate k-means features."}, data_set)
+
+    def movie_collaborative_filter(data_set='movie_collaborative_filter', date='2014-10-06'):
+        """Data set of movie ratings as generated live in class by students."""
+        download_data(data_set)
+        from pandas import read_csv
+        dir_path = os.path.join(data_path, data_set)
+        filename = os.path.join(dir_path, 'film-death-counts-Python.csv')
+        Y = read_csv(filename)
+        return data_details_return({'Y': Y, 'info' : "Data set of movie ratings as summarized from Google doc spreadheets of students in class.",
+                                    }, data_set)
+
+

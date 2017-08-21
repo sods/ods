@@ -15,11 +15,17 @@ else:
 dataset_helpers = ['authorize_download',
                    'clear_cache',
                    'data_available',
+                   'discrete',
+                   'df2arff',
                    'download_rogers_girolami_data',
                    'downloard_url',
+                   'datenum',
+                   'datetime64_',
                    'data_details_return',
                    'download_data',
                    'download_url',
+                   'integer',
+                   'json_object',
                    'list',
                    'urlopen',
                    'prompt_user',
@@ -32,6 +38,7 @@ dataset_helpers = ['authorize_download',
                    'quote',
                    'timestamp',
                    'swiss_roll_generated',
+                   'to_arff',
                    'prompt_stdin']
 
 def list_datasets(module):
@@ -74,9 +81,7 @@ def gtf_(dataset_name, dataset_function, arg=None, docstr=None):
             tester.checkdims()
     
     test_function.__name__ = 'test_' + dataset_name
-    test_function.__doc__ = 'datasets_test: Test function ' + func.__name__
-    if docstr is not None:
-        test_function.__doc__ += '\n' + docstr
+    test_function.__doc__ = 'datasets_tests: Test function pods.datasets.' + dataset_name
     return test_function
 
 dataset_funcs = [pods.datasets.robot_wireless,
@@ -84,20 +89,23 @@ dataset_funcs = [pods.datasets.robot_wireless,
                  pods.datasets.xw_pen,
                  pods.datasets.epomeo_gpx]
 
-def test_dataset_tests():
-    """Auto create dataset test functions."""
+
+def populate_datasets(cls, dataset_test):
+    """populate_dataset_tests: Auto create dataset test functions."""
     for dataset in dataset_test:
         base_funcname = 'test_' + dataset['dataset_name']
         funcname = base_funcname
-        #i = 1
-        #while(funcname in self.__dict__.keys()):
-        #    funcname = base_funcname +str(i)
-        #    i += 1
-        test_function = gtf_(**dataset)
-        test_function.__name__ = funcname
+        i = 1
+        while(funcname in cls.__dict__.keys()):
+            funcname = base_funcname +str(i)
+            i += 1
+        _method = gtf_(**dataset)
+        #_method.__name__ = funcname
+        #if 'docstr' in dataset and dataset['docstr'] is not None:
+        #    _method.__doc__ = dataset['docstr']
         #self.__dict__[funcname]=types.MethodType(test_function, self)
-        yield test_function, dataset
-
+        #yield test_function, dataset
+        setattr(cls, _method.__name__, _method)
         
 class DatasetTester(unittest.TestCase):
     """
@@ -112,6 +120,7 @@ class DatasetTester(unittest.TestCase):
         with mock.patch(user_input, return_value='Y'):
             self.d = self.dataset(**self.kwargs)
         self.ks = self.d.keys()
+        self.checkdims()
         
     def checkdims(self):
         """Check the dimensions of the data in the dataset"""
@@ -198,7 +207,4 @@ class DatasetsTests(unittest.TestCase):
             yield self.data_check, data_f
 
 
-
-           
-
-        
+populate_datasets(DatasetsTests, dataset_test)
