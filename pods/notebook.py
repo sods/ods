@@ -200,4 +200,6 @@ def display_plots(filebase, directory=None, width=700, height=500, **kwargs):
         if directory is not None:
             filename = directory + '/' + filename
         display(HTML("<img src='{filename}'>".format(filename=filename)))
+        
     interact(show_figure, filebase=fixed(filebase), directory=fixed(directory), **kwargs)
+

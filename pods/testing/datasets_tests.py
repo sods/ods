@@ -4,13 +4,8 @@ import pods
 import types
 import mock
 import sys
-from pods.datasets import *
+from pods.google import *
 #pods.datasets.overide_manual_authorize=True
-
-if sys.version_info>=(3,0):
-    user_input = 'builtins.input'
-else:
-    user_input = '__builtin__.raw_input'
 
 dataset_helpers = ['authorize_download',
                    'clear_cache',
@@ -84,14 +79,10 @@ def gtf_(dataset_name, dataset_function, arg=None, docstr=None):
     test_function.__doc__ = 'datasets_tests: Test function pods.datasets.' + dataset_name
     return test_function
 
-dataset_funcs = [pods.datasets.robot_wireless,
-                 pods.datasets.google_trends,
-                 pods.datasets.xw_pen,
-                 pods.datasets.epomeo_gpx]
 
 
 def populate_datasets(cls, dataset_test):
-    """populate_dataset_tests: Auto create dataset test functions."""
+    """populate_dataset: Auto create dataset test functions."""
     for dataset in dataset_test:
         base_funcname = 'test_' + dataset['dataset_name']
         funcname = base_funcname
@@ -100,11 +91,6 @@ def populate_datasets(cls, dataset_test):
             funcname = base_funcname +str(i)
             i += 1
         _method = gtf_(**dataset)
-        #_method.__name__ = funcname
-        #if 'docstr' in dataset and dataset['docstr'] is not None:
-        #    _method.__doc__ = dataset['docstr']
-        #self.__dict__[funcname]=types.MethodType(test_function, self)
-        #yield test_function, dataset
         setattr(cls, _method.__name__, _method)
         
 class DatasetTester(unittest.TestCase):
@@ -121,6 +107,7 @@ class DatasetTester(unittest.TestCase):
             self.d = self.dataset(**self.kwargs)
         self.ks = self.d.keys()
         self.checkdims()
+        self.checkstats()
         
     def checkdims(self):
         """Check the dimensions of the data in the dataset"""
@@ -148,18 +135,18 @@ class DatasetsTests(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super(DatasetsTests, self).__init__(*args, **kwargs)
         # Auto create the test functions
-        for dataset in dataset_test:
-            """Auto create dataset test functions."""
-            base_funcname = 'test_' + dataset['dataset_name']
-            funcname = base_funcname
-            i = 1
-            while(funcname in self.__dict__.keys()):
-                funcname = base_funcname +str(i)
-                i += 1
-            test_function = gtf_(**dataset)
-            test_function.__name__ = funcname
-            self.__dict__[funcname]=types.MethodType(test_function, self)
-
+        # for dataset in dataset_test:
+        #     """Auto create dataset test functions."""
+        #     base_funcname = 'test_' + dataset['dataset_name']
+        #     funcname = base_funcname
+        #     i = 1
+        #     while(funcname in self.__dict__.keys()):
+        #         funcname = base_funcname +str(i)
+        #         i += 1
+        #     test_function = gtf_(**dataset)
+        #     test_function.__name__ = funcname
+        #     self.__dict__[funcname]=types.MethodType(test_function, self)
+        
     def download_data(self, dataset_name):
         """datasets_tests: Test the data download."""
         pods.datasets.clear_cache(dataset_name)
@@ -167,11 +154,6 @@ class DatasetsTests(unittest.TestCase):
         with mock.patch(user_input, return_value='Y'):
             pods.datasets.download_data(dataset_name)
         self.assertTrue(pods.datasets.data_available(dataset_name))
-
-    def data_check(self, f):
-        with mock.patch(user_input, 'Y'):
-            tester = DatasetTester(f)
-        tester.checkdims()
 
     def test_prompt_stdin(self):
         """datasets_tests: Test the prompt input checking code"""
@@ -200,11 +182,6 @@ class DatasetsTests(unittest.TestCase):
         """datasets_tests: Test the data download."""
         for dataset_name in dataset_selection:
             yield self.download_data, dataset_name
-
-    def test_data(self):
-        """datasets_tests: Test the data that has been downloaded."""
-        for data_f in dataset_funcs:
-            yield self.data_check, data_f
 
 
 populate_datasets(DatasetsTests, dataset_test)

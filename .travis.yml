@@ -37,6 +37,8 @@ install:
 - pip install codecov
 - pip install coveralls
 - pip install pypandoc
+- pip install gspread
+- pip install --upgrade google-api-python-client
 - pip install nose-show-skipped
 - python setup.py install
 
