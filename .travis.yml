@@ -17,10 +17,7 @@ python:
 #cache:
 #  directories:
 #  - "$HOME/ods_data_cache"
-#cache:
-#  directories:
-#  - "$HOME/download/"
-#  - "$HOME/install/"
+
 #env:
 #  - PYTHON_VERSION=3.5
 #  - PYTHON_VERSION=3.6
