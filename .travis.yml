@@ -35,16 +35,12 @@ install:
 #  then
 #    conda install --yes pandoc;
 #  fi;
-- pip install --upgrade requests[security]
 - pip install codecov
 - pip install coveralls
 - pip install pypandoc
 - pip install gspread
-- pip install pandas
-- pip install IPython
 - pip install --upgrade google-api-python-client
 - pip install nose-show-skipped
-- pip install ipywidgets
 - python setup.py install
 
 script:
