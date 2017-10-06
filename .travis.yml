@@ -8,20 +8,24 @@ os:
 #   apt_packages:
 #     - pandoc
 
+language: python
 
-cache:
-  directories:
-  - "$HOME/ods_data_cache"
+python:
+  - "3.5"
+  - "3.6"
+
+#cache:
+#  directories:
+#  - "$HOME/ods_data_cache"
 #cache:
 #  directories:
 #  - "$HOME/download/"
 #  - "$HOME/install/"
+#env:
+#  - PYTHON_VERSION=3.5
+#  - PYTHON_VERSION=3.6
 
-env:
-  - PYTHON_VERSION=3.5
-  - PYTHON_VERSION=3.6
-
-before_install:
+#before_install:
 #- wget https://github.com/mzwiessele/travis_scripts/raw/master/download_miniconda.sh
 #- wget https://github.com/mzwiessele/travis_scripts/raw/master/install_retry.sh
 #- source download_miniconda.sh
