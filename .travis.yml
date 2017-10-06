@@ -34,7 +34,7 @@ install:
 #  then
 #    conda install --yes pandoc;
 #  fi;
-- pip install --upgrade requests
+- pip install --upgrade requests[security]
 - pip install codecov
 - pip install coveralls
 - pip install pypandoc
