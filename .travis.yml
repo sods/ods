@@ -4,6 +4,8 @@ os:
 - osx
 - linux
 
+dist: trusty
+
 # addons:
 #   apt_packages:
 #     - pandoc
