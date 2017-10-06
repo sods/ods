@@ -39,6 +39,7 @@ install:
 - pip install pypandoc
 - pip install gspread
 - pip install pandas
+- pip install IPython
 - pip install --upgrade google-api-python-client
 - pip install nose-show-skipped
 - python setup.py install
