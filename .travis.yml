@@ -34,7 +34,7 @@ install:
 #  then
 #    conda install --yes pandoc;
 #  fi;
-- pip install --update requests
+- pip install --upgrade requests
 - pip install codecov
 - pip install coveralls
 - pip install pypandoc
@@ -72,6 +72,6 @@ deploy:
   password:
     secure: 
   on:
-    branch: deploy
+    branch: master
   distributions: $DIST
   skip_cleanup: true
