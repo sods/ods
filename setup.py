@@ -9,7 +9,8 @@ setup(
   author_email = 'lawrennd@gmail.com',
   url = 'https://github.com/sods/ods', # use the URL to the github repo
   download_url = 'https://github.com/sods/ods/tarball/v0.0.2-alpha', 
-  install_requires = ['ipywidgets', 'IPython', 'pandas', 'gspread'],
+  setup_requires = ['IPython', 'ipywidgets', 'pandas', 'gspread'],
+  install_requires = ['IPython', 'ipywidgets', 'pandas', 'gspread'],
   keywords = ['datascience', 'open', 'google sheet'], 
   classifiers = [],
 )
