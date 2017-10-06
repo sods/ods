@@ -4,8 +4,6 @@ os:
 - osx
 - linux
 
-dist: trusty
-
 # addons:
 #   apt_packages:
 #     - pandoc
@@ -36,6 +34,7 @@ install:
 #  then
 #    conda install --yes pandoc;
 #  fi;
+- pip install --update requests
 - pip install codecov
 - pip install coveralls
 - pip install pypandoc
