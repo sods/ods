@@ -131,7 +131,7 @@ def display_prediction(basis, num_basis=4, wlim=(-1.,1.), fig=None, ax=None, xli
         if i ==0:
             lim[0] += offset
             lim[1] += offset
-        param_args['w_' + str(i)] = lim
+        param_args['w_' + str(i)] = tuple(lim)
 
     # helper function for making basis prediction.
     def predict_basis(w, basis, x, num_basis, **kwargs):
