@@ -58,25 +58,25 @@ except ImportError:
 if api_available:
     query_filters = []
     query_filters.append({'name': 'traffic_goals',
-                     'dimensions': ['source', 'medium'],
-                     'metrics': ['sessions', 'goal1Starts', 'goal1Completions',
-                                 'goalStartsAll', 'goalCompletionsAll', 'goalValueAll'],
-                     'sort': ['-goalCompletionsAll'],
-                     'docstr': "This query returns data for the first and all goals defined, sorted by total goal completions in descending order."})
+                          'dimensions': ['source', 'medium'],
+                          'metrics': ['sessions', 'goal1Starts', 'goal1Completions',
+                                      'goalStartsAll', 'goalCompletionsAll', 'goalValueAll'],
+                          'sort': ['-goalCompletionsAll'],
+                          'docstr': "This query returns data for the first and all goals defined, sorted by total goal completions in descending order."})
     query_filters.append({'name': 'page_hits',
-                 'dimensions': ['pagePath'],
-                 'metrics': ['pageviews'],
-                 'sort': ['-pageviews'],
-                 'filters': 'ga:pagePath!@index.html;ga:pagePath!@faq.html;ga:pagePath!@spec.html',
-                 'docstr':"This query retuns the number of page hits"})
+                          'dimensions': ['pagePath'],
+                          'metrics': ['pageviews'],
+                          'sort': ['-pageviews'],
+                          'filters': 'ga:pagePath!@index.html;ga:pagePath!@faq.html;ga:pagePath!@spec.html',
+                          'docstr':"This query retuns the number of page hits"})
     for i in range(4):
         n = str(i+1)
         query_filters.append({'name':"goal" + n + "_completion",
-                                'dimensions': ['goalCompletionLocation'],
-                                'metrics': ['goal' + n + 'Completions'],
-                                'sort': ['-goal' + n + 'Completions'],
-                                'filters': None,
-                                'docstr': "This query retuns the number of goal " + n + "1 completions."})
+                              'dimensions': ['goalCompletionLocation'],
+                              'metrics': ['goal' + n + 'Completions'],
+                              'sort': ['-goal' + n + 'Completions'],
+                              'filters': None,
+                              'docstr': "This query retuns the number of goal " + n + "1 completions."})
     query_filters.append({'name': 'mobile_traffic',
                           'dimensions': ['mobileDeviceInfo'],
                           'metrics': ['sessions','pageviews','sessionDuration'],
@@ -92,41 +92,44 @@ if api_available:
     import json
     import warnings
     sheet_mime = 'application/vnd.google-apps.spreadsheet'
-    if config.has_section('google'):
+    if config.has_section('google'):       # Check if config file is set up
         keyfile = os.path.expanduser(os.path.expandvars(config.get('google', 'oauth2_keyfile')))
         table_id = os.path.expandvars(config.get('google', 'analytics_table'))
-    
-        class google_service:
-            """Base class for accessing a google service"""
-                # Get a google API connection.
-            def __init__(self, scope=None, credentials=None, http=None, service=None):
-                if service is None:
-                    if http is None:
-                        if credentials is None:
-                            f = open(os.path.join(keyfile))
-                            self._oauthkey = json.load(f)
-                            f.close()
-                            self.email = self._oauthkey['client_email']
-                            self.key = bytes(self._oauthkey['private_key'], 'UTF-8')
-                            self.scope = scope
+    else:
+        table_id = None
+        keyfile = None
+        
+    class google_service:
+        """Base class for accessing a google service"""
+            # Get a google API connection.
+        def __init__(self, scope=None, credentials=None, http=None, service=None):
+            if service is None:
+                if http is None:
+                    if credentials is None:
+                        f = open(os.path.join(keyfile))
+                        self._oauthkey = json.load(f)
+                        f.close()
+                        self.email = self._oauthkey['client_email']
+                        self.key = bytes(self._oauthkey['private_key'], 'UTF-8')
+                        self.scope = scope
 
-                            if new_oauth2client:
-                                self.credentials = ServiceAccountCredentials.from_json_keyfile_name(os.path.join(keyfile), self.scope)
-                                #self.credentials = ServiceAccountCredentials.from_p12_keyfile(self.email, self.keyos.path.join(keyfile), self.scope)
-                            else:
-                                self.credentials = SignedJwtAssertionCredentials(self.email, self.key, self.scope)
-
+                        if new_oauth2client:
+                            self.credentials = ServiceAccountCredentials.from_json_keyfile_name(os.path.join(keyfile), self.scope)
+                            #self.credentials = ServiceAccountCredentials.from_p12_keyfile(self.email, self.keyos.path.join(keyfile), self.scope)
                         else:
-                            self.credentials = credentials
-                            self.key = None
-                            self.email = None
+                            self.credentials = SignedJwtAssertionCredentials(self.email, self.key, self.scope)
 
-                        http = httplib2.Http()
-                        self.http = self.credentials.authorize(http)
                     else:
-                        self.http = http
+                        self.credentials = credentials
+                        self.key = None
+                        self.email = None
+
+                    http = httplib2.Http()
+                    self.http = self.credentials.authorize(http)
                 else:
-                    self.service = service
+                    self.http = http
+            else:
+                self.service = service
 
     def gqf_(name=None, docstr=None, dimensions=None, metrics=None, sort=None, filters=None, segment=None):
         """Generate query functions for different dimensions and metrics"""
