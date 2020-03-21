@@ -92,9 +92,12 @@ if api_available:
     import json
     import warnings
     sheet_mime = 'application/vnd.google-apps.spreadsheet'
-    keyfile = os.path.expanduser(os.path.expandvars(config.get('google', 'oauth2_keyfile')))
-    table_id = os.path.expandvars(config.get('google', 'analytics_table'))
-
+    try:
+        keyfile = os.path.expanduser(os.path.expandvars(config.get('google', 'oauth2_keyfile')))
+        table_id = os.path.expandvars(config.get('google', 'analytics_table'))
+    except NoSectionError as err:
+        warning('Looking in .ods_cfg file and error {0}'.format(err))
+    
     class google_service:
         """Base class for accessing a google service"""
             # Get a google API connection.

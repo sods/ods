@@ -539,9 +539,9 @@ def epomeo_gpx(data_set='epomeo_gpx', sample_every=4):
         X.set_index(keys='seconds', inplace=True)
     return data_details_return({'X' : X, 'info' : 'Data is an array containing time in seconds, latitude, longitude and elevation in that order.'}, data_set)
 
-def pmlr(volumes='all', data_set='pmlr'):
+def pmlr(volumes='all', data_set='pmlr', refresh_data=False):
     """Abstracts from the Proceedings of Machine Learning Research"""
-    if not data_available(data_set):
+    if not data_available(data_set) and not refresh_data:
         download_data(data_set)
         
     proceedings_file = open(os.path.join(data_path, data_set, 'proceedings.yaml'), 'r')
