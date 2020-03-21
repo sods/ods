@@ -92,43 +92,41 @@ if api_available:
     import json
     import warnings
     sheet_mime = 'application/vnd.google-apps.spreadsheet'
-    try:
+    if config.has_section('google'):
         keyfile = os.path.expanduser(os.path.expandvars(config.get('google', 'oauth2_keyfile')))
         table_id = os.path.expandvars(config.get('google', 'analytics_table'))
-    except config.NoSectionError as err:
-        warning('Looking in .ods_cfg file and error {0}'.format(err))
     
-    class google_service:
-        """Base class for accessing a google service"""
-            # Get a google API connection.
-        def __init__(self, scope=None, credentials=None, http=None, service=None):
-            if service is None:
-                if http is None:
-                    if credentials is None:
-                        f = open(os.path.join(keyfile))
-                        self._oauthkey = json.load(f)
-                        f.close()
-                        self.email = self._oauthkey['client_email']
-                        self.key = bytes(self._oauthkey['private_key'], 'UTF-8')
-                        self.scope = scope
+        class google_service:
+            """Base class for accessing a google service"""
+                # Get a google API connection.
+            def __init__(self, scope=None, credentials=None, http=None, service=None):
+                if service is None:
+                    if http is None:
+                        if credentials is None:
+                            f = open(os.path.join(keyfile))
+                            self._oauthkey = json.load(f)
+                            f.close()
+                            self.email = self._oauthkey['client_email']
+                            self.key = bytes(self._oauthkey['private_key'], 'UTF-8')
+                            self.scope = scope
 
-                        if new_oauth2client:
-                            self.credentials = ServiceAccountCredentials.from_json_keyfile_name(os.path.join(keyfile), self.scope)
-                            #self.credentials = ServiceAccountCredentials.from_p12_keyfile(self.email, self.keyos.path.join(keyfile), self.scope)
+                            if new_oauth2client:
+                                self.credentials = ServiceAccountCredentials.from_json_keyfile_name(os.path.join(keyfile), self.scope)
+                                #self.credentials = ServiceAccountCredentials.from_p12_keyfile(self.email, self.keyos.path.join(keyfile), self.scope)
+                            else:
+                                self.credentials = SignedJwtAssertionCredentials(self.email, self.key, self.scope)
+
                         else:
-                            self.credentials = SignedJwtAssertionCredentials(self.email, self.key, self.scope)
+                            self.credentials = credentials
+                            self.key = None
+                            self.email = None
 
+                        http = httplib2.Http()
+                        self.http = self.credentials.authorize(http)
                     else:
-                        self.credentials = credentials
-                        self.key = None
-                        self.email = None
-
-                    http = httplib2.Http()
-                    self.http = self.credentials.authorize(http)
+                        self.http = http
                 else:
-                    self.http = http
-            else:
-                self.service = service
+                    self.service = service
 
     def gqf_(name=None, docstr=None, dimensions=None, metrics=None, sort=None, filters=None, segment=None):
         """Generate query functions for different dimensions and metrics"""
