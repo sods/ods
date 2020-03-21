@@ -95,7 +95,7 @@ if api_available:
     try:
         keyfile = os.path.expanduser(os.path.expandvars(config.get('google', 'oauth2_keyfile')))
         table_id = os.path.expandvars(config.get('google', 'analytics_table'))
-    except NoSectionError as err:
+    except config.NoSectionError as err:
         warning('Looking in .ods_cfg file and error {0}'.format(err))
     
     class google_service:
