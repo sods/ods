@@ -560,10 +560,10 @@ def pmlr(volumes='all', data_set='pmlr', refresh_data=False):
             proto, url = entry['yaml'].split('//')
             file = os.path.basename(url)
             dir = os.path.dirname(url)
-            url = proto + '//' + url.split('/')[0]
+            urln = proto + '//' + url.split('/')[0]
             data_resources[data_name_full]['files'].append([file])
             data_resources[data_name_full]['dirs'].append([dir])
-            data_resources[data_name_full]['urls'].append(url)
+            data_resources[data_name_full]['urls'].append(urln)
     Y = []
     # Download the volume data
     if not data_available(data_name_full):
