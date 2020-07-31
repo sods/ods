@@ -559,10 +559,10 @@ def pmlr(volumes='all', data_set='pmlr', refresh_data=False):
             file = entry['yaml'].split('/')[-1]
             proto, url = entry['yaml'].split('//')
             file = os.path.basename(url)
-            dir = os.path.dirname('/'.join(url.split('/')[1:]))
+            dirname = os.path.dirname('/'.join(url.split('/')[1:]))
             urln = proto + '//' + url.split('/')[0]
             data_resources[data_name_full]['files'].append([file])
-            data_resources[data_name_full]['dirs'].append([dir])
+            data_resources[data_name_full]['dirs'].append([dirname])
             data_resources[data_name_full]['urls'].append(urln)
     Y = []
     # Download the volume data
@@ -572,9 +572,13 @@ def pmlr(volumes='all', data_set='pmlr', refresh_data=False):
         volume =  entry['volume']
         if volumes == 'all' or volume in volumes:
             file = entry['yaml'].split('/')[-1]
+            proto, url = entry['yaml'].split('//')
+            file = os.path.basename(url)
+            dirname = os.path.dirname('/'.join(url.split('/')[1:]))
+            urln = proto + '//' + url.split('/')[0]
             volume_file = open(os.path.join(data_path,
                                             data_name_full,
-                                            'v'+str(volume),
+                                            dirname,
                                             file), 'r')
             Y+=yaml.load(volume_file, Loader=yaml.FullLoader)
     if pandas_available:
