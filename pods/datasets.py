@@ -557,10 +557,10 @@ def pmlr(volumes='all', data_set='pmlr', refresh_data=False):
     for entry in proceedings:
         if volumes=='all' or entry['volume'] in volumes:
             file = entry['yaml'].split('/')[-1]
-            proto, url = entry['yaml').split('//')
+            proto, url = entry['yaml'].split('//')
             file = os.path.basename(url)
             dir = os.path.dirname(url)
-            url = url.split('/')[0]
+            url = proto + '//' + url.split('/')[0]
             data_resources[data_name_full]['files'].append([file])
             data_resources[data_name_full]['dirs'].append([dir])
             data_resources[data_name_full]['urls'].append(url)
