@@ -546,7 +546,7 @@ def pmlr(volumes='all', data_set='pmlr', refresh_data=False):
         
     proceedings_file = open(os.path.join(data_path, data_set, 'proceedings.yaml'), 'r')
     import yaml
-    proceedings = yaml.load(proceedings_file)
+    proceedings = yaml.load(proceedings_file, Loader=yaml.FullLoader)
     
     # Create a new resources entry for downloading contents of proceedings.
     data_name_full = 'pmlr_volumes'
@@ -557,10 +557,13 @@ def pmlr(volumes='all', data_set='pmlr', refresh_data=False):
     for entry in proceedings:
         if volumes=='all' or entry['volume'] in volumes:
             file = entry['yaml'].split('/')[-1]
-            dir = 'v' + str(entry['volume'])
+            proto, url = entry['yaml').split('//')
+            file = os.path.basename(url)
+            dir = os.path.dirname(url)
+            url = url.split('/')[0]
             data_resources[data_name_full]['files'].append([file])
             data_resources[data_name_full]['dirs'].append([dir])
-            data_resources[data_name_full]['urls'].append(data_resources[data_set]['urls'][0])
+            data_resources[data_name_full]['urls'].append(url)
     Y = []
     # Download the volume data
     if not data_available(data_name_full):
@@ -573,7 +576,7 @@ def pmlr(volumes='all', data_set='pmlr', refresh_data=False):
                 data_path, data_name_full,
                 'v'+str(volume), file
                 ), 'r')
-            Y+=yaml.load(volume_file)
+            Y+=yaml.load(volume_file, Loader=yaml.FullLoader)
     if pandas_available:
         Y = pd.DataFrame(Y)
         Y['published'] = pd.to_datetime(Y['published'])
