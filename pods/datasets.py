@@ -559,7 +559,7 @@ def pmlr(volumes='all', data_set='pmlr', refresh_data=False):
             file = entry['yaml'].split('/')[-1]
             proto, url = entry['yaml'].split('//')
             file = os.path.basename(url)
-            dir = os.path.dirname(url)
+            dir = '/'.join(url.split('/')[1:])
             urln = proto + '//' + url.split('/')[0]
             data_resources[data_name_full]['files'].append([file])
             data_resources[data_name_full]['dirs'].append([dir])
