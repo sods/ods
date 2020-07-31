@@ -572,10 +572,10 @@ def pmlr(volumes='all', data_set='pmlr', refresh_data=False):
         volume =  entry['volume']
         if volumes == 'all' or volume in volumes:
             file = entry['yaml'].split('/')[-1]
-            volume_file = open(os.path.join(
-                data_path, data_name_full,
-                'v'+str(volume), file
-                ), 'r')
+            volume_file = open(os.path.join(data_path,
+                                            data_name_full,
+                                            'v'+str(volume),
+                                            file), 'r')
             Y+=yaml.load(volume_file, Loader=yaml.FullLoader)
     if pandas_available:
         Y = pd.DataFrame(Y)
