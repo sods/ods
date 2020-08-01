@@ -549,12 +549,13 @@ def pmlr(volumes='all', data_set='pmlr', refresh_data=False):
     proceedings = yaml.load(proceedings_file, Loader=yaml.FullLoader)
     
     # Create a new resources entry for downloading contents of proceedings.
-    data_name_full = 'pmlr_volumes'
-    data_resources[data_name_full] = data_resources[data_set].copy()
-    data_resources[data_name_full]['files'] = []
-    data_resources[data_name_full]['dirs'] = []
-    data_resources[data_name_full]['urls'] = []
+    data_name_full_stub = 'pmlr_volume_'
     for entry in proceedings:
+        data_name_full = data_name_full_stub + 'v' + str(entry['volume'])
+        data_resources[data_name_full] = data_resources[data_set].copy()
+        data_resources[data_name_full]['files'] = []
+        data_resources[data_name_full]['dirs'] = []
+        data_resources[data_name_full]['urls'] = []
         if volumes=='all' or entry['volume'] in volumes:
             file = entry['yaml'].split('/')[-1]
             proto, url = entry['yaml'].split('//')
@@ -564,12 +565,14 @@ def pmlr(volumes='all', data_set='pmlr', refresh_data=False):
             data_resources[data_name_full]['files'].append([file])
             data_resources[data_name_full]['dirs'].append([dirname])
             data_resources[data_name_full]['urls'].append(urln)
-    Y = []
-    # Download the volume data
-    if not data_available(data_name_full):
-        download_data(data_name_full)
+        Y = []
+        # Download the volume data
+        if not data_available(data_name_full):
+            download_data(data_name_full)
+            
     for entry in reversed(proceedings):
         volume =  entry['volume']
+        data_name_full = data_name_full_stub + 'v' + str(volume)
         if volumes == 'all' or volume in volumes:
             file = entry['yaml'].split('/')[-1]
             proto, url = entry['yaml'].split('//')
