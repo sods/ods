@@ -46,9 +46,9 @@ except ImportError:
 try:
     import httplib2
     # easy_install --upgrade google-api-python-client
-    from apiclient import errors
-    from apiclient.discovery import build
-    from apiclient.http import BatchHttpRequest
+    from googleapiclient import errors
+    from googleapiclient.discovery import build
+    from googleapiclient.http import BatchHttpRequest
     from googleapiclient import sample_tools
     from googleapiclient import discovery
     import types
