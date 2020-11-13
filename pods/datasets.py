@@ -563,7 +563,6 @@ def nigerian_covid(data_set='nigerian_covid', refresh_data=False):
                                         'date_onset_symptoms',
                                         'date_admission_hospital',
                                         'death_date'])
-)
     return data_details_return({'Y': Y}, data_set)
 
 def nigerian_nmis(data_set='nigerian_nmis', refresh_data=False):
