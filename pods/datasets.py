@@ -558,7 +558,12 @@ def nigerian_covid(data_set='nigerian_covid', refresh_data=False):
     from pandas import read_csv
     dir_path = os.path.join(data_path, data_set)
     filename = os.path.join(dir_path, 'line-list-nigeria.csv')
-    Y = read_csv(filename)
+    Y = read_csv(filename, parse_dates=['date',
+                                        'date_confirmation',
+                                        'date_onset_symptoms',
+                                        'date_admission_hospital',
+                                        'death_date'])
+)
     return data_details_return({'Y': Y}, data_set)
 
 def nigerian_nmis(data_set='nigerian_nmis', refresh_data=False):
