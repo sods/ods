@@ -560,8 +560,6 @@ def nigerian_nmis_data(data_set='nigerian_nmis_data', refresh_data=False):
     dir_path = os.path.join(data_path, data_set)
     filename = os.path.join(dir_path, 'healthmopupandbaselinenmisfacility.csv')
     Y = read_csv(filename)
-    #Y.columns = ['admin1Name_en', 'admin1Pcode', 'admin0Name_en', 'admin0Pcode', 'population']
-    #Y = Y.set_index('admin1Name_en')
     return data_details_return({'Y': Y}, data_set)
 
 
