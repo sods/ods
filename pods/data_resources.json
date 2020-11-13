@@ -496,17 +496,7 @@
     },
     "nigerian_administrative_zones": {
         "citation": "Nigeria - Subnational Administrative Boundaries. February 23, 2017. Office for the Surveyor General of the Federation of Nigeria (OSGOF), Ehealth, United Nations Cartographic Section (UNCS)",
-        "details": "The dataset represents the Common Operational Data (COD) for administrative boundaries of Nigeria. Each administrative unit contains the p-code and name. Admin COD datasets (Admin 0 – 2) for Nigeria are endorsed by the Office of the Surveyor General of the Federal Republic of Nigeria (OSGOF) and the IMWG Feb 2017. See metadata for description of methodology for admin level 3 and the cleaning and processing performed by ITOS. Levels 0 - 3 are polygonal administrative units, Level 3 only covers Adamawa, Borno and Yobe States and are for operational purposes only.
-
-A senatorial district shapefile is also included. Senatorial districts respect administrative level 1 (state) but are not reflected in the gazetteer, geodatabase, or live services.
-
-Vetting and live service provision by [Information Technology Outreach Services (ITOS)](https://cviog.uga.edu/international-center/) with funding from USAID.
-
-The administrative level 0-2 and senatorial district boundaries are suitable for database or GIS linkage to the [Nigeria 2016 Population Data tables](https://data.humdata.org/dataset/nigeria-2016-population-data).
-
-A topojson generalized version of administrative level 3 is also provided.
-
-REVISION HISTORY 14 February 2020: Topojson generalized administrative level 3 resource added",
+        "details": "The dataset represents the Common Operational Data (COD) for administrative boundaries of Nigeria. Each administrative unit contains the p-code and name. Admin COD datasets (Admin 0 – 2) for Nigeria are endorsed by the Office of the Surveyor General of the Federal Republic of Nigeria (OSGOF) and the IMWG Feb 2017. See metadata for description of methodology for admin level 3 and the cleaning and processing performed by ITOS. Levels 0 - 3 are polygonal administrative units, Level 3 only covers Adamawa, Borno and Yobe States and are for operational purposes only.\n\n A senatorial district shapefile is also included. Senatorial districts respect administrative level 1 (state) but are not reflected in the gazetteer, geodatabase, or live services.\n\n Vetting and live service provision by [Information Technology Outreach Services (ITOS)](https://cviog.uga.edu/international-center/) with funding from USAID.\n\n The administrative level 0-2 and senatorial district boundaries are suitable for database or GIS linkage to the [Nigeria 2016 Population Data tables](https://data.humdata.org/dataset/nigeria-2016-population-data).\n\n A topojson generalized version of administrative level 3 is also provided.\n\n REVISION HISTORY 14 February 2020: Topojson generalized administrative level 3 resource added",
         "files": [
             [
                 "nga_admbnda_osgof_eha_itos.gdb.zip"
@@ -520,13 +510,7 @@ REVISION HISTORY 14 February 2020: Topojson generalized administrative level 3 r
     },
     "nigerian_nmis_data": {
         "citation": " Nigeria NMIS facility database (2014), the Office of the Senior Special Assistant to the President on the Millennium Development Goals (OSSAP-MDGs) & Columbia University",
-        "details": "The Nigeria MDG (Millennium Development Goals) Information System – NMIS health facility data is collected by the Office of the Senior Special Assistant to the President on the Millennium Development Goals (OSSAP-MDGs) in partner with the Sustainable Engineering Lab at Columbia University. A rigorous, geo-referenced baseline facility inventory across Nigeria is created spanning from 2009 to 2011 with an additional survey effort to increase coverage in 2014, to build Nigeria’s first nation-wide inventory of health facility. The database includes 34,139 health facilities info in Nigeria.
-
-The goal of this database is to make the data collected available to planners, government officials, and the public, to be used to make strategic decisions for planning relevant interventions.
-
-For data inquiry, please contact Ms. Funlola Osinupebi, Performance Monitoring & Communications, Advisory Power Team, Office of the Vice President at funlola.osinupebi@aptovp.org
-
-To learn more, please visit http://csd.columbia.edu/2014/03/10/the-nigeria-mdg-information-system-nmis-takes-open-data-further/",
+        "details": "The Nigeria MDG (Millennium Development Goals) Information System – NMIS health facility data is collected by the Office of the Senior Special Assistant to the President on the Millennium Development Goals (OSSAP-MDGs) in partner with the Sustainable Engineering Lab at Columbia University. A rigorous, geo-referenced baseline facility inventory across Nigeria is created spanning from 2009 to 2011 with an additional survey effort to increase coverage in 2014, to build Nigeria’s first nation-wide inventory of health facility. The database includes 34,139 health facilities info in Nigeria.\n\n The goal of this database is to make the data collected available to planners, government officials, and the public, to be used to make strategic decisions for planning relevant interventions.\n\n For data inquiry, please contact Ms. Funlola Osinupebi, Performance Monitoring & Communications, Advisory Power Team, Office of the Vice President at funlola.osinupebi@aptovp.org\n\n To learn more, please visit <http://csd.columbia.edu/2014/03/10/the-nigeria-mdg-information-system-nmis-takes-open-data-further/>",
         "files": [
             [
                 "healthmopupandbaselinenmisfacility.csv"
