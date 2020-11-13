@@ -494,6 +494,20 @@
             "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/stick/"
         ]
     },
+    "nigerian_population_2016": {
+        "citation": "The Humanitarian Data Exchange Nigerian Population dataset hosted at http://data.humdata.org",
+        "details": "Abstracts from the volumes of the Proceedings of Machine Learning research along with author information and PDF links. When using this data please credit the Proceedings of Machine Learning Research.",
+        "files": [
+            [
+                "nga_pop_adm1_2016.csv"
+            ]
+        ],
+        "license": null,
+        "size": 1244,
+        "urls": [
+            "https://data.humdata.org/dataset/a7c3de5e-ff27-4746-99cd-05f2ad9b1066/resource/d9fc551a-b5e4-4bed-9d0d-b047b6961817/download/"
+        ]
+    },
     "pmlr": {
         "citation": "Proceedings of Machine Learning Research hosted at http://proceedings.mlr.press",
         "details": "Abstracts from the volumes of the Proceedings of Machine Learning research along with author information and PDF links. When using this data please credit the Proceedings of Machine Learning Research.",

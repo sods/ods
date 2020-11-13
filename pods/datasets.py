@@ -539,6 +539,18 @@ def epomeo_gpx(data_set='epomeo_gpx', sample_every=4):
         X.set_index(keys='seconds', inplace=True)
     return data_details_return({'X' : X, 'info' : 'Data is an array containing time in seconds, latitude, longitude and elevation in that order.'}, data_set)
 
+def nigerian_population_2016(data_set='nigerian_population_2016', refresh_data=False):
+    if not data_available(data_set) and not refresh_data:
+        download_data(data_set)
+    from pandas import read_csv
+    dir_path = os.path.join(data_path, data_set)
+    filename = os.path.join(dir_path, 'nga_pop_adm1_2016.csv')
+    Y = read_csv(filename)
+    Y.columns = ['admin1Name_en', 'admin1Pcode', 'admin0Name_en', 'admin0Pcode', 'population']
+    Y = Y.set_index('admin1Name_en')
+    return data_details_return({'Y': Y}, data_set)
+
+
 def pmlr(volumes='all', data_set='pmlr', refresh_data=False):
     """Abstracts from the Proceedings of Machine Learning Research"""
     if not data_available(data_set) and not refresh_data:
