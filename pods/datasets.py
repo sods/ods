@@ -539,6 +539,32 @@ def epomeo_gpx(data_set='epomeo_gpx', sample_every=4):
         X.set_index(keys='seconds', inplace=True)
     return data_details_return({'X' : X, 'info' : 'Data is an array containing time in seconds, latitude, longitude and elevation in that order.'}, data_set)
 
+def nigerian_administrative_zones(data_set='nigerian_administrative_zones', refresh_data=False):
+    if not data_available(data_set) and not refresh_data:
+        download_data(data_set)
+    from zipfile import ZipFile
+    with ZipFile(os.path.join(data_path, data_set, 'nga_admbnda_osgof_eha_itos.gdb.zip'), 'r') as zip_ref:
+        zip_ref.extractall(os.path.join(data_path, data_set, 'nga_admbnda_osgof_eha_itos.gdb'))
+    states_file = "nga_admbnda_osgof_eha_itos.gdb/nga_admbnda_osgof_eha_itos.gdb/nga_admbnda_osgof_eha_itos.gdb/nga_admbnda_osgof_eha_itos.gdb/"
+    from geopandas import read_file
+    Y = read_file(states_file, layer=1)
+    Y.crs = "EPSG:4326"
+    Y.set_index('admin1Name_en')
+    return data_details_return({'Y': Y}, data_set)
+    
+
+def nigerian_nmis_data(data_set='nigerian_nmis_data', refresh_data=False):
+    if not data_available(data_set) and not refresh_data:
+        download_data(data_set)
+    from pandas import read_csv
+    dir_path = os.path.join(data_path, data_set)
+    filename = os.path.join(dir_path, 'healthmopupandbaselinenmisfacility.csv')
+    Y = read_csv(filename)
+    #Y.columns = ['admin1Name_en', 'admin1Pcode', 'admin0Name_en', 'admin0Pcode', 'population']
+    #Y = Y.set_index('admin1Name_en')
+    return data_details_return({'Y': Y}, data_set)
+
+
 def nigerian_population_2016(data_set='nigerian_population_2016', refresh_data=False):
     if not data_available(data_set) and not refresh_data:
         download_data(data_set)
@@ -1026,7 +1052,6 @@ def mauna_loa(data_set='mauna_loa', num_train=545, refresh_data=False):
     Y = allY[:num_train, 0:1]
     Ytest = allY[num_train:, 0:1]
     return data_details_return({'X': X, 'Y': Y, 'Xtest': Xtest, 'Ytest': Ytest, 'covariates': [decimalyear('year', '%Y-%m')], 'response': ['CO2/ppm'], 'info': "Mauna Loa data with " + str(num_train) + " values used as training points."}, data_set)
-
 
 def osu_run1(data_set='osu_run1', sample_every=4):
     """Ohio State University's Run1 motion capture data set."""
