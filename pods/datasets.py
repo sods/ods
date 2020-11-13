@@ -552,8 +552,16 @@ def nigerian_administrative_zones(data_set='nigerian_administrative_zones', refr
     Y.set_index('admin1Name_en')
     return data_details_return({'Y': Y}, data_set)
     
+def nigerian_covid(data_set='nigerian_covid', refresh_data=False):
+    if not data_available(data_set) and not refresh_data:
+        download_data(data_set)
+    from pandas import read_csv
+    dir_path = os.path.join(data_path, data_set)
+    filename = os.path.join(dir_path, 'line-list-nigeria.csv')
+    Y = read_csv(filename)
+    return data_details_return({'Y': Y}, data_set)
 
-def nigerian_nmis_data(data_set='nigerian_nmis_data', refresh_data=False):
+def nigerian_nmis(data_set='nigerian_nmis', refresh_data=False):
     if not data_available(data_set) and not refresh_data:
         download_data(data_set)
     from pandas import read_csv

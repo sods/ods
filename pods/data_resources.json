@@ -508,7 +508,21 @@
             "https://data.humdata.org/dataset/81ac1d38-f603-4a98-804d-325c658599a3/resource/0bc2f7bb-9ff6-40db-a569-1989b8ffd3bc/download/"
         ]
     },
-    "nigerian_nmis_data": {
+   "nigerian_covid": {
+        "citation": "Coronavirus COVID-19 (2019-nCoV) Data Repository for Africa. Vukosi Marivarte, Elaine Nsoesie and Consortium for African COVID-19 Data. Available on: <https://github.com/dsfsi/covid19africa>.",
+        "details": "The purpose of this repository is to collate data on the ongoing coronavirus pandemic in Africa. Our goal is to record detailed information on each reported case in every African country. We want to build a line list – a table summarizing information about people who are infected, dead, or recovered. The table for each African country would include demographic, location, and symptom (where available) information for each reported case. The data will be obtained from official sources (e.g., WHO, departments of health, CDC etc.) and unofficial sources (e.g., news). Such a dataset has many uses, including studying the spread of COVID-19 across Africa and assessing similarities and differences to what’s being observed in other regions of the world.\n\nData is taken from:\n\n* [WHO Situational Reports](https://www.who.int/emergencies/diseases/novel-coronavirus-2019/situation-reports)\n* [WHO Africa Dashboard](https://www.afro.who.int/health-topics/coronavirus-covid-19)\n* [beoutbreakprepared/nCoV2019](https://github.com/beoutbreakprepared/nCoV2019/tree/master/bulletins_sitreps)\n* [JHU CSE](https://data.humdata.org/dataset/novel-coronavirus-2019-ncov-cases)\n* Nigeria Center for Disease Control [Main Site](http://covid19.ncdc.gov.ng/), [Twitter](https://twitter.com/NCDCgov)\n* Twitter: [@Chikwe_I](https://twitter.com/Chikwe_I), [@NCDCgov](https://twitter.com/NCDCgov), [@Fmohnigeria](https://twitter.com/Fmohnigeria)",
+        "files": [
+            [
+                "line-list-nigeria.csv"
+            ]
+        ],
+        "license": null,
+        "size": 650294,
+        "urls": [
+            "https://raw.githubusercontent.com/dsfsi/covid19africa/master/data/line_lists/"
+        ]
+    },
+    "nigerian_nmis": {
         "citation": " Nigeria NMIS facility database (2014), the Office of the Senior Special Assistant to the President on the Millennium Development Goals (OSSAP-MDGs) & Columbia University",
         "details": "The Nigeria MDG (Millennium Development Goals) Information System – NMIS health facility data is collected by the Office of the Senior Special Assistant to the President on the Millennium Development Goals (OSSAP-MDGs) in partner with the Sustainable Engineering Lab at Columbia University. A rigorous, geo-referenced baseline facility inventory across Nigeria is created spanning from 2009 to 2011 with an additional survey effort to increase coverage in 2014, to build Nigeria’s first nation-wide inventory of health facility. The database includes 34,139 health facilities info in Nigeria.\n\n The goal of this database is to make the data collected available to planners, government officials, and the public, to be used to make strategic decisions for planning relevant interventions.\n\n For data inquiry, please contact Ms. Funlola Osinupebi, Performance Monitoring & Communications, Advisory Power Team, Office of the Vice President at funlola.osinupebi@aptovp.org\n\n To learn more, please visit <http://csd.columbia.edu/2014/03/10/the-nigeria-mdg-information-system-nmis-takes-open-data-further/>",
         "files": [
