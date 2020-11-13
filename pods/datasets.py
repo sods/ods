@@ -547,7 +547,7 @@ def nigerian_administrative_zones(data_set='nigerian_administrative_zones', refr
         zip_ref.extractall(os.path.join(data_path, data_set, 'nga_admbnda_osgof_eha_itos.gdb'))
     states_file = "nga_admbnda_osgof_eha_itos.gdb/nga_admbnda_osgof_eha_itos.gdb/nga_admbnda_osgof_eha_itos.gdb/nga_admbnda_osgof_eha_itos.gdb/"
     from geopandas import read_file
-    Y = read_file(states_file, layer=1)
+    Y = read_file(os.path.join(data_path, data_set, states_file), layer=1)
     Y.crs = "EPSG:4326"
     Y.set_index('admin1Name_en')
     return data_details_return({'Y': Y}, data_set)
