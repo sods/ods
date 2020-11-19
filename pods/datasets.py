@@ -866,8 +866,8 @@ def google_trends(query_terms=['big data', 'machine learning', 'data science'], 
     terms = len(query_terms)
     import datetime
     from matplotlib.dates import date2num
-    X = np.asarray([(date2num(datetime.datetime.strptime(df.ix[row]['Date'], '%Y-%m-%d')), i) for i in range(terms) for row in df.index])
-    Y = np.asarray([[df.ix[row][query_terms[i]]] for i in range(terms) for row in df.index ])
+    X = np.asarray([(date2num(datetime.datetime.strptime(df.iloc[row]['Date'], '%Y-%m-%d')), i) for i in range(terms) for row in df.index])
+    Y = np.asarray([[df.iloc[row][query_terms[i]]] for i in range(terms) for row in df.index ])
     output_info = columns[1:]
     cats = {}
     for i in range(terms):
@@ -1913,7 +1913,7 @@ if False:
                             # for a minute and try again
                             time.sleep(60.0)
                     for tweet in tweet_block_results:
-                        data.ix[data['id_str'] == int(tweet.id_str), 'time'] = tweet.created_at
+                        data.iloc[data['id_str'] == int(tweet.id_str), 'time'] = tweet.created_at
 
                     # Wait so as to stay below the rate limit
                     # Stay on the safe side, presume that collection is instantanious
@@ -1925,7 +1925,7 @@ if False:
                 #Now convert times to pandas datetimes
                 data['time'] = pd.to_datetime(data['time'])
                 #Get rid of non-parsed dates
-                data = data.ix[data['time'].notnull(), :]
+                data = data.iloc[data['time'].notnull(), :]
                 data.to_csv(parsed_file_path)
 
             data_dict[party] = data
