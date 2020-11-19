@@ -6,7 +6,7 @@ if int(IPython.__version__[0])>3:
     from ipywidgets import interact, fixed
 else:
     from IPython.html.widgets.interaction import interact, fixed        
-from IPython.display import display, HTML
+from IPython.display import display, HTML, IFrame
 
 def display_url(target):
     """Displaying URL in an IPython notebook to allow the user to click and check on information. With thanks to Fernando Perez for putting together the implementation!
@@ -62,7 +62,7 @@ def display_google_book(id, page=None, width=700, height=500, **kwargs):
         url = 'http://books.google.co.uk/books?id={id}&pg=PA{page}&output=embed'.format(id=id, page=page)
     else:
         url = 'http://books.google.co.uk/books?id={id}&pg={page}&output=embed'.format(id=id, page=page)
-    display_iframe_url(url, width=width, height=height, **kwargs)
+    IFrame(url, width=width, height=height, **kwargs)
 
                   
 def code_toggle(start_show=False, message=None):

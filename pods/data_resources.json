@@ -395,9 +395,25 @@
             "https://github.com/sjmgarnier/R-vs-Python/raw/master/Deadliest%20movies%20scrape/code/"
         ]
     },
+    "nigerian_nmis_facility_database": {
+	"citation": "Nigeria NMIS facility database (2014), the Office of the Senior Special Assistant to the President on the Millennium Development Goals (OSSAP-MDGs) & Columbia University",
+	"details": "Nigeria - NMIS health facility data (2014) The Nigeria MDG (Millennium Development Goals) Information System – NMIS health facility data is collected by the Office of the Senior Special Assistant to the President on the Millennium Development Goals (OSSAP-MDGs) in partner with the Sustainable Engineering Lab at Columbia University. A rigorous, geo-referenced baseline facility inventory across Nigeria is created spanning from 2009 to 2011 with an additional survey effort to increase coverage in 2014, to build Nigeria’s first nation-wide inventory of health facility. The database includes 34,139 health facilities info in Nigeria.\n\nThe goal of this database is to make the data collected available to planners, government officials, and the public, to be used to make strategic decisions for planning relevant interventions.\n\nFor data inquiry, please contact Ms. Funlola Osinupebi, Performance Monitoring & Communications, Advisory Power Team, Office of the Vice President at funlola.osinupebi@aptovp.org\n\nTo learn more, please visit http://csd.columbia.edu/2014/03/10/the-nigeria-mdg-information-system-nmis-takes-open-data-further/",
+	"files": [
+	    [
+		"healthmopupandbaselinenmisfacility.csv"
+	    ]
+	],
+	"license": "",
+	"size": 0,
+	"urls": [
+	    [
+		"https://energydata.info/dataset/f85d1796-e7f2-4630-be84-79420174e3bd/resource/6e640a13-cab4-457b-b9e6-0336051bac27/download/"
+	    ]
+	]
+    },
     "olivetti_faces": {
         "citation": "Ferdinando Samaria and Andy Harter, Parameterisation of a Stochastic Model for Human Face Identification. Proceedings of 2nd IEEE Workshop on Applications of Computer Vision, Sarasota FL, December 1994",
-        "details": "Olivetti Research Labs Face data base, acquired between December 1992 and December 1994 in the Olivetti Research Lab, Cambridge (which later became AT&T Laboratories, Cambridge). When using these images please give credit to AT&T Laboratories, Cambridge. ",
+        "details": "Olivetti Research Labs Face data base, acquired between December 1992 and December 1994 in the Olivetti Research Lab, Cambridge (which later became AT&T Laboratories, Cambridge). When using these images please give credit to AT&T Laboratories, Cambridge.",
         "files": [
             [
                 "att_faces.zip"

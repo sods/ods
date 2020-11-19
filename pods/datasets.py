@@ -1367,6 +1367,17 @@ def movielens100k(data_set='movielens100k'):
     Y = pd.concat(ratings)
     return data_details_return({'Y':Y, 'film_info':items, 'user_info':users, 'info': 'The Movielens 100k data'}, data_set)
 
+def nigerian_nmis_facility_database(data_set='nigerian_nmis_facility_database'):
+    """A rigorous, geo-referenced baseline facility inventory across Nigeria is created spanning from 2009 to 2011 with an additional survey effort to increase coverage in 2014, to build Nigeria’s first nation-wide inventory of health facility. The database includes 34,139 health facilities info in Nigeria."""
+    if not data_available(data_set):
+        download_data(data_set)
+
+    from pandas import read_csv
+    dir_path = os.path.join(data_path, data_set)
+    filename = os.path.join(dir_path, 'healthmopupandbaselinenmisfacility.csv')
+    Y = read_csv(filename)
+    return data_details_return({'Y': Y, 'info' : "Geo-referenced baseline facility inventory across Nigeria giving Nigeria's first nation-wide inventory of health facilities.",
+                                }, data_set)
 
 def crescent_data(num_data=200, seed=default_seed):
     """
