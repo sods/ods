@@ -46,9 +46,9 @@ except ImportError:
 try:
     import httplib2
     # easy_install --upgrade google-api-python-client
-    from apiclient import errors
-    from apiclient.discovery import build
-    from apiclient.http import BatchHttpRequest
+    from googleapiclient import errors
+    from googleapiclient.discovery import build
+    from googleapiclient.http import BatchHttpRequest
     from googleapiclient import sample_tools
     from googleapiclient import discovery
     import types
@@ -58,25 +58,25 @@ except ImportError:
 if api_available:
     query_filters = []
     query_filters.append({'name': 'traffic_goals',
-                     'dimensions': ['source', 'medium'],
-                     'metrics': ['sessions', 'goal1Starts', 'goal1Completions',
-                                 'goalStartsAll', 'goalCompletionsAll', 'goalValueAll'],
-                     'sort': ['-goalCompletionsAll'],
-                     'docstr': "This query returns data for the first and all goals defined, sorted by total goal completions in descending order."})
+                          'dimensions': ['source', 'medium'],
+                          'metrics': ['sessions', 'goal1Starts', 'goal1Completions',
+                                      'goalStartsAll', 'goalCompletionsAll', 'goalValueAll'],
+                          'sort': ['-goalCompletionsAll'],
+                          'docstr': "This query returns data for the first and all goals defined, sorted by total goal completions in descending order."})
     query_filters.append({'name': 'page_hits',
-                 'dimensions': ['pagePath'],
-                 'metrics': ['pageviews'],
-                 'sort': ['-pageviews'],
-                 'filters': 'ga:pagePath!@index.html;ga:pagePath!@faq.html;ga:pagePath!@spec.html',
-                 'docstr':"This query retuns the number of page hits"})
+                          'dimensions': ['pagePath'],
+                          'metrics': ['pageviews'],
+                          'sort': ['-pageviews'],
+                          'filters': 'ga:pagePath!@index.html;ga:pagePath!@faq.html;ga:pagePath!@spec.html',
+                          'docstr':"This query retuns the number of page hits"})
     for i in range(4):
         n = str(i+1)
         query_filters.append({'name':"goal" + n + "_completion",
-                                'dimensions': ['goalCompletionLocation'],
-                                'metrics': ['goal' + n + 'Completions'],
-                                'sort': ['-goal' + n + 'Completions'],
-                                'filters': None,
-                                'docstr': "This query retuns the number of goal " + n + "1 completions."})
+                              'dimensions': ['goalCompletionLocation'],
+                              'metrics': ['goal' + n + 'Completions'],
+                              'sort': ['-goal' + n + 'Completions'],
+                              'filters': None,
+                              'docstr': "This query retuns the number of goal " + n + "1 completions."})
     query_filters.append({'name': 'mobile_traffic',
                           'dimensions': ['mobileDeviceInfo'],
                           'metrics': ['sessions','pageviews','sessionDuration'],
@@ -92,9 +92,13 @@ if api_available:
     import json
     import warnings
     sheet_mime = 'application/vnd.google-apps.spreadsheet'
-    keyfile = os.path.expanduser(os.path.expandvars(config.get('google', 'oauth2_keyfile')))
-    table_id = os.path.expandvars(config.get('google', 'analytics_table'))
-
+    if config.has_section('google'):       # Check if config file is set up
+        keyfile = os.path.expanduser(os.path.expandvars(config.get('google', 'oauth2_keyfile')))
+        table_id = os.path.expandvars(config.get('google', 'analytics_table'))
+    else:
+        table_id = None
+        keyfile = None
+        
     class google_service:
         """Base class for accessing a google service"""
             # Get a google API connection.

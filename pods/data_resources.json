@@ -510,6 +510,62 @@
             "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/stick/"
         ]
     },
+    "nigerian_administrative_zones": {
+        "citation": "Nigeria - Subnational Administrative Boundaries. February 23, 2017. Office for the Surveyor General of the Federation of Nigeria (OSGOF), Ehealth, United Nations Cartographic Section (UNCS)",
+        "details": "The dataset represents the Common Operational Data (COD) for administrative boundaries of Nigeria. Each administrative unit contains the p-code and name. Admin COD datasets (Admin 0 – 2) for Nigeria are endorsed by the Office of the Surveyor General of the Federal Republic of Nigeria (OSGOF) and the IMWG Feb 2017. See metadata for description of methodology for admin level 3 and the cleaning and processing performed by ITOS. Levels 0 - 3 are polygonal administrative units, Level 3 only covers Adamawa, Borno and Yobe States and are for operational purposes only.\n\n A senatorial district shapefile is also included. Senatorial districts respect administrative level 1 (state) but are not reflected in the gazetteer, geodatabase, or live services.\n\n Vetting and live service provision by [Information Technology Outreach Services (ITOS)](https://cviog.uga.edu/international-center/) with funding from USAID.\n\n The administrative level 0-2 and senatorial district boundaries are suitable for database or GIS linkage to the [Nigeria 2016 Population Data tables](https://data.humdata.org/dataset/nigeria-2016-population-data).\n\n A topojson generalized version of administrative level 3 is also provided.\n\n REVISION HISTORY 14 February 2020: Topojson generalized administrative level 3 resource added",
+        "files": [
+            [
+                "nga_admbnda_osgof_eha_itos.gdb.zip"
+            ]
+        ],
+        "license": "This data is licensed for Humanitarian use only.",
+        "size": 6706778,
+        "urls": [
+            "https://data.humdata.org/dataset/81ac1d38-f603-4a98-804d-325c658599a3/resource/0bc2f7bb-9ff6-40db-a569-1989b8ffd3bc/download/"
+        ]
+    },
+   "nigerian_covid": {
+        "citation": "Coronavirus COVID-19 (2019-nCoV) Data Repository for Africa. Vukosi Marivarte, Elaine Nsoesie and Consortium for African COVID-19 Data. Available on: <https://github.com/dsfsi/covid19africa>.",
+        "details": "The purpose of this repository is to collate data on the ongoing coronavirus pandemic in Africa. Our goal is to record detailed information on each reported case in every African country. We want to build a line list – a table summarizing information about people who are infected, dead, or recovered. The table for each African country would include demographic, location, and symptom (where available) information for each reported case. The data will be obtained from official sources (e.g., WHO, departments of health, CDC etc.) and unofficial sources (e.g., news). Such a dataset has many uses, including studying the spread of COVID-19 across Africa and assessing similarities and differences to what’s being observed in other regions of the world.\n\nData is taken from:\n\n* [WHO Situational Reports](https://www.who.int/emergencies/diseases/novel-coronavirus-2019/situation-reports)\n* [WHO Africa Dashboard](https://www.afro.who.int/health-topics/coronavirus-covid-19)\n* [beoutbreakprepared/nCoV2019](https://github.com/beoutbreakprepared/nCoV2019/tree/master/bulletins_sitreps)\n* [JHU CSE](https://data.humdata.org/dataset/novel-coronavirus-2019-ncov-cases)\n* Nigeria Center for Disease Control [Main Site](http://covid19.ncdc.gov.ng/), [Twitter](https://twitter.com/NCDCgov)\n* Twitter: [@Chikwe_I](https://twitter.com/Chikwe_I), [@NCDCgov](https://twitter.com/NCDCgov), [@Fmohnigeria](https://twitter.com/Fmohnigeria)",
+        "files": [
+            [
+                "line-list-nigeria.csv"
+            ]
+        ],
+        "license": null,
+        "size": 650294,
+        "urls": [
+            "https://raw.githubusercontent.com/dsfsi/covid19africa/master/data/line_lists/"
+        ]
+    },
+    "nigerian_nmis": {
+        "citation": " Nigeria NMIS facility database (2014), the Office of the Senior Special Assistant to the President on the Millennium Development Goals (OSSAP-MDGs) & Columbia University",
+        "details": "The Nigeria MDG (Millennium Development Goals) Information System – NMIS health facility data is collected by the Office of the Senior Special Assistant to the President on the Millennium Development Goals (OSSAP-MDGs) in partner with the Sustainable Engineering Lab at Columbia University. A rigorous, geo-referenced baseline facility inventory across Nigeria is created spanning from 2009 to 2011 with an additional survey effort to increase coverage in 2014, to build Nigeria’s first nation-wide inventory of health facility. The database includes 34,139 health facilities info in Nigeria.\n\n The goal of this database is to make the data collected available to planners, government officials, and the public, to be used to make strategic decisions for planning relevant interventions.\n\n For data inquiry, please contact Ms. Funlola Osinupebi, Performance Monitoring & Communications, Advisory Power Team, Office of the Vice President at funlola.osinupebi@aptovp.org\n\n To learn more, please visit <http://csd.columbia.edu/2014/03/10/the-nigeria-mdg-information-system-nmis-takes-open-data-further/>",
+        "files": [
+            [
+                "healthmopupandbaselinenmisfacility.csv"
+            ]
+        ],
+        "license": null,
+        "size": 11136562,
+        "urls": [
+            "https://energydata.info/dataset/f85d1796-e7f2-4630-be84-79420174e3bd/resource/6e640a13-cab4-457b-b9e6-0336051bac27/download/"
+        ]
+    },
+   "nigerian_population_2016": {
+        "citation": "Nigeria - Subnational Population Statistics by administrative level 1 and 2. A projection based on the 2006 Census conucted by the National Population Commission of Nigeria. Available from The Humanitarian Data Exchange http://data.humdata.org",
+        "details": "Projection of administrative level 1 population statistics in Nigeria based on 2006 Census conducted by the National Population Commission (NPC) of Nigeria. Available from https://data.humdata.org/dataset/a7c3de5e-ff27-4746-99cd-05f2ad9b1066",
+        "files": [
+            [
+                "nga_pop_adm1_2016.csv"
+            ]
+        ],
+        "license": null,
+        "size": 1244,
+        "urls": [
+            "https://data.humdata.org/dataset/a7c3de5e-ff27-4746-99cd-05f2ad9b1066/resource/d9fc551a-b5e4-4bed-9d0d-b047b6961817/download/"
+        ]
+    },
     "pmlr": {
         "citation": "Proceedings of Machine Learning Research hosted at http://proceedings.mlr.press",
         "details": "Abstracts from the volumes of the Proceedings of Machine Learning research along with author information and PDF links. When using this data please credit the Proceedings of Machine Learning Research.",
@@ -593,7 +649,7 @@
             ]
         ],
         "urls": [
-            "https://www.dropbox.com/sh/7p6tu1t29idgliq/_XqlH_3nt9/"
+            "http://www.dcs.gla.ac.uk/~srogers/firstcourseml/"
         ]
     },
     "guo_qpcr_2010": {

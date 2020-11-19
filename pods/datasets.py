@@ -539,41 +539,99 @@ def epomeo_gpx(data_set='epomeo_gpx', sample_every=4):
         X.set_index(keys='seconds', inplace=True)
     return data_details_return({'X' : X, 'info' : 'Data is an array containing time in seconds, latitude, longitude and elevation in that order.'}, data_set)
 
-def pmlr(volumes='all', data_set='pmlr'):
+def nigerian_administrative_zones(data_set='nigerian_administrative_zones', refresh_data=False):
+    if not data_available(data_set) and not refresh_data:
+        download_data(data_set)
+    from zipfile import ZipFile
+    with ZipFile(os.path.join(data_path, data_set, 'nga_admbnda_osgof_eha_itos.gdb.zip'), 'r') as zip_ref:
+        zip_ref.extractall(os.path.join(data_path, data_set, 'nga_admbnda_osgof_eha_itos.gdb'))
+    states_file = "nga_admbnda_osgof_eha_itos.gdb/nga_admbnda_osgof_eha_itos.gdb/nga_admbnda_osgof_eha_itos.gdb/nga_admbnda_osgof_eha_itos.gdb/"
+    from geopandas import read_file
+    Y = read_file(os.path.join(data_path, data_set, states_file), layer=1)
+    Y.crs = "EPSG:4326"
+    Y.set_index('admin1Name_en')
+    return data_details_return({'Y': Y}, data_set)
+    
+def nigerian_covid(data_set='nigerian_covid', refresh_data=False):
+    if not data_available(data_set) and not refresh_data:
+        download_data(data_set)
+    from pandas import read_csv
+    dir_path = os.path.join(data_path, data_set)
+    filename = os.path.join(dir_path, 'line-list-nigeria.csv')
+    Y = read_csv(filename, parse_dates=['date',
+                                        'date_confirmation',
+                                        'date_onset_symptoms',
+                                        'date_admission_hospital',
+                                        'death_date'])
+    return data_details_return({'Y': Y}, data_set)
+
+def nigerian_nmis(data_set='nigerian_nmis', refresh_data=False):
+    if not data_available(data_set) and not refresh_data:
+        download_data(data_set)
+    from pandas import read_csv
+    dir_path = os.path.join(data_path, data_set)
+    filename = os.path.join(dir_path, 'healthmopupandbaselinenmisfacility.csv')
+    Y = read_csv(filename)
+    return data_details_return({'Y': Y}, data_set)
+
+
+def nigerian_population_2016(data_set='nigerian_population_2016', refresh_data=False):
+    if not data_available(data_set) and not refresh_data:
+        download_data(data_set)
+    from pandas import read_csv
+    dir_path = os.path.join(data_path, data_set)
+    filename = os.path.join(dir_path, 'nga_pop_adm1_2016.csv')
+    Y = read_csv(filename)
+    Y.columns = ['admin1Name_en', 'admin1Pcode', 'admin0Name_en', 'admin0Pcode', 'population']
+    Y = Y.set_index('admin1Name_en')
+    return data_details_return({'Y': Y}, data_set)
+
+
+def pmlr(volumes='all', data_set='pmlr', refresh_data=False):
     """Abstracts from the Proceedings of Machine Learning Research"""
-    if not data_available(data_set):
+    if not data_available(data_set) and not refresh_data:
         download_data(data_set)
         
     proceedings_file = open(os.path.join(data_path, data_set, 'proceedings.yaml'), 'r')
     import yaml
-    proceedings = yaml.load(proceedings_file)
+    proceedings = yaml.load(proceedings_file, Loader=yaml.FullLoader)
     
     # Create a new resources entry for downloading contents of proceedings.
-    data_name_full = 'pmlr_volumes'
-    data_resources[data_name_full] = data_resources[data_set].copy()
-    data_resources[data_name_full]['files'] = []
-    data_resources[data_name_full]['dirs'] = []
-    data_resources[data_name_full]['urls'] = []
+    data_name_full_stub = 'pmlr_volume_'
     for entry in proceedings:
+        data_name_full = data_name_full_stub + 'v' + str(entry['volume'])
+        data_resources[data_name_full] = data_resources[data_set].copy()
+        data_resources[data_name_full]['files'] = []
+        data_resources[data_name_full]['dirs'] = []
+        data_resources[data_name_full]['urls'] = []
         if volumes=='all' or entry['volume'] in volumes:
             file = entry['yaml'].split('/')[-1]
-            dir = 'v' + str(entry['volume'])
+            proto, url = entry['yaml'].split('//')
+            file = os.path.basename(url)
+            dirname = os.path.dirname('/'.join(url.split('/')[1:]))
+            urln = proto + '//' + url.split('/')[0]
             data_resources[data_name_full]['files'].append([file])
-            data_resources[data_name_full]['dirs'].append([dir])
-            data_resources[data_name_full]['urls'].append(data_resources[data_set]['urls'][0])
-    Y = []
-    # Download the volume data
-    if not data_available(data_name_full):
-        download_data(data_name_full)
+            data_resources[data_name_full]['dirs'].append([dirname])
+            data_resources[data_name_full]['urls'].append(urln)
+        Y = []
+        # Download the volume data
+        if not data_available(data_name_full):
+            download_data(data_name_full)
+            
     for entry in reversed(proceedings):
         volume =  entry['volume']
+        data_name_full = data_name_full_stub + 'v' + str(volume)
         if volumes == 'all' or volume in volumes:
             file = entry['yaml'].split('/')[-1]
-            volume_file = open(os.path.join(
-                data_path, data_name_full,
-                'v'+str(volume), file
-                ), 'r')
-            Y+=yaml.load(volume_file)
+            proto, url = entry['yaml'].split('//')
+            file = os.path.basename(url)
+            dirname = os.path.dirname('/'.join(url.split('/')[1:]))
+            urln = proto + '//' + url.split('/')[0]
+            volume_file = open(os.path.join(data_path,
+                                            data_name_full,
+                                            dirname,
+                                            file), 'r')
+            Y+=yaml.load(volume_file, Loader=yaml.FullLoader)
     if pandas_available:
         Y = pd.DataFrame(Y)
         Y['published'] = pd.to_datetime(Y['published'])
@@ -1004,7 +1062,6 @@ def mauna_loa(data_set='mauna_loa', num_train=545, refresh_data=False):
     Y = allY[:num_train, 0:1]
     Ytest = allY[num_train:, 0:1]
     return data_details_return({'X': X, 'Y': Y, 'Xtest': Xtest, 'Ytest': Ytest, 'covariates': [decimalyear('year', '%Y-%m')], 'response': ['CO2/ppm'], 'info': "Mauna Loa data with " + str(num_train) + " values used as training points."}, data_set)
-
 
 def osu_run1(data_set='osu_run1', sample_every=4):
     """Ohio State University's Run1 motion capture data set."""
