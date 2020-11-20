@@ -1183,7 +1183,7 @@ def airline_delay(data_set='airline_delay', num_train=700000, num_test=100000, s
         download_data(data_set)
 
     dir_path = os.path.join(data_path, data_set)
-    filename = os.path.join(dir_path, 'filtered_data.pickle')
+    filename = os.path.join(dir_path, 'filtered_data2.pickle')
 
     # 1. Load the dataset
     import pandas as pd
