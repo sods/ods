@@ -1,15 +1,15 @@
 {
     "airline_delay": {
         "citation": "Gaussian Processes for Big Data (In UAI'13). J. Hensman, N. Fusi and N. D. Lawrence",
-        "details": "Flight arrival and departure times for every commercial flight in the USA from January 2008 to April 2008. This dataset contains extensive information about almost 2 million flights, including the delay (in minutes) in reaching the desitnation.",
+        "details": "Flight arrival and departure times for every commercial flight in the USA from January 2008 to April 2008. This dataset contains extensive information about almost 2 million flights, including the delay (in minutes) in reaching the destination.",
         "files": [
             [
-                "filtered_data.pickle"
+                "filtered_data2.pickle"
             ]
         ],
         "license": null,
-        "size": 180905165,
-        "urls": [
+        "size": 180905168,
+	"urls": [
             "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/airline_delay/"
         ]
     },
