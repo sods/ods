@@ -1526,11 +1526,26 @@ def cmu_mocap_35_walk_jog(data_set='cmu_mocap'):
     data['info'] = "Walk and jog data from CMU data base subject 35. As used in Tayor, Roweis and Hinton at NIPS 2007, but without their pre-processing (i.e. as used by Lawrence at AISTATS 2007). It consists of " + data['info']
     return data
 
+def cmu_mocap_high_five(data_set='cmu_mocap'):
+    """Load the CMU Motion capture for the high 5 between subjects 20 and 21 in the motion capture data. The data was used by Lawrence and Moore ICML 2007. Later the work was recreated by Damianou and Lawrence at AISTATS 2013."""
+    data = cmu_mocap('20', ['11'], [], sample_every=4, data_set=data_set)
+    data2 = cmu_mocap('21', ['11'], [], sample_every=4, data_set=data_set)
+    data_resources[data_set]['files'] = resource['files']
+    data_resources[data_set]['urls'] = resource['urls']
+    data['Y1'] = data.pop('Y')
+    data['skel1'] = data.pop('skel')
+    data['Y2'] = data2['Y']
+    data['skel2'] = data2['skel']
+    
+    data['info'] = "High Five motion catpure of two subjects walking towards each other and 'high fiving' as used by Lawrence and Moore at ICML. Data taken from subjects 20 and 21. It consists of " + data['info'] + ' and ' + data2['info']
+    return data
+
 
 
 def cmu_mocap(subject, train_motions, test_motions=[], sample_every=4, data_set='cmu_mocap'):
     """Load a given subject's training and test motions from the CMU motion capture data."""
     # Load in subject skeleton.
+
     from . import mocap
     subject_dir = os.path.join(data_path, data_set)
 
