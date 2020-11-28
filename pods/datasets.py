@@ -1530,6 +1530,7 @@ def cmu_mocap_high_five(data_set='cmu_mocap'):
     """Load the CMU Motion capture for the high 5 between subjects 20 and 21 in the motion capture data. The data was used by Lawrence and Moore ICML 2007. Later the work was recreated by Damianou and Lawrence at AISTATS 2013."""
     data = cmu_mocap('20', ['11'], [], sample_every=4, data_set=data_set)
     data2 = cmu_mocap('21', ['11'], [], sample_every=4, data_set=data_set)
+    resource = cmu_urls_files((['20', '21'], ['11', '11']))
     data_resources[data_set]['files'] = resource['files']
     data_resources[data_set]['urls'] = resource['urls']
     data['Y1'] = data.pop('Y')
