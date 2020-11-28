@@ -1538,7 +1538,7 @@ def cmu_mocap_high_five(data_set='cmu_mocap'):
     data['Y2'] = data2['Y']
     data['skel2'] = data2['skel']
     
-    data['info'] = "High Five motion catpure of two subjects walking towards each other and 'high fiving' as used by Lawrence and Moore at ICML. Data taken from subjects 20 and 21. It consists of " + data['info'] + ' and ' + data2['info']
+    data['info'] = "High Five motion capture of two subjects walking towards each other and 'high fiving' as used by Lawrence and Moore at ICML. Data taken from subjects 20 and 21. It consists of " + data['info'] + ' and ' + data2['info']
     return data
 
 
