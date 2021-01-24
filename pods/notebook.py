@@ -196,7 +196,7 @@ def display_prediction(basis, num_basis=4, wlim=(-1.,1.), fig=None, ax=None, xli
              **param_args)
 
 
-def display_plots(filebase, directory=None, width=600, height=40, **kwargs):
+def display_plots(filebase, directory=None, width=600, height=450, **kwargs):
     """Display a series of plots controlled by sliders. The function relies on Python string format functionality to index through a series of plots."""
     def show_figure(filebase, directory, width=600, height=450,  **kwargs):
         """Helper function to load in the relevant plot for display."""
