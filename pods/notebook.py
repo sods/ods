@@ -205,7 +205,7 @@ def display_plots(filebase, directory=None, width=600, height=40, **kwargs):
         if directory is not None:
             filename = directory + '/' + filename
         if ext.lower() == '.svg':
-            display(SVG(data="{filename}".format(filename=filename), width=width, height=height))
+            display(SVG(data="{filename}".format(filename=filename)))
         elif ext.lower() in ['.png', '.jpg', '.gif', '.jpeg']:
             display(Image(data="{filename}".format(filename=filename), width=width, height=height))
         elif ext.lower() in ['.html']:
