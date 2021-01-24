@@ -338,6 +338,16 @@
             "http://hapmap.ncbi.nlm.nih.gov/downloads/genotypes/latest_phaseIII_ncbi_b36/plink_format/"
         ]
     },
+    "kepler_light_curves": {
+        "citation": "",
+        "details": "The Kepler spacecraft was launched into an earth trailing orbit and stared at a 100 sq. degree patch of sky near Cygnus in order to measure the brightness variations of about 200,000 stars.  It's primary mission was to find exoplanets transiting these stars and to determine the prevalence of exoplanets in the Galaxy.  The Kepler spacecraft rotated by 90 degrees every 90 days in order to keep the solar panels pointing at the sun and thus the Kepler data is divided into 90-day quarters. Kepler only downloaded the pixels surrounding selected stars of interest at either a 30-minute or 1-minute cadence. The mission produced a flux time series for each star and searched these light curves for the presence of a transiting exoplanet.  In addition to discovering exoplanets, Kepler data has been used to study the variability of stars and eclipsing binaries.",
+        "files": null,
+        "license": null,
+        "size": null,
+        "urls": [
+            "https://archive.stsci.edu/missions/kepler/lightcurves/"
+        ]
+    },
     "isomap_face_data": {
         "citation": "A Global Geometric Framework for Nonlinear Dimensionality Reduction, J. B. Tenenbaum, V. de Silva and J. C. Langford, Science 290 (5500): 2319-2323, 22 December 2000",
         "details": "Face data made available by Tenenbaum, de Silva and Langford to demonstrate isomap, available from http://isomap.stanford.edu/datasets.html.",

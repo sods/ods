@@ -413,6 +413,70 @@ def to_arff(dataset, **kwargs):
         df2arff(d, n, pods_data)
 
 
+def kepler_load_urls(filename):
+    """Convert a list of Kepler URLS into star and motion times."""
+    star_datasets = {}
+    with open(filename, 'r'):
+        url = f.readline().strip()
+        url_file = os.path.basename(url)
+        star, start = url_file.split('-')
+        star = star[4:]
+        if not star in star_datasets:
+            star_datasets['star'] = []
+        star_datasets['star'].append(start[:13])
+    return star_datasets
+        
+def kepler_light_curves_urls_files(star_datasets, messages = True):
+    """
+    Find which resources are missing on the local disk for the requested Kepler datasets.
+
+    :param star_datasets: the star data sets to be checked for.
+    :type star_datasets: tuple of lists containg kepler ids and data sets.
+    """
+
+    dr = data_resources['kepler_telescope']
+    kepler_url = dr['urls'][0]
+
+    stars_num = subj_datasets[0]
+    datasets_num = subj_datasets[1]
+
+    resource = {'urls' : [], 'files' : []}
+    # Convert numbers to strings
+    stars = []
+    datasets = [list() for _ in range(len(stars_num))]
+    for i in range(len(stars_num)):
+        curSubj = str(int(stars_num[i])).zfill(9)
+        stars.append(curSubj)
+        for j in range(len(datasets_num[i])):
+            curMot = str(int(datasets_num[i][j]))
+            datasets[i].append(curMot)
+
+    all_stars = []
+
+    assert len(stars) == len(datasets)
+
+    all_datasets = []
+
+    star_dir = os.path.join(data_path, 'kepler_telescope')
+    for i in range(len(stars)):
+        url_required = False
+        file_download = []
+        if not os.path.isdir(star_dir):
+            os.makedirs(star_dir)
+        for j in range(len(datasets[i])):
+            file_name = 'kplr' + stars[i] + '-' + datasets[i][j] + '_slc.fits'
+            cur_motion_file = os.path.join(star_dir, file_name)
+            if not os.path.exists(cur_motion_file):
+                url_required = True
+                file_download.append(file_name)
+        if url_required:
+            resource['urls'].append(kepler_url + '/' +
+                                    stars[i][:4] + '/' +
+                                    stars[i] + '/')
+            resource['files'].append(file_download)
+    return resource
+
+    
 def cmu_urls_files(subj_motions, messages = True):
     """
     Find which resources are missing on the local disk for the requested CMU motion capture motions.
@@ -1506,6 +1570,9 @@ def ceres(data_set='ceres'):
     return data_details_return({'data': data}, data_set)
 
 
+def kelper_lightcurves_(data_set='kepler_lightcurves'):
+    """Load Kepler light curves from David W. Hogg & Kate Storey-Fisher's NeurIPS 2020 Tutorial as shown in this colab https://colab.research.google.com/drive/1TimsiQhhcK6qX_lD951H-WJDHd92my61?usp=sharing"""
+    cmu
 def cmu_mocap_49_balance(data_set='cmu_mocap'):
     """Load CMU subject 49's one legged balancing motion that was used by Alvarez, Luengo and Lawrence at AISTATS 2009."""
     train_motions = ['18', '19']

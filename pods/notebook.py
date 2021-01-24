@@ -1,12 +1,13 @@
 # Copyright 2014 Open Data Science Initiative and other authors. See AUTHORS.txt
 # Licensed under the BSD 3-clause license (see LICENSE.txt)
 
+import os
 import IPython
 if int(IPython.__version__[0])>3:
     from ipywidgets import interact, fixed
 else:
     from IPython.html.widgets.interaction import interact, fixed        
-from IPython.display import display, HTML, IFrame
+from IPython.display import display, HTML, IFrame, Image, SVG
 
 def display_url(target):
     """Displaying URL in an IPython notebook to allow the user to click and check on information. With thanks to Fernando Perez for putting together the implementation!
@@ -59,9 +60,9 @@ def display_google_book(id, page=None, width=700, height=500, **kwargs):
     :param page: the start page for the book.
     :type id: string or int."""
     if isinstance(page, int):
-        url = 'http://books.google.co.uk/books?id={id}&pg=PA{page}&output=embed'.format(id=id, page=page)
+        url = 'https://books.google.co.uk/books?id={id}&pg=PA{page}&output=embed'.format(id=id, page=page)
     else:
-        url = 'http://books.google.co.uk/books?id={id}&pg={page}&output=embed'.format(id=id, page=page)
+        url = 'https://books.google.co.uk/books?id={id}&pg={page}&output=embed'.format(id=id, page=page)
     IFrame(url, width=width, height=height, **kwargs)
 
                   
@@ -199,10 +200,16 @@ def display_plots(filebase, directory=None, width=700, height=500, **kwargs):
     """Display a series of plots controlled by sliders. The function relies on Python string format functionality to index through a series of plots."""
     def show_figure(filebase, directory, **kwargs):
         """Helper function to load in the relevant plot for display."""
+        _, ext = os.path.splitext(filebase)
         filename = filebase.format(**kwargs)
         if directory is not None:
             filename = directory + '/' + filename
-        display(HTML("<img src='{filename}'>".format(filename=filename)))
-        
+        if ext.lower() == '.svg':
+            display(SVG(data="{filename}".format(filename=filename), width=width, height=height))
+        elif ext.lower() in ['.png', '.jpg', '.gif', '.jpeg']:
+            display(Image(data="{filename}".format(filename=filename), width=width, height=height))
+        elif ext.lower() in ['.html']:
+            display(IFrame(src="{filename}".format(filename=filename), width=width, height=height))
+            
     interact(show_figure, filebase=fixed(filebase), directory=fixed(directory), **kwargs)
 
