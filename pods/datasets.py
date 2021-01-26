@@ -629,7 +629,7 @@ def nigerian_covid(data_set='nigerian_covid', refresh_data=False):
                                         'death_date'])
     return data_details_return({'Y': Y}, data_set)
 
-def nigerian_nmis(data_set='nigerian_nmis', refresh_data=False):
+def nigeria_nmis(data_set='nigeria_nmis', refresh_data=False):
     if not data_available(data_set) and not refresh_data:
         download_data(data_set)
     from pandas import read_csv
@@ -1488,7 +1488,7 @@ def movielens100k(data_set='movielens100k'):
     Y = pd.concat(ratings)
     return data_details_return({'Y':Y, 'film_info':items, 'user_info':users, 'info': 'The Movielens 100k data'}, data_set)
 
-def nigerian_nmis_facility_database(data_set='nigerian_nmis_facility_database'):
+def nigeria_nmis_facility_database(data_set='nigeria_nmis_facility_database'):
     """A rigorous, geo-referenced baseline facility inventory across Nigeria is created spanning from 2009 to 2011 with an additional survey effort to increase coverage in 2014, to build Nigeria’s first nation-wide inventory of health facility. The database includes 34,139 health facilities info in Nigeria."""
     if not data_available(data_set):
         download_data(data_set)
