@@ -916,6 +916,7 @@ def google_trends(query_terms=['big data', 'machine learning', 'data science'], 
             os.makedirs(dir_path)
 
         df.to_csv(file_name)
+        df['Date'] = df.index
         df = df.set_index(np.array(range(len(df.index))))
         df = df.rename({'date': 'Date'})
         loaddf = False
