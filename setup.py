@@ -39,6 +39,9 @@ EXTRAS = {
     'pandas google sheet interface' : [
         'gdata'
     ],
+    'google trends interface' : [
+        'pytrends'
+    ],
     
 }
 

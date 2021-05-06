@@ -877,15 +877,19 @@ def google_trends(query_terms=['big data', 'machine learning', 'data science'], 
 
     The function will cache the result of any query in an attempt to
     avoid this. If you wish to refresh an old query set refresh_data
-    to True. The function is inspired by this notebook:
+    to True. The original function is inspired by this notebook:
 
     http://nbviewer.ipython.org/github/sahuguet/notebooks/blob/master/GoogleTrends%20meet%20Notebook.ipynb
+
+    But the update makes use of `pytrends`
 
     """
 
     query_terms.sort()
     import pandas as pd
-
+    from pytrends.request import TrendReq
+    pytrends = TrendReq(hl='en-US', tz=360)
+    
     # Create directory name for data
     dir_path = os.path.join(data_path,'google_trends')
     if not os.path.isdir(dir_path):
@@ -904,18 +908,10 @@ def google_trends(query_terms=['big data', 'machine learning', 'data science'], 
         print("Query terms: ", ', '.join(query_terms))
 
         print("Fetching query:")
-        query = 'http://www.google.com/trends/fetchComponent?q=%s&cid=TIMESERIES_GRAPH_0&export=3' % ",".join(quoted_terms)
-
-        data = urlopen(query).read().decode('utf8')
+        pytrends = TrendReq(hl='en-US', tz=0)
+        pytrends.build_payload(query_terms, cat=0, timeframe='all', geo='', gprop='')
+        df = pytrends.interest_over_time()
         print("Done.")
-        # In the notebook they did some data cleaning: remove Javascript header+footer, and translate new Date(....,..,..) into YYYY-MM-DD.
-        header = """// Data table response\ngoogle.visualization.Query.setResponse("""
-        data = data[len(header):-2]
-        data = re.sub('new Date\((\d+),(\d+),(\d+)\)', (lambda m: '"%s-%02d-%02d"' % (m.group(1).strip(), 1+int(m.group(2)), int(m.group(3)))), data)
-        timeseries = json.loads(data)
-        columns = [k['label'] for k in timeseries['table']['cols']]
-        rows = list(map(lambda x: [k['v'] for k in x['c']], timeseries['table']['rows']))
-        df = pd.DataFrame(rows, columns=columns)
         if not os.path.isdir(dir_path):
             os.makedirs(dir_path)
 
