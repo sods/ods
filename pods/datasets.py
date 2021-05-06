@@ -915,10 +915,10 @@ def google_trends(query_terms=['big data', 'machine learning', 'data science'], 
         if not os.path.isdir(dir_path):
             os.makedirs(dir_path)
 
-        df.to_csv(file_name)
         df['Date'] = df.index
         df = df.set_index(np.array(range(len(df.index))))
         df = df.rename({'date': 'Date'})
+        df.to_csv(file_name)
         loaddf = False
     else:
         print("Reading cached data for google trends. To refresh the cache set 'refresh_data=True' when calling this function.")
