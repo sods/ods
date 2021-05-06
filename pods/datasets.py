@@ -916,23 +916,24 @@ def google_trends(query_terms=['big data', 'machine learning', 'data science'], 
             os.makedirs(dir_path)
 
         df.to_csv(file_name)
-        df.set_index(np.array(range(len(df.index)))) 
+        df.set_index(np.array(range(len(df.index))))
+        df = df.rename({'date': 'Date'})
+        loaddf = False
     else:
         print("Reading cached data for google trends. To refresh the cache set 'refresh_data=True' when calling this function.")
         print("Query terms: ", ', '.join(query_terms))
 
         df = pd.read_csv(file_name, parse_dates=[0])
+        loaddf = True
 
     columns = df.columns
     terms = len(query_terms)
     import datetime
     from matplotlib.dates import date2num
-    if 'date' in df.columns:
-        date = 'date'
-    elif 'Date' in df.columns:
-        date = 'Date'
-        
-    X = np.asarray([(date2num(datetime.datetime.strptime(df.iloc[row][date], '%Y-%m-%d')), i) for i in range(terms) for row in df.index])
+    if loaddf:
+        X = np.asarray([(date2num(datetime.datetime.strptime(df.iloc[row][date], '%Y-%m-%d')), i) for i in range(terms) for row in df.index])
+    else:
+        X = np.asarray([(date2num(df.iloc[row][date]), i) for i in range(terms) for row in df.index])
     Y = np.asarray([[df.iloc[row][query_terms[i]]] for i in range(terms) for row in df.index ])
     output_info = columns[1:]
     cats = {}
