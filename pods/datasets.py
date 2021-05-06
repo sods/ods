@@ -931,9 +931,9 @@ def google_trends(query_terms=['big data', 'machine learning', 'data science'], 
     import datetime
     from matplotlib.dates import date2num
     if loaddf:
-        X = np.asarray([(date2num(datetime.datetime.strptime(df.iloc[row][date], '%Y-%m-%d')), i) for i in range(terms) for row in df.index])
+        X = np.asarray([(date2num(datetime.datetime.strptime(df.iloc[row]['Date'], '%Y-%m-%d')), i) for i in range(terms) for row in df.index])
     else:
-        X = np.asarray([(date2num(df.iloc[row][date]), i) for i in range(terms) for row in df.index])
+        X = np.asarray([(date2num(df.iloc[row]['Date']), i) for i in range(terms) for row in df.index])
     Y = np.asarray([[df.iloc[row][query_terms[i]]] for i in range(terms) for row in df.index ])
     output_info = columns[1:]
     cats = {}
