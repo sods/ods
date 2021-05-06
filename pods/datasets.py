@@ -916,6 +916,8 @@ def google_trends(query_terms=['big data', 'machine learning', 'data science'], 
             os.makedirs(dir_path)
 
         df.to_csv(file_name)
+        df['Date'] = df.index
+        df.set_index(range(len(df.index))) 
     else:
         print("Reading cached data for google trends. To refresh the cache set 'refresh_data=True' when calling this function.")
         print("Query terms: ", ', '.join(query_terms))
