@@ -25,7 +25,7 @@ VERSION = 'v0.0.21-alpha'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    'openpyxl', 'pods', 'pandas', 'lxml', 'gdata',
+    'pandas',
 ]
 
 # What packages are optional?
