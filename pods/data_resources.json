@@ -10,23 +10,39 @@
         "license": null,
         "size": 180905168,
 	"urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/airline_delay/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/airline_delay/"
         ]
     },
-    "ankur_pose_data": {
-        "citation": "3D Human Pose from Silhouettes by Relevance Vector Regression (In CVPR'04). A. Agarwal and B. Triggs.",
-        "details": "Artificially generated data of silhouettes given poses. Note that the data does not display a left/right ambiguity because across the entire data set one of the arms sticks out more the the other, disambiguating the pose as to which way the individual is facing.",
+    "bmi_steps": {
+        "citation": "A Hypothesis is a Liability. I. Yanai and M. Lercher",
+        "details": "Data for two genders of steps against BMI.",
         "files": [
             [
-                "ankurDataPoseSilhouette.mat"
+                "steps-bmi-data.csv"
             ]
         ],
         "license": null,
-        "size": 2802667,
+        "size": 0,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/ankur_pose_data/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/bmi_steps/"
         ]
     },
+    "boston_housing": {
+        "citation": "Harrison, D. and Rubinfeld, D.L. 'Hedonic prices and the demand for clean air', J. Environ. Economics & Management, vol.5, 81-102, 1978.",
+        "details": "The Boston Housing data relates house values in Boston to a range of input variables.",
+        "files": [
+            [
+                "Index",
+                "housing.data",
+                "housing.names"
+            ]
+        ],
+        "license": null,
+        "size": 51276,
+        "urls": [
+            "http://archive.ics.uci.edu/ml/machine-learning-databases/housing/"
+        ]
+    },    
     "boston_housing": {
         "citation": "Harrison, D. and Rubinfeld, D.L. 'Hedonic prices and the demand for clean air', J. Environ. Economics & Management, vol.5, 81-102, 1978.",
         "details": "The Boston Housing data relates house values in Boston to a range of input variables.",
@@ -54,7 +70,7 @@
         "license": "You may copy and redistribute the data. You may make derivative works from the data. You may use the data for commercial purposes. You may not sublicence the data when redistributing it. You may not redistribute the data under a different license. Source attribution on any use of this data: Must refer source.",
         "size": 46779,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/boxjenkins_airline/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/boxjenkins_airline/"
         ]
     },
     "brendan_faces": {
@@ -82,7 +98,7 @@
         "license": null,
         "size": 2044,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/ceres/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/ceres/"
         ]
     },
     "cifar-10": {
@@ -139,7 +155,7 @@
         "license": null,
         "size": 2031872,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/decampos_digits/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/decampos_digits/"
         ]
     },
     "della_gatta": {
@@ -153,7 +169,7 @@
         "license": null,
         "size": 3729650,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/della_gatta/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/della_gatta/"
         ]
     },
     "drosophila_protein": {
@@ -167,7 +183,7 @@
         "license": null,
         "size": 20258,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/drosophila_protein/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/drosophila_protein/"
         ]
     },
     "spellman_yeast": {
@@ -213,7 +229,7 @@
         "license": null,
         "size": 2031872,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/epomeo_gpx/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/epomeo_gpx/"
         ]
     },
     "football_data": {
@@ -250,7 +266,7 @@
         "license": null,
         "size": 59000000,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/fruitfly_tomancak/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/fruitfly_tomancak/"
         ]
     },
     "fruitfly_tomancak_cel_files": {
@@ -359,7 +375,7 @@
         "license": null,
         "size": 24229368,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/isomap_face_data/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/isomap_face_data/"
         ]
     },
     "mauna_loa": {
@@ -435,7 +451,7 @@
         "license": null,
         "size": 8561331,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/olivetti_faces/",
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/olivetti_faces/",
             "http://www.cs.nyu.edu/~roweis/data/"
         ]
     },
@@ -453,7 +469,7 @@
         "license": null,
         "size": 4261047,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/olivetti_faces/",
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/olivetti_faces/",
             "http://www.cs.nyu.edu/~roweis/data/"
         ]
     },
@@ -468,7 +484,7 @@
         "license": null,
         "size": 584,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/olympic_marathon_men/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/olympic_marathon_men/"
         ]
     },
     "osu_accad": {
@@ -499,7 +515,7 @@
         "size": 15922790,
         "urls": [
             "http://accad.osu.edu/research/mocap/data/",
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/stick/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/stick/"
         ]
     },
     "osu_run1": {
@@ -517,7 +533,7 @@
         "size": 338103,
         "urls": [
             "http://accad.osu.edu/research/mocap/data/",
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/stick/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/stick/"
         ]
     },
     "nigerian_administrative_zones": {
@@ -640,7 +656,7 @@
         "license": null,
         "size": 284390,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/robot_wireless/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/robot_wireless/"
         ]
     },
     "rogers_girolami_data": {
@@ -689,7 +705,7 @@
         "license": null,
         "size": 0,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/sod1_mouse/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/sod1_mouse/"
         ]
     },
     "swiss_roll": {
@@ -722,7 +738,7 @@
         "license": null,
         "size": 712796,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/three_phase_oil_flow/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/three_phase_oil_flow/"
         ]
     },
     "xw_pen": {
@@ -736,7 +752,7 @@
         "license": null,
         "size": 3410,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/xw_pen/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/xw_pen/"
         ]
     },
     "leukemia": {
@@ -795,7 +811,7 @@
         "license": null,
         "size": 7518372,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/twitter_data/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/twitter_data/"
         ]
     }
 }

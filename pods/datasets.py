@@ -535,6 +535,18 @@ def cmu_urls_files(subj_motions, messages = True):
             resource['files'].append(file_download)
     return resource
 
+def bmi_steps(data_set='bmi_steps', seed=default_seed):
+    if not data_available(data_set):
+        download_data(data_set)
+
+    np.random.seed(seed=seed)
+    data = pd.read_csv(os.path.join(data_path, data_set, 'steps-bmi-data.csv'))
+
+    X = np.hstack((data['steps'].values[:, np.newaxis], data['bmi'].values[:, np.newaxis]))
+    Y = data['gender'].values[:, None]
+
+    return data_details_return({'X': X, 'Y' : Y, 'covariates' : ['steps', 'bmi'], 'response' : ['gender']}, data_set)
+
 
 # The data sets
 def boston_housing(data_set='boston_housing'):
