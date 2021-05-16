@@ -535,7 +535,7 @@ def cmu_urls_files(subj_motions, messages = True):
             resource['files'].append(file_download)
     return resource
 
-def bmi_steps(data_set='bmi_steps', seed=default_seed):
+def bmi_steps(data_set='bmi_steps'):
     if not data_available(data_set):
         download_data(data_set)
 
