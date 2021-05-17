@@ -539,7 +539,6 @@ def bmi_steps(data_set='bmi_steps'):
     if not data_available(data_set):
         download_data(data_set)
 
-    np.random.seed(seed=seed)
     data = pd.read_csv(os.path.join(data_path, data_set, 'steps-bmi-data.csv'))
 
     X = np.hstack((data['steps'].values[:, np.newaxis], data['bmi'].values[:, np.newaxis]))
