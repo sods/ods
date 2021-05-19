@@ -488,7 +488,7 @@
         ]
     },
     "osu_accad": {
-        "citation": "The Open Motion Data Project by The Ohio State University Advanced Computing Center for the Arts and Design, http://accad.osu.edu/research/mocap/mocap_data.htm.",
+        "citation": "The Open Motion Data Project by The Ohio State University Advanced Computing Center for the Arts and Design, originally found at http://accad.osu.edu/research/mocap/mocap_data.htm.",
         "details": "Motion capture data of different motions from the Open Motion Data Project at Ohio State University.",
         "files": [
             [
@@ -514,12 +514,12 @@
         "license": "Data is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License (http://creativecommons.org/licenses/by-nc-sa/3.0/).",
         "size": 15922790,
         "urls": [
-            "http://accad.osu.edu/research/mocap/data/",
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/osu_accad/",
             "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/stick/"
         ]
     },
     "osu_run1": {
-        "citation": "The Open Motion Data Project by The Ohio State University Advanced Computing Center for the Arts and Design, http://accad.osu.edu/research/mocap/mocap_data.htm.",
+        "citation": "The Open Motion Data Project by The Ohio State University Advanced Computing Center for the Arts and Design, originally found at http://accad.osu.edu/research/mocap/mocap_data.htm.",
         "details": "Motion capture data of a stick man running from the Open Motion Data Project at Ohio State University.",
         "files": [
             [
@@ -532,7 +532,7 @@
         "license": "Data is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License (http://creativecommons.org/licenses/by-nc-sa/3.0/).",
         "size": 338103,
         "urls": [
-            "http://accad.osu.edu/research/mocap/data/",
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/osu_accad/",
             "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/stick/"
         ]
     },
