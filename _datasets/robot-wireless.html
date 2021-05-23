@@ -57,19 +57,14 @@ sns.set_palette('colorblind')}-->
 <span class="editsection-bracket" style="">[</span><span class="editsection" style=""><a href="https://github.com/lawrennd/talks/edit/gh-pages/_datasets/includes/robot-wireless-data.md" target="_blank" onclick="ga('send', 'event', 'Edit Page', 'Edit', 'https://github.com/lawrennd/talks/edit/gh-pages/_datasets/includes/robot-wireless-data.md', 13);">edit</a></span><span class="editsection-bracket" style="">]</span>
 </div>
 <p>The robot wireless data is taken from an experiment run by Brian Ferris at University of Washington. It consists of the measurements of WiFi access point signal strengths as Brian walked in a loop. It was published at IJCAI in 2007 <span class="citation" data-cites="Ferris:wifi07">(Ferris et al., 2007)</span>.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pods</span></code></pre></div>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>data<span class="op">=</span>pods.datasets.robot_wireless()</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> np.linspace(<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">215</span>)[:, np.newaxis]</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> data[<span class="st">&#39;Y&#39;</span>]</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>offset <span class="op">=</span> y.mean()</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>scale <span class="op">=</span> np.sqrt(y.var())</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>yhat <span class="op">=</span> (y<span class="op">-</span>offset)<span class="op">/</span>scale</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pods</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>data<span class="op">=</span>pods.datasets.robot_wireless()</span></code></pre></div>
 <p>The ground truth is recorded in the data, the actual loop is given in the plot below.</p>
 <h2 id="robot-wireless-ground-truth">Robot Wireless Ground Truth</h2>
 <div class="figure">
 <div id="robot-wireless-ground-truth-figure" class="figure-frame">
-<object class="svgplot " data="../slides/diagrams/datasets/robot-wireless-ground-truth.svg" width="60%" style=" ">
+<object class="svgplot " data="https://inverseprobability.com/talks/slides/diagrams//datasets/robot-wireless-ground-truth.svg" width="60%" style=" ">
 </object>
 </div>
 <div id="robot-wireless-ground-truth-magnify" class="magnify" onclick="magnifyFigure(&#39;robot-wireless-ground-truth&#39;)">
@@ -84,7 +79,7 @@ sns.set_palette('colorblind')}-->
 <p>One challenge with the data is that the signal strength ‘drops out.’ This is because the device only tracks a limited number of wifi access points, when one of the access points falls outside the track, the value disappears (in the plot below it reads -0.5). The data is missing, but it is not missing at random because the implication is that the wireless access point must be weak to have dropped from the list of those that are tracked.</p>
 <div class="figure">
 <div id="robot-wireless-data-dim-1-figure" class="figure-frame">
-<object class="svgplot " data="../slides/diagrams/datasets/robot-wireless-dim-1.svg" width="60%" style=" ">
+<object class="svgplot " data="https://inverseprobability.com/talks/slides/diagrams//datasets/robot-wireless-dim-1.svg" width="60%" style=" ">
 </object>
 </div>
 <div id="robot-wireless-data-dim-1-magnify" class="magnify" onclick="magnifyFigure(&#39;robot-wireless-data-dim-1&#39;)">
