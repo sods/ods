@@ -2283,7 +2283,7 @@ def ceres(data_set="ceres"):
     return data_details_return({"data": data}, data_set)
 
 
-def kelper_lightcurves_(data_set="kepler_telescope"):
+def kepler_lightcurves(data_set="kepler_telescope"):
     """Load Kepler light curves from David W. Hogg & Kate Storey-Fisher's NeurIPS 2020 Tutorial as shown in this colab https://colab.research.google.com/drive/1TimsiQhhcK6qX_lD951H-WJDHd92my61?usp=sharing"""
     stars = {'001720554': ['2009350155506'],
              '002696955': ['2009350155506'],
@@ -2371,7 +2371,6 @@ def kepler_telescope(stars, data_set="kepler_telescope"):
     if resource["urls"]:
         download_data(data_set)
 
-    resource["files"]
     data = [fits.open(os.path.join(star_dir, filename))[1].data for filename in files2 for files2 in resource["files"]]
     return data_details_return(
         {
