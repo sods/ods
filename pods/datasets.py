@@ -493,21 +493,7 @@ def to_arff(dataset, **kwargs):
         df2arff(d, n, pods_data)
 
 
-def kepler_load_urls(filename):
-    """Convert a list of Kepler URLS into star and motion times."""
-    star_datasets = {}
-    with open(filename, "r"):
-        url = f.readline().strip()
-        url_file = os.path.basename(url)
-        star, start = url_file.split("-")
-        star = star[4:]
-        if not star in star_datasets:
-            star_datasets["star"] = []
-        star_datasets["star"].append(start[:13])
-    return star_datasets
-
-
-def kepler_light_curves_urls_files(stars, messages=True):
+def kepler_telescope_urls_files(stars, messages=True):
     """
     Find which resources are missing on the local disk for the requested Kepler datasets.
 
@@ -2297,7 +2283,7 @@ def ceres(data_set="ceres"):
     return data_details_return({"data": data}, data_set)
 
 
-def kelper_lightcurves_(data_set="kepler_lightcurves"):
+def kelper_lightcurves_(data_set="kepler_telescope"):
     """Load Kepler light curves from David W. Hogg & Kate Storey-Fisher's NeurIPS 2020 Tutorial as shown in this colab https://colab.research.google.com/drive/1TimsiQhhcK6qX_lD951H-WJDHd92my61?usp=sharing"""
     stars = {'001720554': ['2009350155506'],
              '002696955': ['2009350155506'],
@@ -2364,23 +2350,41 @@ def kelper_lightcurves_(data_set="kepler_lightcurves"):
              '008313018': ['2009350155506'],
              '008324268': ['2009350155506']}
 
-    data = cmu_mocap(
-        "49", train_motions, test_motions, sample_every=4, data_set=data_set
+    data = kepler_telescope(stars)
+    data["citation"] = "Data from Kepler space mission used by David Hogg and Kate Storey-Fisher for their NeurIPS tutorial https://dwh.gg/NeurIPSastro1",
+    data["info"] += """The following wget lines were obtained by doing a simple search at this web form: http://archive.stsci.edu/kepler/data_search/search.php
+where we put "< 8" into the field "KEP_Mag" and "Quarter" into the field "User-specified field 1" and "3" into the "Field descriptions" box associated with that."""
+
+
+def kepler_telescope(stars, data_set="kepler_telescope"):
+    """Load a given star's datasets."""
+
+    from astropy.io import fits
+
+    star_dir = os.path.join(data_path, data_set)
+
+    # Make sure the data is downloaded.
+    resource = kepler_telescope_urls_files(stars)
+    data_resources[data_set] = data_resources["kepler_telescope_base"].copy()
+    data_resources[data_set]["files"] = resource["files"]
+    data_resources[data_set]["urls"] = resource["urls"]
+    if resource["urls"]:
+        download_data(data_set)
+
+    resource["files"]
+    data = [fits.open(os.path.join(star_dir, filename))[1].data for filename in files2 for files2 in resource["files"]]
+    return data_details_return(
+        {
+            "Y": Y,
+            "lbls": lbls,
+            "Ytest": Ytest,
+            "lblstest": lblstest,
+            "info": info,
+            "skel": skel,
+        },
+        data_set,
     )
 
-    if data_available(data_set):
-	"citation": "Data from Kepler space mission used by David Hogg and Kate Storey-Fisher for their NeurIPS tutorial https://dwh.gg/NeurIPSastro1",
-	"license": null,
-	"size": 0,
-	"urls": [
-	    "https://archive.stsci.edu/missions/kepler/lightcurves"
-	]
-    },	
-The following wget lines were obtained by doing a simple search at this web form: http://archive.stsci.edu/kepler/data_search/search.php
-where we put "< 8" into the field "KEP_Mag" and "Quarter" into the field "User-specified field 1" and "3" into the "Field descriptions" box associated with that.
-
-download_data(data_set)
-        
 
 def cmu_mocap_49_balance(data_set="cmu_mocap"):
     """Load CMU subject 49's one legged balancing motion that was used by Alvarez, Luengo and Lawrence at AISTATS 2009."""
