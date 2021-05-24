@@ -516,14 +516,11 @@ def kepler_telescope_urls_files(stars, messages=True):
         for dataset in stars[star]:
             file_name = "kplr" + star + "-" + dataset + "_llc.fits"
             cur_motion_file = os.path.join(star_dir, file_name)
-            if not os.path.exists(cur_motion_file):
-                url_required = True
-                file_download.append(file_name)
-        if url_required:
-            resource["urls"].append(
-                kepler_url + "/" + star[:4] + "/" + star + "/"
-            )
-            resource["files"].append(file_download)
+            file_download.append(file_name)
+        resource["urls"].append(
+            kepler_url + "/" + star[:4] + "/" + star + "/"
+        )
+        resource["files"].append(file_download)
     return resource
 
 
@@ -2351,7 +2348,7 @@ def kepler_lightcurves(data_set="kepler_telescope"):
              '008324268': ['2009350155506']}
 
     data = kepler_telescope(stars)
-    data["citation"] = "Data from Kepler space mission used by David Hogg and Kate Storey-Fisher for their NeurIPS tutorial https://dwh.gg/NeurIPSastro1",
+    data["citation"] = "Data from Kepler space mission used by David Hogg and Kate Storey-Fisher for their NeurIPS tutorial https://dwh.gg/NeurIPSastro1"
     data["info"] = """The following wget lines were obtained by doing a simple search at this web form: http://archive.stsci.edu/kepler/data_search/search.php
 where we put "< 8" into the field "KEP_Mag" and "Quarter" into the field "User-specified field 1" and "3" into the "Field descriptions" box associated with that."""
     return data_details_return({"data": data}, data_set)
