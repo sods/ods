@@ -39,6 +39,12 @@ try:
 except ImportError:
     PD_AVAILABLE = False
 
+PYTRENDS_AVAILABLE = True
+try:
+    from pytrends.request import TrendReq
+except ImportError:
+    PYTRENDS_AVAILABLE = False
+    
 if sys.version_info >= (3, 0):
     from urllib.parse import quote
     from urllib.request import urlopen
@@ -1130,121 +1136,122 @@ def drosophila_knirps(data_set="drosophila_protein"):
     return data_details_return({"Y": Y, "X": X}, data_set)
 
 
+if PYTRENDS_AVAILABLE and PD_AVAILABLE:
 # This will be for downloading google trends data.
-def google_trends(
-    query_terms=["big data", "machine learning", "data science"],
-    data_set="google_trends",
-    refresh_data=False,
-):
-    """
-    Data downloaded from Google trends for given query terms. Warning,
-    if you use this function multiple times in a row you get blocked
-    due to terms of service violations.
+    def google_trends(
+        query_terms=["big data", "machine learning", "data science"],
+        data_set="google_trends",
+        refresh_data=False,
+    ):
+        """
+        Data downloaded from Google trends for given query terms. Warning,
+        if you use this function multiple times in a row you get blocked
+        due to terms of service violations.
 
-    The function will cache the result of any query in an attempt to
-    avoid this. If you wish to refresh an old query set refresh_data
-    to True. The original function is inspired by this notebook:
+        The function will cache the result of any query in an attempt to
+        avoid this. If you wish to refresh an old query set refresh_data
+        to True. The original function is inspired by this notebook:
 
-    http://nbviewer.ipython.org/github/sahuguet/notebooks/blob/master/GoogleTrends%20meet%20Notebook.ipynb
+        http://nbviewer.ipython.org/github/sahuguet/notebooks/blob/master/GoogleTrends%20meet%20Notebook.ipynb
 
-    But the update makes use of `pytrends`
+        But the update makes use of `pytrends`
 
-    """
+        """
 
-    query_terms.sort()
-    import pandas as pd
-    from pytrends.request import TrendReq
+        query_terms.sort()
+        import pandas as pd
+        from pytrends.request import TrendReq
 
-    pytrends = TrendReq(hl="en-US", tz=360)
+        pytrends = TrendReq(hl="en-US", tz=360)
 
-    # Create directory name for data
-    dir_path = os.path.join(data_path, "google_trends")
-    if not os.path.isdir(dir_path):
-        os.makedirs(dir_path)
-    dir_name = "-".join(query_terms)
-    dir_name = dir_name.replace(" ", "_")
-    dir_path = os.path.join(dir_path, dir_name)
-    file = "data.csv"
-    file_name = os.path.join(dir_path, file)
-    if not os.path.exists(file_name) or refresh_data:
-        print(
-            "Accessing Google trends to acquire the data. Note that repeated accesses will result in a block due to a google terms of service violation. Failure at this point may be due to such blocks."
-        )
-        # quote the query terms.
-        quoted_terms = []
-        for term in query_terms:
-            quoted_terms.append(quote(term))
-        print("Query terms: ", ", ".join(query_terms))
-
-        print("Fetching query:")
-        pytrends = TrendReq(hl="en-US", tz=0)
-        pytrends.build_payload(query_terms, cat=0, timeframe="all", geo="", gprop="")
-        df = pytrends.interest_over_time()
-        print("Done.")
+        # Create directory name for data
+        dir_path = os.path.join(data_path, "google_trends")
         if not os.path.isdir(dir_path):
             os.makedirs(dir_path)
+        dir_name = "-".join(query_terms)
+        dir_name = dir_name.replace(" ", "_")
+        dir_path = os.path.join(dir_path, dir_name)
+        file = "data.csv"
+        file_name = os.path.join(dir_path, file)
+        if not os.path.exists(file_name) or refresh_data:
+            print(
+                "Accessing Google trends to acquire the data. Note that repeated accesses will result in a block due to a google terms of service violation. Failure at this point may be due to such blocks."
+            )
+            # quote the query terms.
+            quoted_terms = []
+            for term in query_terms:
+                quoted_terms.append(quote(term))
+            print("Query terms: ", ", ".join(query_terms))
 
-        df["Date"] = df.index
-        df = df.set_index(np.array(range(len(df.index))))
-        df = df.rename({"date": "Date"})
-        df.to_csv(file_name)
-        loaddf = False
-    else:
-        print(
-            "Reading cached data for google trends. To refresh the cache set 'refresh_data=True' when calling this function."
+            print("Fetching query:")
+            pytrends = TrendReq(hl="en-US", tz=0)
+            pytrends.build_payload(query_terms, cat=0, timeframe="all", geo="", gprop="")
+            df = pytrends.interest_over_time()
+            print("Done.")
+            if not os.path.isdir(dir_path):
+                os.makedirs(dir_path)
+
+            df["Date"] = df.index
+            df = df.set_index(np.array(range(len(df.index))))
+            df = df.rename({"date": "Date"})
+            df.to_csv(file_name)
+            loaddf = False
+        else:
+            print(
+                "Reading cached data for google trends. To refresh the cache set 'refresh_data=True' when calling this function."
+            )
+            print("Query terms: ", ", ".join(query_terms))
+
+            df = pd.read_csv(file_name, parse_dates=[0])
+            loaddf = True
+
+        columns = df.columns
+        terms = len(query_terms)
+        import datetime
+        from matplotlib.dates import date2num
+
+        if loaddf:
+            X = np.asarray(
+                [
+                    (
+                        date2num(
+                            datetime.datetime.strptime(df.iloc[row]["Date"], "%Y-%m-%d")
+                        ),
+                        i,
+                    )
+                    for i in range(terms)
+                    for row in df.index
+                ]
+            )
+        else:
+            X = np.asarray(
+                [
+                    (date2num(df.iloc[row]["Date"]), i)
+                    for i in range(terms)
+                    for row in df.index
+                ]
+            )
+        Y = np.asarray(
+            [[df.iloc[row][query_terms[i]]] for i in range(terms) for row in df.index]
         )
-        print("Query terms: ", ", ".join(query_terms))
-
-        df = pd.read_csv(file_name, parse_dates=[0])
-        loaddf = True
-
-    columns = df.columns
-    terms = len(query_terms)
-    import datetime
-    from matplotlib.dates import date2num
-
-    if loaddf:
-        X = np.asarray(
-            [
-                (
-                    date2num(
-                        datetime.datetime.strptime(df.iloc[row]["Date"], "%Y-%m-%d")
-                    ),
-                    i,
-                )
-                for i in range(terms)
-                for row in df.index
-            ]
+        output_info = columns[1:]
+        cats = {}
+        for i in range(terms):
+            cats[query_terms[i]] = i
+        return data_details_return(
+            {
+                "data frame": df,
+                "X": X,
+                "Y": Y,
+                "query_terms": query_terms,
+                "info": "Data downloaded from google trends with query terms: "
+                + ", ".join(query_terms)
+                + ".",
+                "covariates": [datenum("date"), discrete(cats, "query_terms")],
+                "response": ["normalized interest"],
+            },
+            data_set,
         )
-    else:
-        X = np.asarray(
-            [
-                (date2num(df.iloc[row]["Date"]), i)
-                for i in range(terms)
-                for row in df.index
-            ]
-        )
-    Y = np.asarray(
-        [[df.iloc[row][query_terms[i]]] for i in range(terms) for row in df.index]
-    )
-    output_info = columns[1:]
-    cats = {}
-    for i in range(terms):
-        cats[query_terms[i]] = i
-    return data_details_return(
-        {
-            "data frame": df,
-            "X": X,
-            "Y": Y,
-            "query_terms": query_terms,
-            "info": "Data downloaded from google trends with query terms: "
-            + ", ".join(query_terms)
-            + ".",
-            "covariates": [datenum("date"), discrete(cats, "query_terms")],
-            "response": ["normalized interest"],
-        },
-        data_set,
-    )
 
 
 def oil(data_set="three_phase_oil_flow"):
@@ -2309,8 +2316,9 @@ def ceres(data_set="ceres"):
 
 def kelper_lightcurves_(data_set="kepler_lightcurves"):
     """Load Kepler light curves from David W. Hogg & Kate Storey-Fisher's NeurIPS 2020 Tutorial as shown in this colab https://colab.research.google.com/drive/1TimsiQhhcK6qX_lD951H-WJDHd92my61?usp=sharing"""
-    cmu
-
+    if not data_available(data_set):
+        download_data(data_set)
+        
 
 def cmu_mocap_49_balance(data_set="cmu_mocap"):
     """Load CMU subject 49's one legged balancing motion that was used by Alvarez, Luengo and Lawrence at AISTATS 2009."""

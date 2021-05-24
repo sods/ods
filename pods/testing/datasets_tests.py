@@ -174,11 +174,11 @@ class DatasetsTests(unittest.TestCase):
         """datasets_tests: Test the prompt input checking code"""
         for v in positive_return_values:
             with mock.patch('builtins.input', return_value=v):
-                self.assertTrue(pods.datasets.input("Do you pass?"))
+                self.assertTrue(pods.datasets.prompt_stdin("Do you pass?"))
 
         for v in negative_return_values:
             with mock.patch('builtins.input', return_value=v):
-                self.assertFalse(pods.datasets.input("Do you fail?"))
+                self.assertFalse(pods.datasets.prompt_stdin("Do you fail?"))
 
     def test_authorize_download(self):
         """datasets_tests: Test the download authorization code."""
