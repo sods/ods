@@ -1112,11 +1112,11 @@ def drosophila_knirps(data_set="drosophila_protein"):
     filename = os.path.join(dir_path, "becker_et_al.csv")
     # in the csv file we have facts_kni and ext_kni. We treat facts_kni as protein and ext_kni as mRNA
     df = read_csv(filename, header=0)
-    t = df["t"][:, None]
-    x = df["x"][:, None]
+    t = df["t"].to_numpy()[:, np.newaxis]
+    x = df["x"].to_numpy()[:, np.newaxis]
 
-    g = df["expression1"][:, None]
-    p = df["expression2"][:, None]
+    g = df["expression1"].to_numpy()[:, np.newaxis]
+    p = df["expression2"].to_numpy()[:, np.newaxis]
 
     leng = x.shape[0]
 
