@@ -29,6 +29,8 @@ dataset_helpers = [
     "prompt_user",
     "cmu_mocap",
     "cmu_urls_files",
+    "kepler_telescope_urls_files",
+    "kepler_telescope",
     "datenum",
     "decimalyear",
     "permute",

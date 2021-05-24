@@ -430,9 +430,7 @@
 	"license": "",
 	"size": 0,
 	"urls": [
-	    [
-		"https://energydata.info/dataset/f85d1796-e7f2-4630-be84-79420174e3bd/resource/6e640a13-cab4-457b-b9e6-0336051bac27/download/"
-	    ]
+	    "https://energydata.info/dataset/f85d1796-e7f2-4630-be84-79420174e3bd/resource/6e640a13-cab4-457b-b9e6-0336051bac27/download/"
 	]
     },
     "olivetti_faces": {
