@@ -513,15 +513,15 @@ def kepler_telescope_urls_files(stars, messages=True):
     for star in stars:
         url_required = False
         file_download = []
-        for j in stars[star]:
-            file_name = "kplr" + stars[i] + "-" + datasets[i][j] + "_slc.fits"
+        for dataset in stars[star]:
+            file_name = "kplr" + star + "-" + dataset + "_slc.fits"
             cur_motion_file = os.path.join(star_dir, file_name)
             if not os.path.exists(cur_motion_file):
                 url_required = True
                 file_download.append(file_name)
         if url_required:
             resource["urls"].append(
-                kepler_url + "/" + stars[i][:4] + "/" + stars[i] + "/"
+                kepler_url + "/" + star[:4] + "/" + star + "/"
             )
             resource["files"].append(file_download)
     return resource
