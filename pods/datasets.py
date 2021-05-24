@@ -507,7 +507,7 @@ def kepler_load_urls(filename):
     return star_datasets
 
 
-def kepler_light_curves_urls_files(star_datasets, messages=True):
+def kepler_light_curves_urls_files(stars, messages=True):
     """
     Find which resources are missing on the local disk for the requested Kepler datasets.
 
@@ -515,36 +515,19 @@ def kepler_light_curves_urls_files(star_datasets, messages=True):
     :type star_datasets: tuple of lists containg kepler ids and data sets.
     """
 
-    dr = data_resources["kepler_telescope"]
+    resource = data_resources["kepler_telescope"]
     kepler_url = dr["urls"][0]
 
-    stars_num = subj_datasets[0]
-    datasets_num = subj_datasets[1]
-
-    resource = {"urls": [], "files": []}
-    # Convert numbers to strings
-    stars = []
-    datasets = [list() for _ in range(len(stars_num))]
-    for i in range(len(stars_num)):
-        curSubj = str(int(stars_num[i])).zfill(9)
-        stars.append(curSubj)
-        for j in range(len(datasets_num[i])):
-            curMot = str(int(datasets_num[i][j]))
-            datasets[i].append(curMot)
-
-    all_stars = []
-
-    assert len(stars) == len(datasets)
-
-    all_datasets = []
+    resource["urls"] = []
+    resource["files"] =  []
 
     star_dir = os.path.join(data_path, "kepler_telescope")
-    for i in range(len(stars)):
+    if not os.path.isdir(star_dir):
+        os.makedirs(star_dir)
+    for star in stars:
         url_required = False
         file_download = []
-        if not os.path.isdir(star_dir):
-            os.makedirs(star_dir)
-        for j in range(len(datasets[i])):
+        for j in stars[star]:
             file_name = "kplr" + stars[i] + "-" + datasets[i][j] + "_slc.fits"
             cur_motion_file = os.path.join(star_dir, file_name)
             if not os.path.exists(cur_motion_file):
@@ -2316,8 +2299,87 @@ def ceres(data_set="ceres"):
 
 def kelper_lightcurves_(data_set="kepler_lightcurves"):
     """Load Kepler light curves from David W. Hogg & Kate Storey-Fisher's NeurIPS 2020 Tutorial as shown in this colab https://colab.research.google.com/drive/1TimsiQhhcK6qX_lD951H-WJDHd92my61?usp=sharing"""
-    if not data_available(data_set):
-        download_data(data_set)
+    stars = {'001720554': ['2009350155506'],
+             '002696955': ['2009350155506'],
+             '002987660': ['2009350155506'],
+             '003246460': ['2009350155506'],
+             '003429637': ['2009350155506'],
+             '003441157': ['2009350155506'],
+             '003836439': ['2009350155506'],
+             '004040917': ['2009350155506'],
+             '004044238': ['2009350155506'],
+             '004150611': ['2009350155506'],
+             '004155395': ['2009350155506'],
+             '004242575': ['2009350155506'],
+             '004567097': ['2009350155506'],
+             '004660665': ['2009350155506'],
+             '004671313': ['2009350155506'],
+             '004857678': ['2009350155506'],
+             '004931363': ['2009350155506'],
+             '004989900': ['2009350155506'],
+             '005108214': ['2009350155506'],
+             '005113557': ['2009350155506'],
+             '005164767': ['2009350155506'],
+             '005177450': ['2009350155506'],
+             '005458880': ['2009350155506'],
+             '005683912': ['2009350155506'],
+             '005724440': ['2009350155506'],
+             '005737655': ['2009350155506'],
+             '005802562': ['2009350155506'],
+             '005939450': ['2009350155506'],
+             '005952403': ['2009350155506'],
+             '005954370': ['2009350155506'],
+             '006065699': ['2009350155506'],
+             '006101376': ['2009350155506'],
+             '006106415': ['2009350155506'],
+             '006150124': ['2009350155506'],
+             '006225718': ['2009350155506'],
+             '006342566': ['2009350155506'],
+             '006352430': ['2009350155506'],
+             '006382808': ['2009350155506'],
+             '006450107': ['2009350155506'],
+             '006469154': ['2009350155506'],
+             '006670812': ['2009350155506'],
+             '006675338': ['2009350155506'],
+             '007201012': ['2009350155506'],
+             '007286856': ['2009350155506'],
+             '007345479': ['2009350155506'],
+             '007366121': ['2009350155506'],
+             '007510397': ['2009350155506'],
+             '007669848': ['2009350155506'],
+             '007798339': ['2009350155506'],
+             '007820638': ['2009350155506'],
+             '007827131': ['2009350155506'],
+             '007909976': ['2009350155506'],
+             '007939145': ['2009350155506'],
+             '007940546': ['2009350155506'],
+             '007940959': ['2009350155506'],
+             '007944142': ['2009350155506'],
+             '007950369': ['2009350155506'],
+             '007970740': ['2009350155506'],
+             '008006161': ['2009350155506'],
+             '008077489': ['2009350155506'],
+             '008085683': ['2009350155506'],
+             '008153795': ['2009350155506'],
+             '008313018': ['2009350155506'],
+             '008324268': ['2009350155506']}
+
+    data = cmu_mocap(
+        "49", train_motions, test_motions, sample_every=4, data_set=data_set
+    )
+
+    if data_available(data_set):
+	"citation": "Data from Kepler space mission used by David Hogg and Kate Storey-Fisher for their NeurIPS tutorial https://dwh.gg/NeurIPSastro1",
+	"license": null,
+	"size": 0,
+	"urls": [
+	    "https://archive.stsci.edu/missions/kepler/lightcurves"
+	]
+    },	
+The following wget lines were obtained by doing a simple search at this web form: http://archive.stsci.edu/kepler/data_search/search.php
+where we put "< 8" into the field "KEP_Mag" and "Quarter" into the field "User-specified field 1" and "3" into the "Field descriptions" box associated with that.
+
+download_data(data_set)
         
 
 def cmu_mocap_49_balance(data_set="cmu_mocap"):
