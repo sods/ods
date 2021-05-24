@@ -26,17 +26,17 @@ from .util import download_url
 from .config import *
 from functools import reduce
 
-ipython_available=True
+IPY_AVAILABLE=True
 try:
     import IPython
 except ImportError:
-    ipython_available=False
+    IPY_AVAILABLE=False
 
-pandas_available=True
+PD_AVAILABLE=True
 try:
     import pandas as pd
 except ImportError:
-    pandas_available=False
+    PD_AVAILABLE=False
 
 if sys.version_info>=(3,0):
     from urllib.parse import quote
@@ -614,7 +614,7 @@ def epomeo_gpx(data_set='epomeo_gpx', sample_every=4):
         data = [[(point.time-datetime.datetime(2013,8,21, tzinfo=datetime.timezone.utc)).total_seconds(), point.latitude, point.longitude, point.elevation] for point in points]
         X.append(np.asarray(data)[::sample_every, :])
         gpx_file.close()
-    if pandas_available:
+    if PD_AVAILABLE:
         X = pd.DataFrame(X[0], columns=['seconds', 'latitude', 'longitude', 'elevation'])
         X.set_index(keys='seconds', inplace=True)
     return data_details_return({'X' : X, 'info' : 'Data is an array containing time in seconds, latitude, longitude and elevation in that order.'}, data_set)
@@ -712,7 +712,7 @@ def pmlr(volumes='all', data_set='pmlr', refresh_data=False):
                                             dirname,
                                             file), 'r')
             Y+=yaml.load(volume_file, Loader=yaml.FullLoader)
-    if pandas_available:
+    if PD_AVAILABLE:
         Y = pd.DataFrame(Y)
         Y['published'] = pd.to_datetime(Y['published'])
         #Y.columns.values[4] = json_object('authors')
