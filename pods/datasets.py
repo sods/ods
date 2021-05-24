@@ -514,7 +514,7 @@ def kepler_telescope_urls_files(stars, messages=True):
         url_required = False
         file_download = []
         for dataset in stars[star]:
-            file_name = "kplr" + star + "-" + dataset + "_slc.fits"
+            file_name = "kplr" + star + "-" + dataset + "_llc.fits"
             cur_motion_file = os.path.join(star_dir, file_name)
             if not os.path.exists(cur_motion_file):
                 url_required = True
