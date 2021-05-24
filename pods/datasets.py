@@ -2371,15 +2371,10 @@ def kepler_telescope(stars, data_set="kepler_telescope"):
     if resource["urls"]:
         download_data(data_set)
 
-    data = [fits.open(os.path.join(star_dir, filename))[1].data for files2 in resource["files"] for filename in files2]
+    Y = [fits.open(os.path.join(star_dir, filename))[1].data for files2 in resource["files"] for filename in files2]
     return data_details_return(
         {
             "Y": Y,
-            "lbls": lbls,
-            "Ytest": Ytest,
-            "lblstest": lblstest,
-            "info": info,
-            "skel": skel,
         },
         data_set,
     )
