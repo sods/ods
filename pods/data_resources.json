@@ -762,9 +762,9 @@
             ]
         ],
         "license": null,
-        "size": 51276,
+        "size": 65354,
         "urls": [
-            "http://www.math.ntnu.no/%7Ehrue/r-inla.org/examples/leukemia/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/leukemia_survival/"
         ]
     },
     "mcycle": {
