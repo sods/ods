@@ -501,7 +501,7 @@ def kepler_telescope_urls_files(stars, messages=True):
     :type star_datasets: tuple of lists containg kepler ids and data sets.
     """
 
-    resource = data_resources["kepler_telescope"]
+    resource = data_resources["kepler_telescope_base"]
     kepler_url = dr["urls"][0]
 
     resource["urls"] = []
