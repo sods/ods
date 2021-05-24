@@ -502,7 +502,7 @@ def kepler_telescope_urls_files(stars, messages=True):
     """
 
     resource = data_resources["kepler_telescope_base"]
-    kepler_url = dr["urls"][0]
+    kepler_url = resource["urls"][0]
 
     resource["urls"] = []
     resource["files"] =  []
