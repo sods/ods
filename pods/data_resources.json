@@ -27,20 +27,18 @@
             "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/bmi_steps/"
         ]
     },
-    "boston_housing": {
-        "citation": "Harrison, D. and Rubinfeld, D.L. 'Hedonic prices and the demand for clean air', J. Environ. Economics & Management, vol.5, 81-102, 1978.",
-        "details": "The Boston Housing data relates house values in Boston to a range of input variables.",
+    "ankur_pose_data": {
+        "citation": "Agarwal, A. and Triggs, B. 'Recovering 3D Human Pose from Monocular Images', IEEE TPAMI vol 28(1), 44-58, 2006.",
+        "details": "The Agarwal and Triggs pose data provides artificially generated silhouettes alongside motion capture positions for a range of poses.",
         "files": [
             [
-                "Index",
-                "housing.data",
-                "housing.names"
+                "ankurDataPoseSilhouette.mat"
             ]
         ],
         "license": null,
-        "size": 51276,
+        "size": 2802667,
         "urls": [
-            "http://archive.ics.uci.edu/ml/machine-learning-databases/housing/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/ankur_pose_data/"
         ]
     },    
     "boston_housing": {

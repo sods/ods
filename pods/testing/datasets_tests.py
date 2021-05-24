@@ -4,6 +4,7 @@ import pods
 import types
 import mock
 import sys
+
 from pods.google import *
 
 # pods.datasets.overide_manual_authorize=True
@@ -80,7 +81,7 @@ def gtf_(dataset_name, dataset_function, arg=None, docstr=None):
     """Generate test function for testing the given data set."""
 
     def test_function(self):
-        with mock.patch(user_input, "Y"):
+        with mock.patch('builtins.input', "Y"):
             if arg is None:
                 tester = DatasetTester(dataset_function)
             else:
@@ -118,7 +119,7 @@ class DatasetTester(unittest.TestCase):
         self.name = name
         self.dataset = dataset
         self.kwargs = kwargs
-        with mock.patch(user_input, return_value="Y"):
+        with mock.patch('builtins.input', return_value="Y"):
             self.d = self.dataset(**self.kwargs)
         self.ks = self.d.keys()
         self.checkdims()
@@ -165,23 +166,23 @@ class DatasetsTests(unittest.TestCase):
         """datasets_tests: Test the data download."""
         pods.datasets.clear_cache(dataset_name)
         self.assertFalse(pods.datasets.data_available(dataset_name))
-        with mock.patch(user_input, return_value="Y"):
+        with mock.patch('builtins.input', return_value="Y"):
             pods.datasets.download_data(dataset_name)
         self.assertTrue(pods.datasets.data_available(dataset_name))
 
-    def test_prompt_stdin(self):
+    def test_input(self):
         """datasets_tests: Test the prompt input checking code"""
         for v in positive_return_values:
-            with mock.patch(user_input, return_value=v):
-                self.assertTrue(pods.datasets.prompt_stdin("Do you pass?"))
+            with mock.patch('builtins.input', return_value=v):
+                self.assertTrue(pods.datasets.input("Do you pass?"))
 
         for v in negative_return_values:
-            with mock.patch(user_input, return_value=v):
-                self.assertFalse(pods.datasets.prompt_stdin("Do you fail?"))
+            with mock.patch('builtins.input', return_value=v):
+                self.assertFalse(pods.datasets.input("Do you fail?"))
 
     def test_authorize_download(self):
         """datasets_tests: Test the download authorization code."""
-        with mock.patch(user_input, return_value="Y"):
+        with mock.patch('builtins.input', return_value="Y"):
             for dataset_name in dataset_selection:
                 self.assertTrue(pods.datasets.authorize_download(dataset_name))
 

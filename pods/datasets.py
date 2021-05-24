@@ -145,7 +145,7 @@ def prompt_stdin(prompt):
         print("You need to set")
         print("overide_manual_authorize=True")
         print("to proceed with the download. Please set that variable and continue.")
-        raise
+        raise 
 
     if choice in yes:
         return True

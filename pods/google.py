@@ -22,17 +22,16 @@ from . import notebook as nb
 
 import pods
 
-gspread_available = True
+GS_AVAILABLE = True
 try:
     import gspread
 except ImportError:
-    gspread_available = False
+    GS_AVAILABLE = False
 
 new_oauth2client = False
-if gspread_available:
+if GS_AVAILABLE:
     from collections import defaultdict
 
-api_available = True
 try:
     # See this change: https://github.com/google/oauth2client/issues/401
     from oauth2client.service_account import ServiceAccountCredentials
@@ -44,6 +43,7 @@ except ImportError:
     except ImportError:
         api_available = False
 
+GAPI_AVAILABLE = True
 try:
     import httplib2
 
@@ -55,9 +55,9 @@ try:
     from googleapiclient import discovery
     import types
 except ImportError:
-    api_available = False
+    GAPI_AVAILABLE = False
 
-if api_available:
+if GAPI_AVAILABLE:
     query_filters = []
     query_filters.append(
         {
@@ -301,7 +301,7 @@ if api_available:
             )
 
 
-if gspread_available and api_available:
+if GS_AVAILABLE and GAPI_AVAILABLE:
 
     class drive(google_service):
         """
