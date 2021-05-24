@@ -516,11 +516,14 @@ def kepler_telescope_urls_files(stars, messages=True):
         for dataset in stars[star]:
             file_name = "kplr" + star + "-" + dataset + "_llc.fits"
             cur_motion_file = os.path.join(star_dir, file_name)
-            file_download.append(file_name)
-        resource["urls"].append(
-            kepler_url + "/" + star[:4] + "/" + star + "/"
-        )
-        resource["files"].append(file_download)
+            if not os.path.exists(cur_motion_file):
+                url_required = True
+                file_download.append(file_name)
+        if url_required:
+            resource["urls"].append(
+                kepler_url + "/" + star[:4] + "/" + star + "/"
+            )
+            resource["files"].append(file_download)
     return resource
 
 
@@ -2369,7 +2372,14 @@ def kepler_telescope(stars, data_set="kepler_telescope"):
     if resource["urls"]:
         download_data(data_set)
 
-    Y = [fits.open(os.path.join(star_dir, filename))[1].data for files2 in resource["files"] for filename in files2]
+    star_dir = os.path.join(data_path, "kepler_telescope")
+    filenames = []
+    for star in stars:
+        for dataset in stars[star]:
+            filenames.append("kplr" + star + "-" + dataset + "_llc.fits")
+
+        
+    Y = [fits.open(os.path.join(star_dir, filename))[1].data for filename in files]
     return data_details_return(
         {
             "Y": Y,
