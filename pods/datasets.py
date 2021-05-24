@@ -8,7 +8,6 @@ import sys
 import csv
 import copy
 import numpy as np
-import pylab as pb
 import scipy.io
 import datetime
 import json
