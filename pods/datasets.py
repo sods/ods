@@ -2379,7 +2379,7 @@ def kepler_telescope(stars, data_set="kepler_telescope"):
             filenames.append("kplr" + star + "-" + dataset + "_llc.fits")
 
         
-    Y = [fits.open(os.path.join(star_dir, filename))[1].data for filename in files]
+    Y = [fits.open(os.path.join(star_dir, filename))[1].data for filename in filenames]
     return data_details_return(
         {
             "Y": Y,
