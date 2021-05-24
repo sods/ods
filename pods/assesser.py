@@ -12,21 +12,22 @@ check_mark = '<span style="color:red;">**Correct**</span>'
 # when not having those lines in the config!
 # I am not quite sure what to do else...
 
-#short_name = config.get('assesser', 'assessment_short_name')
-#long_name = config.get('assesser', 'assessment_long_name')
-#year = config.get('assesser', 'assessment_year')
+# short_name = config.get('assesser', 'assessment_short_name')
+# long_name = config.get('assesser', 'assessment_long_name')
+# year = config.get('assesser', 'assessment_year')
 
-#data_directory = os.path.expandvars(config.get('assesser', 'data_directory'))
+# data_directory = os.path.expandvars(config.get('assesser', 'data_directory'))
 
-#instructor_email = config.get('assesser', 'instructor_email')
-#instructor_name = config.get('assesser', 'instructor_name')
-#assesser_group_email = config.get('assesser', 'assesser_group_email')
+# instructor_email = config.get('assesser', 'instructor_email')
+# instructor_name = config.get('assesser', 'instructor_name')
+# assesser_group_email = config.get('assesser', 'assesser_group_email')
 
-#participant_key = config.get('assesser', 'participant_list_key')
-#participant_sheet = config.get('assesser', 'participant_list_sheet')
-#marksheets_filename = config.get('assesser', 'class_marksheets_pickle')
+# participant_key = config.get('assesser', 'participant_list_key')
+# participant_sheet = config.get('assesser', 'participant_list_sheet')
+# marksheets_filename = config.get('assesser', 'class_marksheets_pickle')
 
-class assessment():
+
+class assessment:
     """Class for storing assesment information. This class stores the
     questions and answers for an assessment paper. It
     produces mark sheets and provides individual feedback.
@@ -40,12 +41,20 @@ class assessment():
     :type source: dict or str
 
     """
-    
-    def __init__(self, part=0, source=None, answers_sep=None, display_answer=False, display_marks=True):
-        self.display_answer=display_answer
-        self.display_marks=display_marks
 
-        self.latex_preamble = r"""\documentclass[]{article}
+    def __init__(
+        self,
+        part=0,
+        source=None,
+        answers_sep=None,
+        display_answer=False,
+        display_marks=True,
+    ):
+        self.display_answer = display_answer
+        self.display_marks = display_marks
+
+        self.latex_preamble = (
+            r"""\documentclass[]{article}
 \usepackage{a4}
 \usepackage{amssymb,amsmath}
 \usepackage{ifxetex,ifluatex}
@@ -90,9 +99,11 @@ class assessment():
  
 
 \begin{document}
-\title{Lab Assessment """ + str(part+1) + "}\n"
+\title{Lab Assessment """
+            + str(part + 1)
+            + "}\n"
+        )
         self.latex_post = "\n" + r"""\end{document}"""
-
 
         self.html_preamble = r"""<html>
 <head>
@@ -103,7 +114,9 @@ class assessment():
 </head>
 <body>
   <h1>Lab Assessment {part}</h1>
-""".format(part=part+1)
+""".format(
+            part=part + 1
+        )
         self.html_post = r"""  </body>
 </html>"""
         # if source is None:
@@ -112,14 +125,14 @@ class assessment():
         #     # participant list is stored in a google doc
         #     if 'spreadsheet_key' in source and 'worksheet_name' in source:
         #         self.participant_sheet = gl.sheet(spreadsheet_key=source['spreadsheet_key'],
-        #                                           worksheet_name=source['worksheet_name'], 
-        #                                           gd_client=self.gd_client, 
+        #                                           worksheet_name=source['worksheet_name'],
+        #                                           gd_client=self.gd_client,
         #                                           docs_client=self.docs_client)
         #         # if gl.sheet had to login, store the details.
         #         self.gd_client = self.participant_sheet.gd_client
         #         self.docs_client = self.participant_sheet.docs_client
         #         self.answers = self.participant_sheet.read()
-        #         self.users.rename(columns={'Gmail Address': 'Email'}, 
+        #         self.users.rename(columns={'Gmail Address': 'Email'},
         #                           inplace=True)
         #     else:
         #         raise ValueError, "If a the source is a dictionary, then it should encode a google doc for the source with fields 'spreadsheet_key' and 'worksheet_name'."
@@ -137,11 +150,11 @@ class assessment():
         #         import json
         #         self.source=os.path.join(self.class_dir, source)
         #         self.answers = json.load(open(self.source, "rb"))
-                
+
         # else:
         #     raise ValueError, "Could not determine type of source file."
         self.answers = answer(part)
-            
+
     def latex(self):
         """Gives a latex representation of the assessment."""
         output = self.latex_preamble
@@ -156,137 +169,173 @@ class assessment():
         output += self.html_post
         return output
 
-
     def _repr_html_(self):
         from IPython.nbconvert.filters.markdown import markdown2html
+
         return markdown2html(self._repr_md_())
 
     def _repr_latex_(self):
         from IPython.nbconvert.filters.markdown import markdown2latex
+
         return markdown2latex(self._repr_md_())
 
     def _repr_md_(self):
-        output = ''
-        
+        output = ""
+
         for qu, answer in enumerate(self.answers):
-            output += '#### Assignment Question ' + str(qu+1) + '\n\n'
+            output += "#### Assignment Question " + str(qu + 1) + "\n\n"
             mark = 0
-            question = ''
+            question = ""
             for number, part in enumerate(answer):
-                if number==0:
+                if number == 0:
                     # First part is the intro ramble
                     if type(part) is list or type(part) is tuple:
-                        output += '' + part[0] + '\n\n'
-                        if len(part)>1 and part[1] is False:
+                        output += "" + part[0] + "\n\n"
+                        if len(part) > 1 and part[1] is False:
                             display_subs = False
                         else:
                             display_subs = True
-                    elif len(part)>0:
-                        output += '' + part + '\n\n'
+                    elif len(part) > 0:
+                        output += "" + part + "\n\n"
                         display_subs = True
                     else:
                         display_subs = True
 
-                else:                    
+                else:
                     if display_subs:
-                        question += ' ' + part[0] 
+                        question += " " + part[0]
                     mark += part[2]
-                    if (len(part)>3 and part[3] and not self.display_answer):
+                    if len(part) > 3 and part[3] and not self.display_answer:
                         pass
                     else:
                         output += question
                         if self.display_answer:
                             if part[1] == check_mark:
-                                output += ' '
+                                output += " "
                             else:
-                                output += '\n\n'
-                        question = ''
+                                output += "\n\n"
+                        question = ""
                         if self.display_answer:
-                            output += '\n\n**Answer**\n\n' + part[1] + '\n\n'
-                        if part[2]>0 and self.display_marks:
-                            output += ' *' + str(mark) + ' marks*\n\n'
-                        mark=0
+                            output += "\n\n**Answer**\n\n" + part[1] + "\n\n"
+                        if part[2] > 0 and self.display_marks:
+                            output += " *" + str(mark) + " marks*\n\n"
+                        mark = 0
         return output
-    
+
     def marksheet(self):
         """Returns an pandas empty dataframe object containing rows and columns for marking. This can then be passed to a google doc that is distributed to markers for editing with the mark for each section."""
-        columns=['Number', 'Question', 'Correct (a fraction)', 'Max Mark', 'Comments']
-        mark_sheet = pd.DataFrame() 
+        columns = ["Number", "Question", "Correct (a fraction)", "Max Mark", "Comments"]
+        mark_sheet = pd.DataFrame()
         for qu_number, question in enumerate(self.answers):
             part_no = 0
             for number, part in enumerate(question):
-                if number>0:
+                if number > 0:
                     if part[2] > 0:
                         part_no += 1
-                        index = str(qu_number+1) +'_'+str(part_no)
+                        index = str(qu_number + 1) + "_" + str(part_no)
                         frame = pd.DataFrame(columns=columns, index=[index])
-                        frame.loc[index]['Number'] = index
-                        frame.loc[index]['Question'] = part[0]
-                        frame.loc[index]['Max Mark'] = part[2]
-                        mark_sheet =  mark_sheet.append(frame)
+                        frame.loc[index]["Number"] = index
+                        frame.loc[index]["Question"] = part[0]
+                        frame.loc[index]["Max Mark"] = part[2]
+                        mark_sheet = mark_sheet.append(frame)
 
-        return mark_sheet.sort(columns='Number')
+        return mark_sheet.sort(columns="Number")
 
     def total_marks(self):
         """Compute the total mark for the assessment."""
         total = 0
         for answer in self.answers:
             for number, part in enumerate(answer):
-                if number>0:
-                    if part[2]>0:
-                        total+=part[2]
+                if number > 0:
+                    if part[2] > 0:
+                        total += part[2]
         return total
+
 
 class feedback(assessment):
     """A class for providing student feedback."""
+
     def __init__(self, marksheet, part=0):
         assessment.__init__(self, part, display_answer=True, display_marks=False)
-        self.marksheet=marksheet
+        self.marksheet = marksheet
         for qu in xrange(len(self.answers)):
             mark = 0
-            question = ''
+            question = ""
             counter = 0
             for number in xrange(len(self.answers[qu])):
 
-                if number==0:
-                    if type(self.answers[qu][number]) is list or type(self.answers[qu][number]) is tuple:
-                        if len(self.answers[qu][number])>1 and self.answers[qu][number][1] is False:
+                if number == 0:
+                    if (
+                        type(self.answers[qu][number]) is list
+                        or type(self.answers[qu][number]) is tuple
+                    ):
+                        if (
+                            len(self.answers[qu][number]) > 1
+                            and self.answers[qu][number][1] is False
+                        ):
                             self.answers[qu][number][1] = True
-                else:  
+                else:
                     mark = self.answers[qu][number][2]
                     if not np.isnan(mark) and mark > 0:
                         counter += 1
-                        index = str(qu+1) + '_' + str(counter)
-                        fraction = marksheet.loc[index]['Correct (a fraction)']
-                        if fraction<1:
+                        index = str(qu + 1) + "_" + str(counter)
+                        fraction = marksheet.loc[index]["Correct (a fraction)"]
+                        if fraction < 1:
                             # Markers might write unicode in their
                             # comments, need to handle this here.
-                            comment = marksheet.loc[index]['Comments']
-                            
+                            comment = marksheet.loc[index]["Comments"]
+
                             if type(comment) is float:
                                 if np.isnan(comment):
-                                    comment = ''
+                                    comment = ""
                             else:
-                                if str(comment) != 'nan':
-                                    comment = '<span style="color:red;">*Marker comment*:' + ' ' + str(comment) + '</span>\n\n'
+                                if str(comment) != "nan":
+                                    comment = (
+                                        '<span style="color:red;">*Marker comment*:'
+                                        + " "
+                                        + str(comment)
+                                        + "</span>\n\n"
+                                    )
                                 else:
-                                    comment = ''
-                            if self.answers[qu][number][1] == '':
-                                self.answers[qu][number][1] = '<span style="color:red;">No **-' + str((1-fraction)*mark) + ' mark(s)**</span> ' + comment
+                                    comment = ""
+                            if self.answers[qu][number][1] == "":
+                                self.answers[qu][number][1] = (
+                                    '<span style="color:red;">No **-'
+                                    + str((1 - fraction) * mark)
+                                    + " mark(s)**</span> "
+                                    + comment
+                                )
                             else:
-                                self.answers[qu][number][1] = '' + comment + '<span style="color:red;">**Correct Answer:**</span>\n\n' + self.answers[qu][number][1] + '\n\n<span style="color:red;">**-' + str((1-fraction)*mark) + ' mark(s)**</span>'
+                                self.answers[qu][number][1] = (
+                                    ""
+                                    + comment
+                                    + '<span style="color:red;">**Correct Answer:**</span>\n\n'
+                                    + self.answers[qu][number][1]
+                                    + '\n\n<span style="color:red;">**-'
+                                    + str((1 - fraction) * mark)
+                                    + " mark(s)**</span>"
+                                )
                         else:
                             self.answers[qu][number][1] = check_mark
+
     def _repr_md_(self):
         import numpy as np
-        total = np.ceil((self.marksheet['Correct (a fraction)']*self.marksheet['Max Mark']).sum())
-        if np.isnan(total):
-            return '### We do not have a record of a submitted assignment.\n\n#### Total Mark: 0'
-        else:
-            return '### <span style="color:red;">Total Marks ' + str(total) + '</span>\n\n' + assessment._repr_md_(self) 
 
-        
-def answer(part, module='mlai2014.json'):
+        total = np.ceil(
+            (self.marksheet["Correct (a fraction)"] * self.marksheet["Max Mark"]).sum()
+        )
+        if np.isnan(total):
+            return "### We do not have a record of a submitted assignment.\n\n#### Total Mark: 0"
+        else:
+            return (
+                '### <span style="color:red;">Total Marks '
+                + str(total)
+                + "</span>\n\n"
+                + assessment._repr_md_(self)
+            )
+
+
+def answer(part, module="mlai2014.json"):
     """Returns the answers to the lab classes."""
-    marks = json.load(open(os.path.join(data_directory, module), 'rb'))
-    return marks['Lab '  + str(part+1)]
+    marks = json.load(open(os.path.join(data_directory, module), "rb"))
+    return marks["Lab " + str(part + 1)]
