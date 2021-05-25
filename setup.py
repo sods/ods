@@ -38,6 +38,8 @@ EXTRAS = {
     ],
     "pandas google sheet interface": ["gdata"],
     "google trends interface": ["pytrends"],
+    "Nigerian NMIS data": ["geopandas"],
+    "Kepler telescope light curves": ["astropy"],
 }
 
 PACKAGE_DATA = {"pods": ["defaults.cfg", "data_resources.json", "football_teams.json"]}
