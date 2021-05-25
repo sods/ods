@@ -2360,7 +2360,6 @@ where we put "< 8" into the field "KEP_Mag" and "Quarter" into the field "User-s
 def kepler_telescope(stars, data_set="kepler_telescope"):
     """Load a given star's datasets."""
 
-    from astropy.io import fits
 
     star_dir = os.path.join(data_path, data_set)
 
@@ -2379,7 +2378,9 @@ def kepler_telescope(stars, data_set="kepler_telescope"):
             filenames.append("kplr" + star + "-" + dataset + "_llc.fits")
 
         
-    Y = [fits.open(os.path.join(star_dir, filename))[1].data for filename in filenames]
+    from astropy.table import Table
+    
+    Y = pd.DataFrame({star: {dataset: Table.read(os.path.join(star_dir, "kplr" + star + "-" + dataset + "_llc.fits"), format='fits').to_pandas() for dataset in stars[star]} for star in stars})
     return data_details_return(
         {
             "Y": Y,
