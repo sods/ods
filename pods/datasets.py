@@ -493,7 +493,7 @@ def to_arff(dataset, **kwargs):
         df2arff(d, n, pods_data)
 
 
-def kepler_telescope_urls_files(scans, messages=True):
+def kepler_telescope_urls_files(datasets, messages=True):
     """
     Find which resources are missing on the local disk for the requested Kepler datasets.
 
@@ -507,21 +507,21 @@ def kepler_telescope_urls_files(scans, messages=True):
     resource["urls"] = []
     resource["files"] =  []
 
-    scan_dir = os.path.join(data_path, "kepler_telescope")
-    if not os.path.isdir(scan_dir):
-        os.makedirs(scan_dir)
-    for scan in scans:
+    dataset_dir = os.path.join(data_path, "kepler_telescope")
+    if not os.path.isdir(dataset_dir):
+        os.makedirs(dataset_dir)
+    for dataset in datasets:
         url_required = False
         file_download = []
-        for star in scans[scan]:
-            file_name = "kplr" + star + "-" + scan + "_llc.fits"
-            cur_scan_file = os.path.join(scan_dir, file_name)
-            if not os.path.exists(cur_scan_file):
+        for kepler_id in datasets[dataset]:
+            file_name = "kplr" + kepler_id + "-" + dataset + "_llc.fits"
+            cur_dataset_file = os.path.join(dataset_dir, file_name)
+            if not os.path.exists(cur_dataset_file):
                 url_required = True
                 file_download.append(file_name)
         if url_required:
             resource["urls"].append(
-                kepler_url + "/" + star[:4] + "/" + star + "/"
+                kepler_url + "/" + kepler_id[:4] + "/" + kepler_id + "/"
             )
             resource["files"].append(file_download)
     return resource
@@ -2285,104 +2285,104 @@ def ceres(data_set="ceres"):
 
 def kepler_lightcurves(data_set="kepler_telescope"):
     """Load Kepler light curves from David W. Hogg & Kate Storey-Fisher's NeurIPS 2020 Tutorial as shown in this colab https://colab.research.google.com/drive/1TimsiQhhcK6qX_lD951H-WJDHd92my61?usp=sharing"""
-    scans = {'2009350155506':
-             ['001720554',
-              '002696955',
-              '002987660',
-              '003246460',
-              '003429637',
-              '003441157',
-              '003836439',
-              '004040917',
-              '004044238',
-              '004150611',
-              '004155395',
-              '004242575',
-              '004567097',
-              '004660665',
-              '004671313',
-              '004857678',
-              '004931363',
-              '004989900',
-              '005108214',
-              '005113557',
-              '005164767',
-              '005177450',
-              '005458880',
-              '005683912',
-              '005724440',
-              '005737655',
-              '005802562',
-              '005939450',
-              '005952403',
-              '005954370',
-              '006065699',
-              '006101376',
-              '006106415',
-              '006150124',
-              '006225718',
-              '006342566',
-              '006352430',
-              '006382808',
-              '006450107',
-              '006469154',
-              '006670812',
-              '006675338',
-              '007201012',
-              '007286856',
-              '007345479',
-              '007366121',
-              '007510397',
-              '007669848',
-              '007798339',
-              '007820638',
-              '007827131',
-              '007909976',
-              '007939145',
-              '007940546',
-              '007940959',
-              '007944142',
-              '007950369',
-              '007970740',
-              '008006161',
-              '008077489',
-              '008085683',
-              '008153795',
-              '008313018',
-              '008324268']}
+    datasets = {'2009350155506':
+                ['001720554',
+                 '002696955',
+                 '002987660',
+                 '003246460',
+                 '003429637',
+                 '003441157',
+                 '003836439',
+                 '004040917',
+                 '004044238',
+                 '004150611',
+                 '004155395',
+                 '004242575',
+                 '004567097',
+                 '004660665',
+                 '004671313',
+                 '004857678',
+                 '004931363',
+                 '004989900',
+                 '005108214',
+                 '005113557',
+                 '005164767',
+                 '005177450',
+                 '005458880',
+                 '005683912',
+                 '005724440',
+                 '005737655',
+                 '005802562',
+                 '005939450',
+                 '005952403',
+                 '005954370',
+                 '006065699',
+                 '006101376',
+                 '006106415',
+                 '006150124',
+                 '006225718',
+                 '006342566',
+                 '006352430',
+                 '006382808',
+                 '006450107',
+                 '006469154',
+                 '006670812',
+                 '006675338',
+                 '007201012',
+                 '007286856',
+                 '007345479',
+                 '007366121',
+                 '007510397',
+                 '007669848',
+                 '007798339',
+                 '007820638',
+                 '007827131',
+                 '007909976',
+                 '007939145',
+                 '007940546',
+                 '007940959',
+                 '007944142',
+                 '007950369',
+                 '007970740',
+                 '008006161',
+                 '008077489',
+                 '008085683',
+                 '008153795',
+                 '008313018',
+                 '008324268']}
 
-    data = kepler_telescope(scans)
-    data["scans"] = scans
+    data = kepler_telescope(datasets)
+    data["datasets"] = datasets
     data["citation"] = "Data from Kepler space mission used by David Hogg and Kate Storey-Fisher for their NeurIPS tutorial https://dwh.gg/NeurIPSastro1"
     data["info"] = """The following wget lines were obtained by doing a simple search at this web form: http://archive.stsci.edu/kepler/data_search/search.php
 where we put "< 8" into the field "KEP_Mag" and "Quarter" into the field "User-specified field 1" and "3" into the "Field descriptions" box associated with that."""
     return data_details_return(data, data_set)
 
 
-def kepler_telescope(scans, data_set="kepler_telescope"):
-    """Load a given star's datasets."""
+def kepler_telescope(datasets, data_set="kepler_telescope"):
+    """Load a given kepler_id's datasets."""
 
 
     scan_dir = os.path.join(data_path, data_set)
 
     # Make sure the data is downloaded.
-    resource = kepler_telescope_urls_files(scans)
+    resource = kepler_telescope_urls_files(datasets)
     data_resources[data_set] = data_resources["kepler_telescope_base"].copy()
     data_resources[data_set]["files"] = resource["files"]
     data_resources[data_set]["urls"] = resource["urls"]
     if resource["urls"]:
         download_data(data_set)
 
-    scan_dir = os.path.join(data_path, "kepler_telescope")
+    dataset_dir = os.path.join(data_path, "kepler_telescope")
     filenames = []
-    for scan in scans:
-        for star in scans[scan]:
-            filenames.append("kplr" + star + "-" + scan + "_llc.fits")
+    for dataset in datasets:
+        for kepler_id in datasets[dataset]:
+            filenames.append("kplr" + kepler_id + "-" + dataset + "_llc.fits")
 
         
     from astropy.table import Table
     
-    Y = pd.DataFrame({scan: {star: Table.read(os.path.join(scan_dir, "kplr" + star + "-" + scan + "_llc.fits"), format='fits').to_pandas() for star in scans[scan]} for scan in scans})
+    Y = pd.DataFrame({dataset: {kepler_id: Table.read(os.path.join(dataset_dir, "kplr" + kepler_id + "-" + dataset + "_llc.fits"), format='fits').to_pandas() for kepler_id in datasets[dataset]} for dataset in datasets})
     return data_details_return(
         {
             "Y": Y,
