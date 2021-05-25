@@ -515,7 +515,7 @@ def kepler_telescope_urls_files(scans, messages=True):
         file_download = []
         for star in scans[scan]:
             file_name = "kplr" + star + "-" + scan + "_llc.fits"
-            cur_scan_file = os.path.join(star_dir, file_name)
+            cur_scan_file = os.path.join(scan_dir, file_name)
             if not os.path.exists(cur_scan_file):
                 url_required = True
                 file_download.append(file_name)
