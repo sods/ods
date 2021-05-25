@@ -2351,10 +2351,11 @@ def kepler_lightcurves(data_set="kepler_telescope"):
              '008324268': ['2009350155506']}
 
     data = kepler_telescope(stars)
+    data["stars"] = stars
     data["citation"] = "Data from Kepler space mission used by David Hogg and Kate Storey-Fisher for their NeurIPS tutorial https://dwh.gg/NeurIPSastro1"
     data["info"] = """The following wget lines were obtained by doing a simple search at this web form: http://archive.stsci.edu/kepler/data_search/search.php
 where we put "< 8" into the field "KEP_Mag" and "Quarter" into the field "User-specified field 1" and "3" into the "Field descriptions" box associated with that."""
-    return data_details_return({"data": data}, data_set)
+    return data_details_return(data, data_set)
 
 
 def kepler_telescope(stars, data_set="kepler_telescope"):

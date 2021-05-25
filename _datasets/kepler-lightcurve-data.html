@@ -79,5 +79,22 @@ sns.set_palette('colorblind')}-->
 <p>Figure: Light curve from star 001720554.</p>
 </div>
 </div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>star0 <span class="op">=</span> data[<span class="st">&quot;data&quot;</span>][<span class="st">&quot;Y&quot;</span>].keys()[<span class="dv">0</span>]</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>star1 <span class="op">=</span> data[<span class="st">&quot;data&quot;</span>][<span class="st">&quot;Y&quot;</span>].keys()[<span class="dv">1</span>]</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>X0 <span class="op">=</span> data[<span class="st">&quot;data&quot;</span>][<span class="st">&quot;Y&quot;</span>][star0][<span class="dv">0</span>]</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>X1 <span class="op">=</span> data[<span class="st">&quot;data&quot;</span>][<span class="st">&quot;Y&quot;</span>][star1][<span class="dv">0</span>]</span></code></pre></div>
+<div class="figure">
+<div id="barycentric-time-difference-figure" class="figure-frame">
+<object class="svgplot " data="https://inverseprobability.com/talks/slides/diagrams//datasets/barycentric-time-difference.svg" width="60%" style=" ">
+</object>
+</div>
+<div id="barycentric-time-difference-magnify" class="magnify" onclick="magnifyFigure(&#39;barycentric-time-difference&#39;)">
+<img class="img-button" src="{{ '/assets/images/Magnify_Large.svg' | relative_url }}" style="width:1.5ex">
+</div>
+<div id="barycentric-time-difference-caption" class="caption-frame">
+<p>Figure: Light curve from star 001720554.</p>
+</div>
+</div>
 <h1 id="references">References</h1>
 
