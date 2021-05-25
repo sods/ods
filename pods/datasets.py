@@ -493,7 +493,7 @@ def to_arff(dataset, **kwargs):
         df2arff(d, n, pods_data)
 
 
-def kepler_telescope_urls_files(stars, messages=True):
+def kepler_telescope_urls_files(scans, messages=True):
     """
     Find which resources are missing on the local disk for the requested Kepler datasets.
 
@@ -507,16 +507,16 @@ def kepler_telescope_urls_files(stars, messages=True):
     resource["urls"] = []
     resource["files"] =  []
 
-    star_dir = os.path.join(data_path, "kepler_telescope")
-    if not os.path.isdir(star_dir):
-        os.makedirs(star_dir)
-    for star in stars:
+    scan_dir = os.path.join(data_path, "kepler_telescope")
+    if not os.path.isdir(scan_dir):
+        os.makedirs(scan_dir)
+    for scan in scans:
         url_required = False
         file_download = []
-        for dataset in stars[star]:
-            file_name = "kplr" + star + "-" + dataset + "_llc.fits"
-            cur_motion_file = os.path.join(star_dir, file_name)
-            if not os.path.exists(cur_motion_file):
+        for star in scans[scan]:
+            file_name = "kplr" + star + "-" + scan + "_llc.fits"
+            cur_scan_file = os.path.join(star_dir, file_name)
+            if not os.path.exists(cur_scan_file):
                 url_required = True
                 file_download.append(file_name)
         if url_required:
@@ -2285,103 +2285,104 @@ def ceres(data_set="ceres"):
 
 def kepler_lightcurves(data_set="kepler_telescope"):
     """Load Kepler light curves from David W. Hogg & Kate Storey-Fisher's NeurIPS 2020 Tutorial as shown in this colab https://colab.research.google.com/drive/1TimsiQhhcK6qX_lD951H-WJDHd92my61?usp=sharing"""
-    stars = {'001720554': ['2009350155506'],
-             '002696955': ['2009350155506'],
-             '002987660': ['2009350155506'],
-             '003246460': ['2009350155506'],
-             '003429637': ['2009350155506'],
-             '003441157': ['2009350155506'],
-             '003836439': ['2009350155506'],
-             '004040917': ['2009350155506'],
-             '004044238': ['2009350155506'],
-             '004150611': ['2009350155506'],
-             '004155395': ['2009350155506'],
-             '004242575': ['2009350155506'],
-             '004567097': ['2009350155506'],
-             '004660665': ['2009350155506'],
-             '004671313': ['2009350155506'],
-             '004857678': ['2009350155506'],
-             '004931363': ['2009350155506'],
-             '004989900': ['2009350155506'],
-             '005108214': ['2009350155506'],
-             '005113557': ['2009350155506'],
-             '005164767': ['2009350155506'],
-             '005177450': ['2009350155506'],
-             '005458880': ['2009350155506'],
-             '005683912': ['2009350155506'],
-             '005724440': ['2009350155506'],
-             '005737655': ['2009350155506'],
-             '005802562': ['2009350155506'],
-             '005939450': ['2009350155506'],
-             '005952403': ['2009350155506'],
-             '005954370': ['2009350155506'],
-             '006065699': ['2009350155506'],
-             '006101376': ['2009350155506'],
-             '006106415': ['2009350155506'],
-             '006150124': ['2009350155506'],
-             '006225718': ['2009350155506'],
-             '006342566': ['2009350155506'],
-             '006352430': ['2009350155506'],
-             '006382808': ['2009350155506'],
-             '006450107': ['2009350155506'],
-             '006469154': ['2009350155506'],
-             '006670812': ['2009350155506'],
-             '006675338': ['2009350155506'],
-             '007201012': ['2009350155506'],
-             '007286856': ['2009350155506'],
-             '007345479': ['2009350155506'],
-             '007366121': ['2009350155506'],
-             '007510397': ['2009350155506'],
-             '007669848': ['2009350155506'],
-             '007798339': ['2009350155506'],
-             '007820638': ['2009350155506'],
-             '007827131': ['2009350155506'],
-             '007909976': ['2009350155506'],
-             '007939145': ['2009350155506'],
-             '007940546': ['2009350155506'],
-             '007940959': ['2009350155506'],
-             '007944142': ['2009350155506'],
-             '007950369': ['2009350155506'],
-             '007970740': ['2009350155506'],
-             '008006161': ['2009350155506'],
-             '008077489': ['2009350155506'],
-             '008085683': ['2009350155506'],
-             '008153795': ['2009350155506'],
-             '008313018': ['2009350155506'],
-             '008324268': ['2009350155506']}
+    scans = {'2009350155506':
+             ['001720554',
+              '002696955',
+              '002987660',
+              '003246460',
+              '003429637',
+              '003441157',
+              '003836439',
+              '004040917',
+              '004044238',
+              '004150611',
+              '004155395',
+              '004242575',
+              '004567097',
+              '004660665',
+              '004671313',
+              '004857678',
+              '004931363',
+              '004989900',
+              '005108214',
+              '005113557',
+              '005164767',
+              '005177450',
+              '005458880',
+              '005683912',
+              '005724440',
+              '005737655',
+              '005802562',
+              '005939450',
+              '005952403',
+              '005954370',
+              '006065699',
+              '006101376',
+              '006106415',
+              '006150124',
+              '006225718',
+              '006342566',
+              '006352430',
+              '006382808',
+              '006450107',
+              '006469154',
+              '006670812',
+              '006675338',
+              '007201012',
+              '007286856',
+              '007345479',
+              '007366121',
+              '007510397',
+              '007669848',
+              '007798339',
+              '007820638',
+              '007827131',
+              '007909976',
+              '007939145',
+              '007940546',
+              '007940959',
+              '007944142',
+              '007950369',
+              '007970740',
+              '008006161',
+              '008077489',
+              '008085683',
+              '008153795',
+              '008313018',
+              '008324268']}
 
-    data = kepler_telescope(stars)
-    data["stars"] = stars
+    data = kepler_telescope(scans)
+    data["scans"] = scans
     data["citation"] = "Data from Kepler space mission used by David Hogg and Kate Storey-Fisher for their NeurIPS tutorial https://dwh.gg/NeurIPSastro1"
     data["info"] = """The following wget lines were obtained by doing a simple search at this web form: http://archive.stsci.edu/kepler/data_search/search.php
 where we put "< 8" into the field "KEP_Mag" and "Quarter" into the field "User-specified field 1" and "3" into the "Field descriptions" box associated with that."""
     return data_details_return(data, data_set)
 
 
-def kepler_telescope(stars, data_set="kepler_telescope"):
+def kepler_telescope(scans, data_set="kepler_telescope"):
     """Load a given star's datasets."""
 
 
-    star_dir = os.path.join(data_path, data_set)
+    scan_dir = os.path.join(data_path, data_set)
 
     # Make sure the data is downloaded.
-    resource = kepler_telescope_urls_files(stars)
+    resource = kepler_telescope_urls_files(scans)
     data_resources[data_set] = data_resources["kepler_telescope_base"].copy()
     data_resources[data_set]["files"] = resource["files"]
     data_resources[data_set]["urls"] = resource["urls"]
     if resource["urls"]:
         download_data(data_set)
 
-    star_dir = os.path.join(data_path, "kepler_telescope")
+    scan_dir = os.path.join(data_path, "kepler_telescope")
     filenames = []
-    for star in stars:
-        for dataset in stars[star]:
-            filenames.append("kplr" + star + "-" + dataset + "_llc.fits")
+    for scan in scans:
+        for star in scans[scan]:
+            filenames.append("kplr" + star + "-" + scan + "_llc.fits")
 
         
     from astropy.table import Table
     
-    Y = pd.DataFrame({star: {dataset: Table.read(os.path.join(star_dir, "kplr" + star + "-" + dataset + "_llc.fits"), format='fits').to_pandas() for dataset in stars[star]} for star in stars})
+    Y = pd.DataFrame({scan: {star: Table.read(os.path.join(scan_dir, "kplr" + star + "-" + scan + "_llc.fits"), format='fits').to_pandas() for star in scans[scan]} for scan in scans})
     return data_details_return(
         {
             "Y": Y,
