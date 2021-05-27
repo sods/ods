@@ -15,7 +15,7 @@ else:
 test_url = "http://www.bbc.co.uk/"
 store_directory = "tmp"
 save_name = "bbc_website.html"
-title = "<title>BBC - Home</title>"
+title = "<title data-rh=\"true\">BBC - Home</title>"
 
 # details of a non existent page
 fake_url = "http://pandemonium.sinclair.spectrum.absolute.blast.google.gobsmackazedare.co.uk/index.html"
