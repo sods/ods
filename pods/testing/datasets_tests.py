@@ -5,7 +5,6 @@ import types
 import mock
 import sys
 
-from pods.google import *
 
 # pods.datasets.overide_manual_authorize=True
 
