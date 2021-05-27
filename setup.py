@@ -34,6 +34,7 @@ EXTRAS = {
         "gspread",
         "httplib2",
         "oauth2client",
+        "pandas",
         "google-api-python-client",
     ],
     "pandas google sheet interface": ["gdata"],
