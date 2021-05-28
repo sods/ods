@@ -1,21 +1,35 @@
 {
     "airline_delay": {
         "citation": "Gaussian Processes for Big Data (In UAI'13). J. Hensman, N. Fusi and N. D. Lawrence",
-        "details": "Flight arrival and departure times for every commercial flight in the USA from January 2008 to April 2008. This dataset contains extensive information about almost 2 million flights, including the delay (in minutes) in reaching the desitnation.",
+        "details": "Flight arrival and departure times for every commercial flight in the USA from January 2008 to April 2008. This dataset contains extensive information about almost 2 million flights, including the delay (in minutes) in reaching the destination.",
         "files": [
             [
-                "filtered_data.pickle"
+                "filtered_data2.pickle"
             ]
         ],
         "license": null,
-        "size": 180905165,
+        "size": 180905168,
+	"urls": [
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/airline_delay/"
+        ]
+    },
+    "bmi_steps": {
+        "citation": "A Hypothesis is a Liability. I. Yanai and M. Lercher",
+        "details": "Data for two genders of steps against BMI.",
+        "files": [
+            [
+                "steps-bmi-data.csv"
+            ]
+        ],
+        "license": null,
+        "size": 18270,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/airline_delay/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/bmi_steps/"
         ]
     },
     "ankur_pose_data": {
-        "citation": "3D Human Pose from Silhouettes by Relevance Vector Regression (In CVPR'04). A. Agarwal and B. Triggs.",
-        "details": "Artificially generated data of silhouettes given poses. Note that the data does not display a left/right ambiguity because across the entire data set one of the arms sticks out more the the other, disambiguating the pose as to which way the individual is facing.",
+        "citation": "Agarwal, A. and Triggs, B. 'Recovering 3D Human Pose from Monocular Images', IEEE TPAMI vol 28(1), 44-58, 2006.",
+        "details": "The Agarwal and Triggs pose data provides artificially generated silhouettes alongside motion capture positions for a range of poses.",
         "files": [
             [
                 "ankurDataPoseSilhouette.mat"
@@ -24,9 +38,9 @@
         "license": null,
         "size": 2802667,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/ankur_pose_data/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/ankur_pose_data/"
         ]
-    },
+    },    
     "boston_housing": {
         "citation": "Harrison, D. and Rubinfeld, D.L. 'Hedonic prices and the demand for clean air', J. Environ. Economics & Management, vol.5, 81-102, 1978.",
         "details": "The Boston Housing data relates house values in Boston to a range of input variables.",
@@ -54,7 +68,7 @@
         "license": "You may copy and redistribute the data. You may make derivative works from the data. You may use the data for commercial purposes. You may not sublicence the data when redistributing it. You may not redistribute the data under a different license. Source attribution on any use of this data: Must refer source.",
         "size": 46779,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/boxjenkins_airline/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/boxjenkins_airline/"
         ]
     },
     "brendan_faces": {
@@ -82,7 +96,7 @@
         "license": null,
         "size": 2044,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/ceres/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/ceres/"
         ]
     },
     "cifar-10": {
@@ -139,7 +153,7 @@
         "license": null,
         "size": 2031872,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/decampos_digits/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/decampos_digits/"
         ]
     },
     "della_gatta": {
@@ -153,7 +167,7 @@
         "license": null,
         "size": 3729650,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/della_gatta/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/della_gatta/"
         ]
     },
     "drosophila_protein": {
@@ -167,7 +181,7 @@
         "license": null,
         "size": 20258,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/drosophila_protein/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/drosophila_protein/"
         ]
     },
     "spellman_yeast": {
@@ -213,7 +227,7 @@
         "license": null,
         "size": 2031872,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/epomeo_gpx/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/epomeo_gpx/"
         ]
     },
     "football_data": {
@@ -250,7 +264,7 @@
         "license": null,
         "size": 59000000,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/fruitfly_tomancak/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/fruitfly_tomancak/"
         ]
     },
     "fruitfly_tomancak_cel_files": {
@@ -338,6 +352,16 @@
             "http://hapmap.ncbi.nlm.nih.gov/downloads/genotypes/latest_phaseIII_ncbi_b36/plink_format/"
         ]
     },
+    "kepler_telescope_base": {
+        "citation": "",
+        "details": "The Kepler spacecraft was launched into an earth trailing orbit and stared at a 100 sq. degree patch of sky near Cygnus in order to measure the brightness variations of about 200,000 stars.  It's primary mission was to find exoplanets transiting these stars and to determine the prevalence of exoplanets in the Galaxy.  The Kepler spacecraft rotated by 90 degrees every 90 days in order to keep the solar panels pointing at the sun and thus the Kepler data is divided into 90-day quarters. Kepler only downloaded the pixels surrounding selected stars of interest at either a 30-minute or 1-minute cadence. The mission produced a flux time series for each star and searched these light curves for the presence of a transiting exoplanet.  In addition to discovering exoplanets, Kepler data has been used to study the variability of stars and eclipsing binaries.",
+        "files": null,
+        "license": null,
+        "size": null,
+        "urls": [
+            "https://archive.stsci.edu/missions/kepler/lightcurves/"
+        ]
+    },
     "isomap_face_data": {
         "citation": "A Global Geometric Framework for Nonlinear Dimensionality Reduction, J. B. Tenenbaum, V. de Silva and J. C. Langford, Science 290 (5500): 2319-2323, 22 December 2000",
         "details": "Face data made available by Tenenbaum, de Silva and Langford to demonstrate isomap, available from http://isomap.stanford.edu/datasets.html.",
@@ -349,7 +373,7 @@
         "license": null,
         "size": 24229368,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/isomap_face_data/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/isomap_face_data/"
         ]
     },
     "mauna_loa": {
@@ -395,9 +419,23 @@
             "https://github.com/sjmgarnier/R-vs-Python/raw/master/Deadliest%20movies%20scrape/code/"
         ]
     },
+    "nigeria_nmis_facility_database": {
+	"citation": "Nigeria NMIS facility database (2014), the Office of the Senior Special Assistant to the President on the Millennium Development Goals (OSSAP-MDGs) & Columbia University",
+	"details": "Nigeria - NMIS health facility data (2014) The Nigeria MDG (Millennium Development Goals) Information System – NMIS health facility data is collected by the Office of the Senior Special Assistant to the President on the Millennium Development Goals (OSSAP-MDGs) in partner with the Sustainable Engineering Lab at Columbia University. A rigorous, geo-referenced baseline facility inventory across Nigeria is created spanning from 2009 to 2011 with an additional survey effort to increase coverage in 2014, to build Nigeria’s first nation-wide inventory of health facility. The database includes 34,139 health facilities info in Nigeria.\n\nThe goal of this database is to make the data collected available to planners, government officials, and the public, to be used to make strategic decisions for planning relevant interventions.\n\nFor data inquiry, please contact Ms. Funlola Osinupebi, Performance Monitoring & Communications, Advisory Power Team, Office of the Vice President at funlola.osinupebi@aptovp.org\n\nTo learn more, please visit http://csd.columbia.edu/2014/03/10/the-nigeria-mdg-information-system-nmis-takes-open-data-further/",
+	"files": [
+	    [
+		"healthmopupandbaselinenmisfacility.csv"
+	    ]
+	],
+	"license": "",
+	"size": 0,
+	"urls": [
+	    "https://energydata.info/dataset/f85d1796-e7f2-4630-be84-79420174e3bd/resource/6e640a13-cab4-457b-b9e6-0336051bac27/download/"
+	]
+    },
     "olivetti_faces": {
         "citation": "Ferdinando Samaria and Andy Harter, Parameterisation of a Stochastic Model for Human Face Identification. Proceedings of 2nd IEEE Workshop on Applications of Computer Vision, Sarasota FL, December 1994",
-        "details": "Olivetti Research Labs Face data base, acquired between December 1992 and December 1994 in the Olivetti Research Lab, Cambridge (which later became AT&T Laboratories, Cambridge). When using these images please give credit to AT&T Laboratories, Cambridge. ",
+        "details": "Olivetti Research Labs Face data base, acquired between December 1992 and December 1994 in the Olivetti Research Lab, Cambridge (which later became AT&T Laboratories, Cambridge). When using these images please give credit to AT&T Laboratories, Cambridge.",
         "files": [
             [
                 "att_faces.zip"
@@ -409,7 +447,7 @@
         "license": null,
         "size": 8561331,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/olivetti_faces/",
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/olivetti_faces/",
             "http://www.cs.nyu.edu/~roweis/data/"
         ]
     },
@@ -427,7 +465,7 @@
         "license": null,
         "size": 4261047,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/olivetti_faces/",
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/olivetti_faces/",
             "http://www.cs.nyu.edu/~roweis/data/"
         ]
     },
@@ -442,11 +480,11 @@
         "license": null,
         "size": 584,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/olympic_marathon_men/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/olympic_marathon_men/"
         ]
     },
     "osu_accad": {
-        "citation": "The Open Motion Data Project by The Ohio State University Advanced Computing Center for the Arts and Design, http://accad.osu.edu/research/mocap/mocap_data.htm.",
+        "citation": "The Open Motion Data Project by The Ohio State University Advanced Computing Center for the Arts and Design, originally found at http://accad.osu.edu/research/mocap/mocap_data.htm.",
         "details": "Motion capture data of different motions from the Open Motion Data Project at Ohio State University.",
         "files": [
             [
@@ -472,12 +510,12 @@
         "license": "Data is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License (http://creativecommons.org/licenses/by-nc-sa/3.0/).",
         "size": 15922790,
         "urls": [
-            "http://accad.osu.edu/research/mocap/data/",
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/stick/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/osu_accad/",
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/stick/"
         ]
     },
     "osu_run1": {
-        "citation": "The Open Motion Data Project by The Ohio State University Advanced Computing Center for the Arts and Design, http://accad.osu.edu/research/mocap/mocap_data.htm.",
+        "citation": "The Open Motion Data Project by The Ohio State University Advanced Computing Center for the Arts and Design, originally found at http://accad.osu.edu/research/mocap/mocap_data.htm.",
         "details": "Motion capture data of a stick man running from the Open Motion Data Project at Ohio State University.",
         "files": [
             [
@@ -490,8 +528,8 @@
         "license": "Data is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License (http://creativecommons.org/licenses/by-nc-sa/3.0/).",
         "size": 338103,
         "urls": [
-            "http://accad.osu.edu/research/mocap/data/",
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/stick/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/osu_accad/",
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/stick/"
         ]
     },
     "nigerian_administrative_zones": {
@@ -522,7 +560,7 @@
             "https://raw.githubusercontent.com/dsfsi/covid19africa/master/data/line_lists/"
         ]
     },
-    "nigerian_nmis": {
+    "nigeria_nmis": {
         "citation": " Nigeria NMIS facility database (2014), the Office of the Senior Special Assistant to the President on the Millennium Development Goals (OSSAP-MDGs) & Columbia University",
         "details": "The Nigeria MDG (Millennium Development Goals) Information System – NMIS health facility data is collected by the Office of the Senior Special Assistant to the President on the Millennium Development Goals (OSSAP-MDGs) in partner with the Sustainable Engineering Lab at Columbia University. A rigorous, geo-referenced baseline facility inventory across Nigeria is created spanning from 2009 to 2011 with an additional survey effort to increase coverage in 2014, to build Nigeria’s first nation-wide inventory of health facility. The database includes 34,139 health facilities info in Nigeria.\n\n The goal of this database is to make the data collected available to planners, government officials, and the public, to be used to make strategic decisions for planning relevant interventions.\n\n For data inquiry, please contact Ms. Funlola Osinupebi, Performance Monitoring & Communications, Advisory Power Team, Office of the Vice President at funlola.osinupebi@aptovp.org\n\n To learn more, please visit <http://csd.columbia.edu/2014/03/10/the-nigeria-mdg-information-system-nmis-takes-open-data-further/>",
         "files": [
@@ -614,7 +652,7 @@
         "license": null,
         "size": 284390,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/robot_wireless/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/robot_wireless/"
         ]
     },
     "rogers_girolami_data": {
@@ -663,7 +701,7 @@
         "license": null,
         "size": 0,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/sod1_mouse/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/sod1_mouse/"
         ]
     },
     "swiss_roll": {
@@ -696,7 +734,7 @@
         "license": null,
         "size": 712796,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/three_phase_oil_flow/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/three_phase_oil_flow/"
         ]
     },
     "xw_pen": {
@@ -710,7 +748,7 @@
         "license": null,
         "size": 3410,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/xw_pen/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/xw_pen/"
         ]
     },
     "leukemia": {
@@ -722,9 +760,9 @@
             ]
         ],
         "license": null,
-        "size": 51276,
+        "size": 65354,
         "urls": [
-            "http://www.math.ntnu.no/%7Ehrue/r-inla.org/examples/leukemia/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/leukemia_survival/"
         ]
     },
     "mcycle": {
@@ -769,7 +807,7 @@
         "license": null,
         "size": 7518372,
         "urls": [
-            "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/twitter_data/"
+            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/twitter_data/"
         ]
     }
 }
