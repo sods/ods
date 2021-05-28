@@ -1467,7 +1467,7 @@ Data set formed from a mixture of four Gaussians. In each class two of the Gauss
     cats = {'negative': -1, 'positive': 1}
     return {'X':X, 'Y':Y, 'info': "Two separate classes of data formed approximately in the shape of two crescents.", 'response': [discrete(cats, 'class')]}
 
-def creep_data(data_set='creep_rupture'):
+def creep_rupture(data_set='creep_rupture'):
     """Brun and Yoshida's metal creep rupture data."""
     if not data_available(data_set):
         import tarfile

@@ -1,0 +1,27 @@
+# From: https://github.com/shaypal5/skift/blob/master/.codecov.yml
+codecov:
+  notify:
+      require_ci_to_pass: yes
+
+coverage:
+  precision: 2
+  round: down
+  range: "70...100"
+  ignore: Tests
+  status:
+    patch:
+      default:
+        target: '80'
+    project: false
+
+comment:
+  layout: header, changes, diff
+    behavior: default
+    require_changes: false
+    branches: null
+    flags: null
+    paths: null
+
+ignore:
+  - "testing"
+  - "**/__init__.py"
