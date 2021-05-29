@@ -1093,7 +1093,6 @@ def drosophila_knirps(data_set="drosophila_protein"):
 
 
 if PYTRENDS_AVAILABLE:
-# This will be for downloading google trends data.
     def google_trends(
         query_terms=["big data", "machine learning", "data science"],
         data_set="google_trends",
@@ -1164,8 +1163,12 @@ if PYTRENDS_AVAILABLE:
         columns = df.columns
         terms = len(query_terms)
         import datetime
-        from matplotlib.dates import date2num
-
+        def date2num(dt):
+            # Recreation of matplotlib.dates.date2num functionality.
+            # from matplotlib.dates import date2num
+            return (dt - datetime.datetime(1970,1,1)).days
+            
+        
         if loaddf:
             X = np.asarray(
                 [
