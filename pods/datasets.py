@@ -27,23 +27,33 @@ from .util import download_url
 from .config import *
 from functools import reduce
 
-IPY_AVAILABLE = True
-try:
-    import IPython
-except ImportError:
-    IPY_AVAILABLE = False
+import pandas as pd
 
-PD_AVAILABLE = True
-try:
-    import pandas as pd
-except ImportError:
-    PD_AVAILABLE = False
+
 
 PYTRENDS_AVAILABLE = True
 try:
     from pytrends.request import TrendReq
 except ImportError:
     PYTRENDS_AVAILABLE = False
+
+GPY_AVAILABLE = True
+try:
+    import GPy
+except ImportError:
+    GPY_AVAILABLE = False
+
+NETPBMFILE_AVAILABLE = True
+try:
+    import netpbmfile
+except ImportError:
+    NETPBMFILE_AVAILABLE = False
+
+GEOPANDAS_AVAILABLE = True
+try:
+    import geopandas
+except ImportError:
+    GEOPANDAS_AVAILABLE = False
     
 if sys.version_info >= (3, 0):
     from urllib.parse import quote
@@ -57,7 +67,6 @@ else:
 data_path = os.path.expanduser(os.path.expandvars(config.get("datasets", "dir")))
 default_seed = 10000
 overide_manual_authorize = False
-ods_url = "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/"
 
 # Read data resources from json file.
 # Don't do this when ReadTheDocs is scanning as it breaks things
@@ -75,7 +84,7 @@ if not (on_rtd):
     from io import open as iopen
 
     json_data = iopen(path, encoding="utf-8").read()
-    football_dict = json.loads(json_data, encoding="utf-8")
+    football_dict = json.loads(json_data)
 
 
 permute_data = True
@@ -93,6 +102,16 @@ def permute(num):
 def integer(name):
     """Return a class category that forces integer"""
     return "integer(" + name + ")"
+
+def date2num(dt):
+    # Recreation of matplotlib.dates.date2num functionality.
+    # from matplotlib.dates import date2num
+    return (dt - datetime.datetime(1970,1,1)).days
+
+def num2date(num):
+    # Recreation of matplotlib.dates.num2date functionality.
+    # from matplotlib.dates import num2date
+    return datetime.datetime(1970,1,1) + datetime.timedelta(days=num)
 
 
 def json_object(name="object"):
@@ -330,8 +349,6 @@ def df2arff(df, dataset_name, pods_data):
                 df[atr] = df[atr].astype(int)
                 continue
             if len(atr) > 7 and atr[:8] == "datenum(":
-                from matplotlib.dates import num2date
-
                 elements = atr[8:-1].split(",")
                 d["attributes"].append(
                     (
@@ -345,8 +362,6 @@ def df2arff(df, dataset_name, pods_data):
             if len(atr) > 9 and atr[:10] == "timestamp(":
 
                 def timestamp2date(values):
-                    import datetime
-
                     """Convert timestamp into a date object"""
                     new = []
                     for value in values:
@@ -706,11 +721,10 @@ def epomeo_gpx(data_set="epomeo_gpx", sample_every=4):
         ]
         X.append(np.asarray(data)[::sample_every, :])
         gpx_file.close()
-    if PD_AVAILABLE:
-        X = pd.DataFrame(
-            X[0], columns=["seconds", "latitude", "longitude", "elevation"]
-        )
-        X.set_index(keys="seconds", inplace=True)
+    X = pd.DataFrame(
+        X[0], columns=["seconds", "latitude", "longitude", "elevation"]
+    )
+    X.set_index(keys="seconds", inplace=True)
     return data_details_return(
         {
             "X": X,
@@ -720,26 +734,27 @@ def epomeo_gpx(data_set="epomeo_gpx", sample_every=4):
     )
 
 
-def nigerian_administrative_zones(
-    data_set="nigerian_administrative_zones", refresh_data=False
-):
-    if not data_available(data_set) and not refresh_data:
-        download_data(data_set)
-    from zipfile import ZipFile
+if GEOPANDAS_AVAILABLE:
+    def nigerian_administrative_zones(
+        data_set="nigerian_administrative_zones", refresh_data=False
+    ):
+        if not data_available(data_set) and not refresh_data:
+            download_data(data_set)
+        from zipfile import ZipFile
 
-    with ZipFile(
-        os.path.join(data_path, data_set, "nga_admbnda_osgof_eha_itos.gdb.zip"), "r"
-    ) as zip_ref:
-        zip_ref.extractall(
-            os.path.join(data_path, data_set, "nga_admbnda_osgof_eha_itos.gdb")
-        )
-    states_file = "nga_admbnda_osgof_eha_itos.gdb/nga_admbnda_osgof_eha_itos.gdb/nga_admbnda_osgof_eha_itos.gdb/nga_admbnda_osgof_eha_itos.gdb/"
-    from geopandas import read_file
+        with ZipFile(
+            os.path.join(data_path, data_set, "nga_admbnda_osgof_eha_itos.gdb.zip"), "r"
+        ) as zip_ref:
+            zip_ref.extractall(
+                os.path.join(data_path, data_set, "nga_admbnda_osgof_eha_itos.gdb")
+            )
+        states_file = "nga_admbnda_osgof_eha_itos.gdb/nga_admbnda_osgof_eha_itos.gdb/nga_admbnda_osgof_eha_itos.gdb/nga_admbnda_osgof_eha_itos.gdb/"
+        from geopandas import read_file
 
-    Y = read_file(os.path.join(data_path, data_set, states_file), layer=1)
-    Y.crs = "EPSG:4326"
-    Y.set_index("admin1Name_en")
-    return data_details_return({"Y": Y}, data_set)
+        Y = read_file(os.path.join(data_path, data_set, states_file), layer=1)
+        Y.crs = "EPSG:4326"
+        Y.set_index("admin1Name_en")
+        return data_details_return({"Y": Y}, data_set)
 
 
 def nigerian_covid(data_set="nigerian_covid", refresh_data=False):
@@ -837,28 +852,27 @@ def pmlr(volumes="all", data_set="pmlr", refresh_data=False):
                 os.path.join(data_path, data_name_full, dirname, file), "r"
             )
             Y += yaml.load(volume_file, Loader=yaml.FullLoader)
-    if PD_AVAILABLE:
-        Y = pd.DataFrame(Y)
-        Y["published"] = pd.to_datetime(Y["published"])
-        # Y.columns.values[4] = json_object('authors')
-        # Y.columns.values[7] = json_object('editors')
-        Y["issued"] = Y["issued"].apply(
-            lambda x: np.datetime64(datetime.datetime(*x["date-parts"]))
-        )
-        Y["author"] = Y["author"].apply(
-            lambda x: [
-                str(author["given"]) + " " + str(author["family"]) for author in x
-            ]
-        )
-        Y["editor"] = Y["editor"].apply(
-            lambda x: [
-                str(editor["given"]) + " " + str(editor["family"]) for editor in x
-            ]
-        )
-        columns = list(Y.columns)
-        columns[14] = datetime64_("published")
-        columns[11] = datetime64_("issued")
-        Y.columns = columns
+    Y = pd.DataFrame(Y)
+    Y["published"] = pd.to_datetime(Y["published"])
+    # Y.columns.values[4] = json_object('authors')
+    # Y.columns.values[7] = json_object('editors')
+    Y["issued"] = Y["issued"].apply(
+        lambda x: np.datetime64(datetime.datetime(*x["date-parts"]))
+    )
+    Y["author"] = Y["author"].apply(
+        lambda x: [
+            str(author["given"]) + " " + str(author["family"]) for author in x
+        ]
+    )
+    Y["editor"] = Y["editor"].apply(
+        lambda x: [
+            str(editor["given"]) + " " + str(editor["family"]) for editor in x
+        ]
+    )
+    columns = list(Y.columns)
+    columns[14] = datetime64_("published")
+    columns[11] = datetime64_("issued")
+    Y.columns = columns
 
     return data_details_return(
         {
@@ -888,9 +902,6 @@ def football_data(season="1617", data_set="football_data"):
             return len(football_dict) + 1
 
     def datestr2num(s):
-        import datetime
-        from matplotlib.dates import date2num
-
         return date2num(datetime.datetime.strptime(s.decode("utf-8"), "%d/%m/%y"))
 
     data_set_season = data_set + "_" + season
@@ -1105,8 +1116,7 @@ def drosophila_knirps(data_set="drosophila_protein"):
     return data_details_return({"Y": Y, "X": X}, data_set)
 
 
-if PYTRENDS_AVAILABLE and PD_AVAILABLE:
-# This will be for downloading google trends data.
+if PYTRENDS_AVAILABLE:
     def google_trends(
         query_terms=["big data", "machine learning", "data science"],
         data_set="google_trends",
@@ -1176,9 +1186,8 @@ if PYTRENDS_AVAILABLE and PD_AVAILABLE:
 
         columns = df.columns
         terms = len(query_terms)
-        import datetime
-        from matplotlib.dates import date2num
-
+            
+        
         if loaddf:
             X = np.asarray(
                 [
@@ -1605,52 +1614,52 @@ def isomap_faces(num_samples=698, data_set="isomap_face_data"):
     )
 
 
-def toy_rbf_1d(seed=default_seed, num_samples=500):
-    """
-    Samples values of a function from an RBF covariance with very small noise for inputs uniformly distributed between -1 and 1.
+if GPY_AVAILABLE:
+    def toy_rbf_1d(seed=default_seed, num_samples=500):
+        """
+        Samples values of a function from an RBF covariance with very small noise for inputs uniformly distributed between -1 and 1.
 
-    :param seed: seed to use for random sampling.
-    :type seed: int
-    :param num_samples: number of samples to sample in the function (default 500).
-    :type num_samples: int
+        :param seed: seed to use for random sampling.
+        :type seed: int
+        :param num_samples: number of samples to sample in the function (default 500).
+        :type num_samples: int
 
-    """
-    import GPy
+        """
 
-    np.random.seed(seed=seed)
-    num_in = 1
-    X = np.random.uniform(low=-1.0, high=1.0, size=(num_samples, num_in))
-    X.sort(axis=0)
-    rbf = GPy.kern.RBF(num_in, variance=1.0, lengthscale=np.array((0.25,)))
-    white = GPy.kern.White(num_in, variance=1e-2)
-    kernel = rbf + white
-    K = kernel.K(X)
-    y = np.reshape(
-        np.random.multivariate_normal(np.zeros(num_samples), K), (num_samples, 1)
-    )
-    return {
-        "X": X,
-        "Y": y,
-        "info": "Sampled "
-        + str(num_samples)
-        + " values of a function from an RBF covariance with very small noise for inputs uniformly distributed between -1 and 1.",
-    }
+        np.random.seed(seed=seed)
+        num_in = 1
+        X = np.random.uniform(low=-1.0, high=1.0, size=(num_samples, num_in))
+        X.sort(axis=0)
+        rbf = GPy.kern.RBF(num_in, variance=1.0, lengthscale=np.array((0.25,)))
+        white = GPy.kern.White(num_in, variance=1e-2)
+        kernel = rbf + white
+        K = kernel.K(X)
+        y = np.reshape(
+            np.random.multivariate_normal(np.zeros(num_samples), K), (num_samples, 1)
+        )
+        return {
+            "X": X,
+            "Y": y,
+            "info": "Sampled "
+            + str(num_samples)
+            + " values of a function from an RBF covariance with very small noise for inputs uniformly distributed between -1 and 1.",
+        }
 
 
-def toy_rbf_1d_50(seed=default_seed):
-    np.random.seed(seed=seed)
-    data = toy_rbf_1d()
-    indices = permute(data["X"].shape[0])
-    indices = indices[0:50]
-    indices.sort(axis=0)
-    X = data["X"][indices, :]
-    Y = data["Y"][indices, :]
-    return {
-        "X": X,
-        "Y": Y,
-        "info": "Subsamples the toy_rbf_sample with 50 values randomly taken from the original sample.",
-        "seed": seed,
-    }
+    def toy_rbf_1d_50(seed=default_seed):
+        np.random.seed(seed=seed)
+        data = toy_rbf_1d()
+        indices = permute(data["X"].shape[0])
+        indices = indices[0:50]
+        indices.sort(axis=0)
+        X = data["X"][indices, :]
+        Y = data["Y"][indices, :]
+        return {
+            "X": X,
+            "Y": Y,
+            "info": "Subsamples the toy_rbf_sample with 50 values randomly taken from the original sample.",
+            "seed": seed,
+        }
 
 
 def toy_linear_1d_classification(seed=default_seed):
@@ -1735,32 +1744,31 @@ def airline_delay(
         data_set,
     )
 
+if NETPBMFILE_AVAILABLE:
+    def olivetti_faces(data_set="olivetti_faces"):
+        path = os.path.join(data_path, data_set)
+        if not data_available(data_set):
+            import zipfile
 
-def olivetti_faces(data_set="olivetti_faces"):
-    path = os.path.join(data_path, data_set)
-    if not data_available(data_set):
-        import zipfile
+            download_data(data_set)
+            zip = zipfile.ZipFile(os.path.join(path, "att_faces.zip"), "r")
+            for name in zip.namelist():
+                zip.extract(name, path)
+        Y = []
+        lbls = []
+        for subject in range(40):
+            for image in range(10):
+                image_path = os.path.join(
+                    path, "orl_faces", "s" + str(subject + 1), str(image + 1) + ".pgm"
+                )
 
-        download_data(data_set)
-        zip = zipfile.ZipFile(os.path.join(path, "att_faces.zip"), "r")
-        for name in zip.namelist():
-            zip.extract(name, path)
-    Y = []
-    lbls = []
-    for subject in range(40):
-        for image in range(10):
-            image_path = os.path.join(
-                path, "orl_faces", "s" + str(subject + 1), str(image + 1) + ".pgm"
-            )
-            from GPy.util import netpbmfile
-
-            Y.append(netpbmfile.imread(image_path).flatten())
-            lbls.append(subject)
-    Y = np.asarray(Y)
-    lbls = np.asarray(lbls)[:, None]
-    return data_details_return(
-        {"Y": Y, "lbls": lbls, "info": "ORL Faces processed to 64x64 images."}, data_set
-    )
+                Y.append(netpbmfile.imread(image_path).flatten())
+                lbls.append(subject)
+        Y = np.asarray(Y)
+        lbls = np.asarray(lbls)[:, None]
+        return data_details_return(
+            {"Y": Y, "lbls": lbls, "info": "ORL Faces processed to 64x64 images."}, data_set
+        )
 
 
 def xw_pen(data_set="xw_pen"):

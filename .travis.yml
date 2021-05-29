@@ -4,48 +4,25 @@ sudo: false
 os:
 - osx
 - linux
-
-# addons:
-#   apt_packages:
-#     - pandoc
-
 language: python
 
 python:
-  - "3.5"
-  - "3.6"
-
-#cache:
-#  directories:
-#  - "$HOME/ods_data_cache"
-
-#env:
-#  - PYTHON_VERSION=3.5
-#  - PYTHON_VERSION=3.6
-
-#before_install:
-#- wget https://github.com/mzwiessele/travis_scripts/raw/master/download_miniconda.sh
-#- wget https://github.com/mzwiessele/travis_scripts/raw/master/install_retry.sh
-#- source download_miniconda.sh
-#- echo $PATH
+  - "3.7"
+  - "3.8"
+  - "3.9"
+  
+before_install:
 
 install:
 - echo $PATH
-#- source install_retry.sh
-#- if [[ "$TRAVIS_OS_NAME" == "osx" ]];
-#  then
-#    conda install --yes pandoc;
-#  fi;
 - pip install codecov
 - pip install coveralls
-- pip install pypandoc
-- pip install gspread
-- pip install pandas
-- pip install IPython
-- pip install ipython
-- pip install jupyter
-- pip install --upgrade google-api-python-client
 - pip install nose-show-skipped
+- pip install pytrends
+- pip install gpxpy
+- pip install astropy
+- pip install geopandas
+- pip install netpbmfile
 - python setup.py install
 
 script:
@@ -58,7 +35,7 @@ after_success:
 before_deploy:
   - cd doc
   - pip install sphinx_rtd_theme
-  - sphinx-apidoc -o source/ ../GPy
+  - sphinx-apidoc -o source/ ../pods
   - make html
   - cd ../
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]];

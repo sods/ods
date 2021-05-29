@@ -17,30 +17,25 @@ from setuptools import find_packages, setup, Command
 # Package meta-data.
 NAME = "pods"
 DESCRIPTION = "Python software for Open Data Science"
-URL = "https://github.com/lawrennd/ods"
+URL = "https://github.com/sods/ods"
 EMAIL = "lawrennd@gmail.com"
 AUTHOR = "Neil D. Lawrence"
 REQUIRES_PYTHON = ">=3.6.0"
-VERSION = "v0.0.21-alpha"
+VERSION = "v0.0.31a0"
 
 # What packages are required for this module to be executed?
 REQUIRED = [
     "pandas",
+    "PyYAML",
+    "scipy",
 ]
 
 # What packages are optional?
 EXTRAS = {
-    "google docs interface": [
-        "gspread",
-        "httplib2",
-        "oauth2client",
-        "pandas",
-        "google-api-python-client",
-    ],
-    "pandas google sheet interface": ["gdata"],
     "google trends interface": ["pytrends"],
     "Nigerian NMIS data": ["geopandas"],
     "Kepler telescope light curves": ["astropy"],
+    "Olivetti Faces": ["netpbmfile"],
 }
 
 PACKAGE_DATA = {"pods": ["defaults.cfg", "data_resources.json", "football_teams.json"]}
