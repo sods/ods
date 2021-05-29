@@ -36,6 +36,24 @@ try:
     from pytrends.request import TrendReq
 except ImportError:
     PYTRENDS_AVAILABLE = False
+
+GPY_AVAILABLE = True
+try:
+    import GPy
+except ImportError:
+    GPY_AVAILABLE = False
+
+NETPBMFILE_AVAILABLE = True
+try:
+    import netpbmfile
+except ImportError:
+    NETPBMFILE_AVAILABLE = False
+
+GEOPANDAS_AVAILABLE = True
+try:
+    import geopandas
+except ImportError:
+    GEOPANDAS_AVAILABLE = False
     
 if sys.version_info >= (3, 0):
     from urllib.parse import quote
@@ -716,26 +734,27 @@ def epomeo_gpx(data_set="epomeo_gpx", sample_every=4):
     )
 
 
-def nigerian_administrative_zones(
-    data_set="nigerian_administrative_zones", refresh_data=False
-):
-    if not data_available(data_set) and not refresh_data:
-        download_data(data_set)
-    from zipfile import ZipFile
+if GEOPANDAS_AVAILABLE:
+    def nigerian_administrative_zones(
+        data_set="nigerian_administrative_zones", refresh_data=False
+    ):
+        if not data_available(data_set) and not refresh_data:
+            download_data(data_set)
+        from zipfile import ZipFile
 
-    with ZipFile(
-        os.path.join(data_path, data_set, "nga_admbnda_osgof_eha_itos.gdb.zip"), "r"
-    ) as zip_ref:
-        zip_ref.extractall(
-            os.path.join(data_path, data_set, "nga_admbnda_osgof_eha_itos.gdb")
-        )
-    states_file = "nga_admbnda_osgof_eha_itos.gdb/nga_admbnda_osgof_eha_itos.gdb/nga_admbnda_osgof_eha_itos.gdb/nga_admbnda_osgof_eha_itos.gdb/"
-    from geopandas import read_file
+        with ZipFile(
+            os.path.join(data_path, data_set, "nga_admbnda_osgof_eha_itos.gdb.zip"), "r"
+        ) as zip_ref:
+            zip_ref.extractall(
+                os.path.join(data_path, data_set, "nga_admbnda_osgof_eha_itos.gdb")
+            )
+        states_file = "nga_admbnda_osgof_eha_itos.gdb/nga_admbnda_osgof_eha_itos.gdb/nga_admbnda_osgof_eha_itos.gdb/nga_admbnda_osgof_eha_itos.gdb/"
+        from geopandas import read_file
 
-    Y = read_file(os.path.join(data_path, data_set, states_file), layer=1)
-    Y.crs = "EPSG:4326"
-    Y.set_index("admin1Name_en")
-    return data_details_return({"Y": Y}, data_set)
+        Y = read_file(os.path.join(data_path, data_set, states_file), layer=1)
+        Y.crs = "EPSG:4326"
+        Y.set_index("admin1Name_en")
+        return data_details_return({"Y": Y}, data_set)
 
 
 def nigerian_covid(data_set="nigerian_covid", refresh_data=False):
@@ -1595,52 +1614,52 @@ def isomap_faces(num_samples=698, data_set="isomap_face_data"):
     )
 
 
-def toy_rbf_1d(seed=default_seed, num_samples=500):
-    """
-    Samples values of a function from an RBF covariance with very small noise for inputs uniformly distributed between -1 and 1.
+if GPY_AVAILABLE:
+    def toy_rbf_1d(seed=default_seed, num_samples=500):
+        """
+        Samples values of a function from an RBF covariance with very small noise for inputs uniformly distributed between -1 and 1.
 
-    :param seed: seed to use for random sampling.
-    :type seed: int
-    :param num_samples: number of samples to sample in the function (default 500).
-    :type num_samples: int
+        :param seed: seed to use for random sampling.
+        :type seed: int
+        :param num_samples: number of samples to sample in the function (default 500).
+        :type num_samples: int
 
-    """
-    import GPy
+        """
 
-    np.random.seed(seed=seed)
-    num_in = 1
-    X = np.random.uniform(low=-1.0, high=1.0, size=(num_samples, num_in))
-    X.sort(axis=0)
-    rbf = GPy.kern.RBF(num_in, variance=1.0, lengthscale=np.array((0.25,)))
-    white = GPy.kern.White(num_in, variance=1e-2)
-    kernel = rbf + white
-    K = kernel.K(X)
-    y = np.reshape(
-        np.random.multivariate_normal(np.zeros(num_samples), K), (num_samples, 1)
-    )
-    return {
-        "X": X,
-        "Y": y,
-        "info": "Sampled "
-        + str(num_samples)
-        + " values of a function from an RBF covariance with very small noise for inputs uniformly distributed between -1 and 1.",
-    }
+        np.random.seed(seed=seed)
+        num_in = 1
+        X = np.random.uniform(low=-1.0, high=1.0, size=(num_samples, num_in))
+        X.sort(axis=0)
+        rbf = GPy.kern.RBF(num_in, variance=1.0, lengthscale=np.array((0.25,)))
+        white = GPy.kern.White(num_in, variance=1e-2)
+        kernel = rbf + white
+        K = kernel.K(X)
+        y = np.reshape(
+            np.random.multivariate_normal(np.zeros(num_samples), K), (num_samples, 1)
+        )
+        return {
+            "X": X,
+            "Y": y,
+            "info": "Sampled "
+            + str(num_samples)
+            + " values of a function from an RBF covariance with very small noise for inputs uniformly distributed between -1 and 1.",
+        }
 
 
-def toy_rbf_1d_50(seed=default_seed):
-    np.random.seed(seed=seed)
-    data = toy_rbf_1d()
-    indices = permute(data["X"].shape[0])
-    indices = indices[0:50]
-    indices.sort(axis=0)
-    X = data["X"][indices, :]
-    Y = data["Y"][indices, :]
-    return {
-        "X": X,
-        "Y": Y,
-        "info": "Subsamples the toy_rbf_sample with 50 values randomly taken from the original sample.",
-        "seed": seed,
-    }
+    def toy_rbf_1d_50(seed=default_seed):
+        np.random.seed(seed=seed)
+        data = toy_rbf_1d()
+        indices = permute(data["X"].shape[0])
+        indices = indices[0:50]
+        indices.sort(axis=0)
+        X = data["X"][indices, :]
+        Y = data["Y"][indices, :]
+        return {
+            "X": X,
+            "Y": Y,
+            "info": "Subsamples the toy_rbf_sample with 50 values randomly taken from the original sample.",
+            "seed": seed,
+        }
 
 
 def toy_linear_1d_classification(seed=default_seed):
@@ -1725,32 +1744,31 @@ def airline_delay(
         data_set,
     )
 
+if NETPBMFILE_AVAILABLE:
+    def olivetti_faces(data_set="olivetti_faces"):
+        path = os.path.join(data_path, data_set)
+        if not data_available(data_set):
+            import zipfile
 
-def olivetti_faces(data_set="olivetti_faces"):
-    path = os.path.join(data_path, data_set)
-    if not data_available(data_set):
-        import zipfile
+            download_data(data_set)
+            zip = zipfile.ZipFile(os.path.join(path, "att_faces.zip"), "r")
+            for name in zip.namelist():
+                zip.extract(name, path)
+        Y = []
+        lbls = []
+        for subject in range(40):
+            for image in range(10):
+                image_path = os.path.join(
+                    path, "orl_faces", "s" + str(subject + 1), str(image + 1) + ".pgm"
+                )
 
-        download_data(data_set)
-        zip = zipfile.ZipFile(os.path.join(path, "att_faces.zip"), "r")
-        for name in zip.namelist():
-            zip.extract(name, path)
-    Y = []
-    lbls = []
-    for subject in range(40):
-        for image in range(10):
-            image_path = os.path.join(
-                path, "orl_faces", "s" + str(subject + 1), str(image + 1) + ".pgm"
-            )
-            from GPy.util import netpbmfile
-
-            Y.append(netpbmfile.imread(image_path).flatten())
-            lbls.append(subject)
-    Y = np.asarray(Y)
-    lbls = np.asarray(lbls)[:, None]
-    return data_details_return(
-        {"Y": Y, "lbls": lbls, "info": "ORL Faces processed to 64x64 images."}, data_set
-    )
+                Y.append(netpbmfile.imread(image_path).flatten())
+                lbls.append(subject)
+        Y = np.asarray(Y)
+        lbls = np.asarray(lbls)[:, None]
+        return data_details_return(
+            {"Y": Y, "lbls": lbls, "info": "ORL Faces processed to 64x64 images."}, data_set
+        )
 
 
 def xw_pen(data_set="xw_pen"):

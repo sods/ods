@@ -32,17 +32,10 @@ REQUIRED = [
 
 # What packages are optional?
 EXTRAS = {
-    "google docs interface": [
-        "gspread",
-        "httplib2",
-        "oauth2client",
-        "pandas",
-        "google-api-python-client",
-    ],
-    "pandas google sheet interface": ["gdata"],
     "google trends interface": ["pytrends"],
     "Nigerian NMIS data": ["geopandas"],
     "Kepler telescope light curves": ["astropy"],
+    "Olivetti Faces": ["netpbmfile"],
 }
 
 PACKAGE_DATA = {"pods": ["defaults.cfg", "data_resources.json", "football_teams.json"]}

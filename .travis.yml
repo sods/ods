@@ -21,6 +21,8 @@ install:
 - pip install pytrends
 - pip install gpxpy
 - pip install astropy
+- pip install geopandas
+- pip install netpbmfile
 - python setup.py install
 
 script:
