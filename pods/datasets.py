@@ -526,9 +526,9 @@ def kepler_telescope_urls_files(datasets, messages=True):
     if not os.path.isdir(dataset_dir):
         os.makedirs(dataset_dir)
     for dataset in datasets:
-        url_required = False
         file_download = []
-        for kepler_id in datasets[dataset]:
+        for kepler_id in datasets[dataset]: 
+            url_required = False
             file_name = "kplr" + kepler_id + "-" + dataset + "_llc.fits"
             cur_dataset_file = os.path.join(dataset_dir, file_name)
             if not os.path.exists(cur_dataset_file):

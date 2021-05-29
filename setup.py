@@ -21,7 +21,7 @@ URL = "https://github.com/sods/ods"
 EMAIL = "lawrennd@gmail.com"
 AUTHOR = "Neil D. Lawrence"
 REQUIRES_PYTHON = ">=3.6.0"
-VERSION = "v0.0.31a0"
+VERSION = "v0.0.32a0"
 
 # What packages are required for this module to be executed?
 REQUIRED = [
