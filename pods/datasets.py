@@ -534,11 +534,11 @@ def kepler_telescope_urls_files(datasets, messages=True):
             if not os.path.exists(cur_dataset_file):
                 url_required = True
                 file_download.append(file_name)
-        if url_required:
-            resource["urls"].append(
-                kepler_url + "/" + kepler_id[:4] + "/" + kepler_id + "/"
-            )
-            resource["files"].append(file_download)
+            if url_required:
+                resource["urls"].append(
+                    kepler_url + "/" + kepler_id[:4] + "/" + kepler_id + "/"
+                )
+                resource["files"].append(file_download)
     return resource
 
 
