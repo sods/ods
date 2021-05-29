@@ -27,17 +27,7 @@ from .util import download_url
 from .config import *
 from functools import reduce
 
-IPY_AVAILABLE = True
-try:
-    import IPython
-except ImportError:
-    IPY_AVAILABLE = False
-
-PD_AVAILABLE = True
-try:
-    import pandas as pd
-except ImportError:
-    PD_AVAILABLE = False
+import pandas as pd
 
 PYTRENDS_AVAILABLE = True
 try:
