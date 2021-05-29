@@ -19,6 +19,8 @@ install:
 - pip install coveralls
 - pip install nose-show-skipped
 - pip install pytrends
+- pip install gpxpy
+- pip install astropy
 - python setup.py install
 
 script:
