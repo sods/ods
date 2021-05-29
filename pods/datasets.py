@@ -47,7 +47,6 @@ else:
 data_path = os.path.expanduser(os.path.expandvars(config.get("datasets", "dir")))
 default_seed = 10000
 overide_manual_authorize = False
-ods_url = "http://staffwww.dcs.shef.ac.uk/people/N.Lawrence/dataset_mirror/"
 
 # Read data resources from json file.
 # Don't do this when ReadTheDocs is scanning as it breaks things
@@ -65,7 +64,7 @@ if not (on_rtd):
     from io import open as iopen
 
     json_data = iopen(path, encoding="utf-8").read()
-    football_dict = json.loads(json_data, encoding="utf-8")
+    football_dict = json.loads(json_data)
 
 
 permute_data = True
