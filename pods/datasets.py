@@ -29,6 +29,8 @@ from functools import reduce
 
 import pandas as pd
 
+
+
 PYTRENDS_AVAILABLE = True
 try:
     from pytrends.request import TrendReq
@@ -82,6 +84,16 @@ def permute(num):
 def integer(name):
     """Return a class category that forces integer"""
     return "integer(" + name + ")"
+
+def date2num(dt):
+    # Recreation of matplotlib.dates.date2num functionality.
+    # from matplotlib.dates import date2num
+    return (dt - datetime.datetime(1970,1,1)).days
+
+def num2date(num):
+    # Recreation of matplotlib.dates.num2date functionality.
+    # from matplotlib.dates import num2date
+    return datetime.datetime(1970,1,1) + datetime.timedelta(days=num)
 
 
 def json_object(name="object"):
@@ -319,8 +331,6 @@ def df2arff(df, dataset_name, pods_data):
                 df[atr] = df[atr].astype(int)
                 continue
             if len(atr) > 7 and atr[:8] == "datenum(":
-                from matplotlib.dates import num2date
-
                 elements = atr[8:-1].split(",")
                 d["attributes"].append(
                     (
@@ -334,8 +344,6 @@ def df2arff(df, dataset_name, pods_data):
             if len(atr) > 9 and atr[:10] == "timestamp(":
 
                 def timestamp2date(values):
-                    import datetime
-
                     """Convert timestamp into a date object"""
                     new = []
                     for value in values:
@@ -875,9 +883,6 @@ def football_data(season="1617", data_set="football_data"):
             return len(football_dict) + 1
 
     def datestr2num(s):
-        import datetime
-        from matplotlib.dates import date2num
-
         return date2num(datetime.datetime.strptime(s.decode("utf-8"), "%d/%m/%y"))
 
     data_set_season = data_set + "_" + season
@@ -1162,11 +1167,6 @@ if PYTRENDS_AVAILABLE:
 
         columns = df.columns
         terms = len(query_terms)
-        import datetime
-        def date2num(dt):
-            # Recreation of matplotlib.dates.date2num functionality.
-            # from matplotlib.dates import date2num
-            return (dt - datetime.datetime(1970,1,1)).days
             
         
         if loaddf:
