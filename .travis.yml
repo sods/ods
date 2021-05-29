@@ -1,10 +1,80 @@
+
+sudo: false
+
+os:
+- osx
+- linux
+
+# addons:
+#   apt_packages:
+#     - pandoc
+
 language: python
+
 python:
   - "3.5"
   - "3.6"
-  - "3.8"
+
+#cache:
+#  directories:
+#  - "$HOME/ods_data_cache"
+
+#env:
+#  - PYTHON_VERSION=3.5
+#  - PYTHON_VERSION=3.6
+
+#before_install:
+#- wget https://github.com/mzwiessele/travis_scripts/raw/master/download_miniconda.sh
+#- wget https://github.com/mzwiessele/travis_scripts/raw/master/install_retry.sh
+#- source download_miniconda.sh
+#- echo $PATH
+
 install:
-  - pip install -r requirements.txt
-  - pip install .
-# command to run tests
-script: travis_tests.py
+- echo $PATH
+#- source install_retry.sh
+#- if [[ "$TRAVIS_OS_NAME" == "osx" ]];
+#  then
+#    conda install --yes pandoc;
+#  fi;
+- pip install codecov
+- pip install coveralls
+- pip install pypandoc
+- pip install gspread
+- pip install pandas
+- pip install IPython
+- pip install ipython
+- pip install jupyter
+- pip install --upgrade google-api-python-client
+- pip install nose-show-skipped
+- python setup.py install
+
+script:
+  - coverage run travis_tests.py
+
+after_success:
+  - codecov
+  - coveralls
+
+before_deploy:
+  - cd doc
+  - pip install sphinx_rtd_theme
+  - sphinx-apidoc -o source/ ../GPy
+  - make html
+  - cd ../
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]];
+    then
+      export DIST='sdist';
+    elif [[ "$TRAVIS_OS_NAME" == "osx" ]];
+    then
+      export DIST='bdist_wheel';
+    fi;
+
+deploy:
+  provider: pypi
+  user: lawrennd
+  password:
+    secure: 
+  on:
+    branch: master
+  distributions: $DIST
+  skip_cleanup: true
