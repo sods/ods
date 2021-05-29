@@ -695,11 +695,10 @@ def epomeo_gpx(data_set="epomeo_gpx", sample_every=4):
         ]
         X.append(np.asarray(data)[::sample_every, :])
         gpx_file.close()
-    if PD_AVAILABLE:
-        X = pd.DataFrame(
-            X[0], columns=["seconds", "latitude", "longitude", "elevation"]
-        )
-        X.set_index(keys="seconds", inplace=True)
+    X = pd.DataFrame(
+        X[0], columns=["seconds", "latitude", "longitude", "elevation"]
+    )
+    X.set_index(keys="seconds", inplace=True)
     return data_details_return(
         {
             "X": X,
@@ -826,28 +825,27 @@ def pmlr(volumes="all", data_set="pmlr", refresh_data=False):
                 os.path.join(data_path, data_name_full, dirname, file), "r"
             )
             Y += yaml.load(volume_file, Loader=yaml.FullLoader)
-    if PD_AVAILABLE:
-        Y = pd.DataFrame(Y)
-        Y["published"] = pd.to_datetime(Y["published"])
-        # Y.columns.values[4] = json_object('authors')
-        # Y.columns.values[7] = json_object('editors')
-        Y["issued"] = Y["issued"].apply(
-            lambda x: np.datetime64(datetime.datetime(*x["date-parts"]))
-        )
-        Y["author"] = Y["author"].apply(
-            lambda x: [
-                str(author["given"]) + " " + str(author["family"]) for author in x
-            ]
-        )
-        Y["editor"] = Y["editor"].apply(
-            lambda x: [
-                str(editor["given"]) + " " + str(editor["family"]) for editor in x
-            ]
-        )
-        columns = list(Y.columns)
-        columns[14] = datetime64_("published")
-        columns[11] = datetime64_("issued")
-        Y.columns = columns
+    Y = pd.DataFrame(Y)
+    Y["published"] = pd.to_datetime(Y["published"])
+    # Y.columns.values[4] = json_object('authors')
+    # Y.columns.values[7] = json_object('editors')
+    Y["issued"] = Y["issued"].apply(
+        lambda x: np.datetime64(datetime.datetime(*x["date-parts"]))
+    )
+    Y["author"] = Y["author"].apply(
+        lambda x: [
+            str(author["given"]) + " " + str(author["family"]) for author in x
+        ]
+    )
+    Y["editor"] = Y["editor"].apply(
+        lambda x: [
+            str(editor["given"]) + " " + str(editor["family"]) for editor in x
+        ]
+    )
+    columns = list(Y.columns)
+    columns[14] = datetime64_("published")
+    columns[11] = datetime64_("issued")
+    Y.columns = columns
 
     return data_details_return(
         {
@@ -1094,7 +1092,7 @@ def drosophila_knirps(data_set="drosophila_protein"):
     return data_details_return({"Y": Y, "X": X}, data_set)
 
 
-if PYTRENDS_AVAILABLE and PD_AVAILABLE:
+if PYTRENDS_AVAILABLE:
 # This will be for downloading google trends data.
     def google_trends(
         query_terms=["big data", "machine learning", "data science"],
