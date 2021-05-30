@@ -1,4 +1,4 @@
-name: test-code
+name: code-tests
 on: [push]
 jobs:
   run-code-tests:
@@ -16,7 +16,7 @@ jobs:
       - run: pip install geopandas
       - run: pip install netpbmfile
       - run: python setup.py install
-      - run: coverage run travis_tests.py
+      - run: coverage run code-tests.py
       - run: codecov
       - run: coveralls
             

@@ -2,7 +2,7 @@ pods
 ===
 
 <p align="left">
-  <a href="https://github.com/lawrennd/ods"><img alt="GitHub Actions status" src="https://github.com/lawrennd/ods/workflows/teest-code/badge.svg"></a>
+  <a href="https://github.com/lawrennd/ods"><img alt="GitHub Actions status" src="https://github.com/lawrennd/ods/workflows/code-tests/badge.svg"></a>
 </p>
 
 # Python open data science software. 
