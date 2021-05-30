@@ -9,6 +9,7 @@ jobs:
       - run: pip install codecov
       - run: pip install coveralls
       - run: pip install nose-show-skipped
+      - run: pip install mock
       - run: pip install pytrends
       - run: pip install gpxpy
       - run: pip install astropy
