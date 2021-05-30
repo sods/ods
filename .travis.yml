@@ -52,6 +52,6 @@ deploy:
   password:
     secure: 
   on:
-    branch: master
+    branch: main
   distributions: $DIST
   skip_cleanup: true
