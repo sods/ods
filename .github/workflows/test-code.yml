@@ -1,0 +1,21 @@
+name: test-code
+on: [push]
+jobs:
+  check-bats-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - run:
+          - run: pip install codecov
+          - run: pip install coveralls
+          - run: pip install nose-show-skipped
+          - run: pip install pytrends
+          - run: pip install gpxpy
+          - run: pip install astropy
+          - run: pip install geopandas
+          - run: pip install netpbmfile
+          - run: python setup.py install
+          - run: codecov
+          - run: coveralls
+            
