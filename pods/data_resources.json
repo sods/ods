@@ -4,11 +4,11 @@
         "details": "Flight arrival and departure times for every commercial flight in the USA from January 2008 to April 2008. This dataset contains extensive information about almost 2 million flights, including the delay (in minutes) in reaching the destination.",
         "files": [
             [
-                "airline_delay.hdf"
+                "airline_delay.json"
             ]
         ],
         "license": null,
-        "size": 180905168,
+        "size": 285917964,
 	"urls": [
             "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/airline_delay/"
         ]
