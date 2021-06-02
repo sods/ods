@@ -19,5 +19,6 @@ jobs:
       - run: coverage run code-tests.py
       - run: codecov
       - run: coveralls
-        env: GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             
