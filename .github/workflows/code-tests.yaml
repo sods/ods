@@ -15,6 +15,7 @@ jobs:
       - run: pip install astropy
       - run: pip install geopandas
       - run: pip install netpbmfile
+      - run: pip install tables
       - run: python setup.py install
       - run: coverage run code-tests.py
       - run: codecov
