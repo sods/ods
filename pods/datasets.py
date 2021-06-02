@@ -759,7 +759,7 @@ def nigerian_covid(data_set="nigerian_covid", refresh_data=False):
 
     dir_path = os.path.join(DATAPATH, data_set)
     filename = os.path.join(dir_path, "line-list-nigeria.csv")
-    Y = read_csv(
+    Y = pd.read_csv(
         filename,
         parse_dates=[
             "date",
@@ -778,7 +778,7 @@ def nigeria_nmis(data_set="nigeria_nmis", refresh_data=False):
 
     dir_path = os.path.join(DATAPATH, data_set)
     filename = os.path.join(dir_path, "healthmopupandbaselinenmisfacility.csv")
-    Y = read_csv(filename)
+    Y = pd.read_csv(filename)
     return data_details_return({"Y": Y}, data_set)
 
 
@@ -788,7 +788,7 @@ def nigerian_population_2016(data_set="nigerian_population_2016", refresh_data=F
 
     dir_path = os.path.join(DATAPATH, data_set)
     filename = os.path.join(dir_path, "nga_pop_adm1_2016.csv")
-    Y = read_csv(filename)
+    Y = pd.read_csv(filename)
     Y.columns = [
         "admin1Name_en",
         "admin1Pcode",
