@@ -6,7 +6,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
-        env: GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: pip install codecov
       - run: pip install coveralls
       - run: pip install nose-show-skipped
@@ -20,4 +19,5 @@ jobs:
       - run: coverage run code-tests.py
       - run: codecov
       - run: coveralls
+        env: GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             
