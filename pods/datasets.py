@@ -809,13 +809,9 @@ def pmlr(volumes="all", data_set="pmlr", refresh_data=False):
     proceedings = yaml.load(proceedings_file, Loader=yaml.FullLoader)
 
     # Create a new resources entry for downloading contents of proceedings.
-    data_name_full_stub = "pmlr_volume_"
+    data_name_full = "pmlr"
+    data_resources[data_set]["dirs"] = [['.']]
     for entry in proceedings:
-        data_name_full = data_name_full_stub + "v" + str(entry["volume"])
-        data_resources[data_name_full] = data_resources[data_set].copy()
-        data_resources[data_name_full]["files"] = []
-        data_resources[data_name_full]["dirs"] = []
-        data_resources[data_name_full]["urls"] = []
         if volumes == "all" or entry["volume"] in volumes:
             file = entry["yaml"].split("/")[-1]
             proto, url = entry["yaml"].split("//")
@@ -827,12 +823,12 @@ def pmlr(volumes="all", data_set="pmlr", refresh_data=False):
             data_resources[data_name_full]["urls"].append(urln)
         Y = []
         # Download the volume data
-        if not data_available(data_name_full):
-            download_data(data_name_full)
+    if not data_available(data_name_full):
+        download_data(data_name_full)
 
     for entry in reversed(proceedings):
         volume = entry["volume"]
-        data_name_full = data_name_full_stub + "v" + str(volume)
+        # data_name_full = data_name_full_stub + "v" + str(volume)
         if volumes == "all" or volume in volumes:
             file = entry["yaml"].split("/")[-1]
             proto, url = entry["yaml"].split("//")
@@ -852,16 +848,18 @@ def pmlr(volumes="all", data_set="pmlr", refresh_data=False):
             lambda x: np.datetime64(datetime.datetime(*x["date-parts"]))
         )
     except TypeError:
-        raise TypeError("Type error for entry\n" + x) from e
+        raise TypeError("Type error for entry\n" + Y["issued"]) from e
+
+    def full_name(person):
+        order = ["given", "prefix", "family", "suffix"]
+        names = [str(person[key]) for key in order if key in person and person[key] is not None]
+        return " ".join(names)
+
     Y["author"] = Y["author"].apply(
-        lambda x: [
-            str(author["given"]) + " " + str(author["family"]) for author in x
-        ]
+        lambda x: ', '.join([full_name(author) for author in x])
     )
     Y["editor"] = Y["editor"].apply(
-        lambda x: [
-            str(editor["given"]) + " " + str(editor["family"]) for editor in x
-        ]
+        lambda x: ', '.join([full_name(editor) for editor in x])
     )
     columns = list(Y.columns)
     columns[14] = datetime64_("published")
