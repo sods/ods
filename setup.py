@@ -28,6 +28,7 @@ REQUIRED = [
     "pandas",
     "PyYAML",
     "scipy",
+    "tables",
 ]
 
 # What packages are optional?

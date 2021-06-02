@@ -64,7 +64,7 @@ else:
 
 
 # Global variables
-data_path = os.path.expanduser(os.path.expandvars(config.get("datasets", "dir")))
+DATAPATH = os.path.expanduser(os.path.expandvars(config.get("datasets", "dir")))
 default_seed = 10000
 overide_manual_authorize = False
 
@@ -187,12 +187,12 @@ def clear_cache(dataset_name=None):
     if "dirs" in dr:
         for dirs, files in zip(dr["dirs"], dr["files"]):
             for dir, file in zip(dirs, files):
-                path = os.path.join(data_path, dataset_name, dir, file)
+                path = os.path.join(DATAPATH, dataset_name, dir, file)
                 if os.path.exists(path):
                     logging.info("clear_cache: removing " + path)
                     os.unlink(path)
             for dir in dirs:
-                path = os.path.join(data_path, dataset_name, dir)
+                path = os.path.join(DATAPATH, dataset_name, dir)
                 if os.path.exists(path):
                     logging.info("clear_cache: remove directory " + path)
                     os.rmdir(path)
@@ -200,7 +200,7 @@ def clear_cache(dataset_name=None):
     else:
         for file_list in dr["files"]:
             for file in file_list:
-                path = os.path.join(data_path, dataset_name, file)
+                path = os.path.join(DATAPATH, dataset_name, file)
                 if os.path.exists(path):
                     logging.info("clear_cache: remove " + path)
                     os.unlink(path)
@@ -212,12 +212,12 @@ def data_available(dataset_name=None):
     if "dirs" in dr:
         for dirs, files in zip(dr["dirs"], dr["files"]):
             for dir, file in zip(dirs, files):
-                if not os.path.exists(os.path.join(data_path, dataset_name, dir, file)):
+                if not os.path.exists(os.path.join(DATAPATH, dataset_name, dir, file)):
                     return False
     else:
         for file_list in dr["files"]:
             for file in file_list:
-                if not os.path.exists(os.path.join(data_path, dataset_name, file)):
+                if not os.path.exists(os.path.join(DATAPATH, dataset_name, file)):
                     return False
     return True
 
@@ -242,7 +242,7 @@ def authorize_download(dataset_name=None, prompt=prompt_stdin):
             + " bytes of space."
         )
         print("")
-    print("Data will be stored in " + os.path.join(data_path, dataset_name) + ".")
+    print("Data will be stored in " + os.path.join(DATAPATH, dataset_name) + ".")
     print("")
     if overide_manual_authorize:
         if dr["license"]:
@@ -270,7 +270,7 @@ def download_data(dataset_name=None, prompt=prompt_stdin):
             for file, suffix in zip(files, suffices):
                 download_url(
                     url=os.path.join(url, file),
-                    dir_name=data_path,
+                    dir_name=DATAPATH,
                     store_directory=dataset_name,
                     suffix=suffix,
                 )
@@ -280,7 +280,7 @@ def download_data(dataset_name=None, prompt=prompt_stdin):
                 print(file, dir)
                 download_url(
                     url=os.path.join(url, dir, file),
-                    dir_name=data_path,
+                    dir_name=DATAPATH,
                     store_directory=os.path.join(dataset_name, dir),
                 )
     else:
@@ -288,7 +288,7 @@ def download_data(dataset_name=None, prompt=prompt_stdin):
             for file in files:
                 download_url(
                     url=os.path.join(url, file),
-                    dir_name=data_path,
+                    dir_name=DATAPATH,
                     store_directory=dataset_name,
                 )
     return True
@@ -522,7 +522,7 @@ def kepler_telescope_urls_files(datasets, messages=True):
     resource["urls"] = []
     resource["files"] =  []
 
-    dataset_dir = os.path.join(data_path, "kepler_telescope")
+    dataset_dir = os.path.join(DATAPATH, "kepler_telescope")
     if not os.path.isdir(dataset_dir):
         os.makedirs(dataset_dir)
     for dataset in datasets:
@@ -573,7 +573,7 @@ def cmu_urls_files(subj_motions, messages=True):
     all_motions = []
 
     for i in range(len(subjects)):
-        skel_dir = os.path.join(data_path, "cmu_mocap")
+        skel_dir = os.path.join(DATAPATH, "cmu_mocap")
         cur_skel_file = os.path.join(skel_dir, subjects[i] + ".asf")
 
         url_required = False
@@ -601,7 +601,7 @@ def bmi_steps(data_set="bmi_steps"):
     if not data_available(data_set):
         download_data(data_set)
 
-    data = pd.read_csv(os.path.join(data_path, data_set, "steps-bmi-data.csv"))
+    data = pd.read_csv(os.path.join(DATAPATH, data_set, "steps-bmi-data.csv"))
 
     X = np.hstack(
         (data["steps"].values[:, np.newaxis], data["bmi"].values[:, np.newaxis])
@@ -618,18 +618,18 @@ def bmi_steps(data_set="bmi_steps"):
 def boston_housing(data_set="boston_housing"):
     if not data_available(data_set):
         download_data(data_set)
-    all_data = np.genfromtxt(os.path.join(data_path, data_set, "housing.data"))
+    all_data = np.genfromtxt(os.path.join(DATAPATH, data_set, "housing.data"))
     X = all_data[:, 0:13]
     Y = all_data[:, 13:14]
     return data_details_return({"X": X, "Y": Y}, data_set)
 
 
 def boxjenkins_airline(data_set="boxjenkins_airline", num_train=96):
-    path = os.path.join(data_path, data_set)
+    path = os.path.join(DATAPATH, data_set)
     if not data_available(data_set):
         download_data(data_set)
     data = np.loadtxt(
-        os.path.join(data_path, data_set, "boxjenkins_airline.csv"), delimiter=","
+        os.path.join(DATAPATH, data_set, "boxjenkins_airline.csv"), delimiter=","
     )
     Y = data[:num_train, 1:2]
     X = data[:num_train, 0:1]
@@ -653,7 +653,7 @@ def boxjenkins_airline(data_set="boxjenkins_airline", num_train=96):
 def brendan_faces(data_set="brendan_faces"):
     if not data_available(data_set):
         download_data(data_set)
-    mat_data = scipy.io.loadmat(os.path.join(data_path, data_set, "frey_rawface.mat"))
+    mat_data = scipy.io.loadmat(os.path.join(DATAPATH, data_set, "frey_rawface.mat"))
     Y = mat_data["ff"].T
     return data_details_return({"Y": Y}, data_set)
 
@@ -661,7 +661,7 @@ def brendan_faces(data_set="brendan_faces"):
 def della_gatta_TRP63_gene_expression(data_set="della_gatta", gene_number=None):
     if not data_available(data_set):
         download_data(data_set)
-    mat_data = scipy.io.loadmat(os.path.join(data_path, data_set, "DellaGattadata.mat"))
+    mat_data = scipy.io.loadmat(os.path.join(DATAPATH, data_set, "DellaGattadata.mat"))
     X = np.double(mat_data["timepoints"])
     if gene_number == None:
         Y = mat_data["exprs_tp53_RMA"]
@@ -693,7 +693,7 @@ def epomeo_gpx(data_set="epomeo_gpx", sample_every=4):
 
     X = []
     for file in files:
-        gpx_file = open(os.path.join(data_path, "epomeo_gpx", file + ".gpx"), "r")
+        gpx_file = open(os.path.join(DATAPATH, "epomeo_gpx", file + ".gpx"), "r")
 
         gpx = gpxpy.parse(gpx_file)
         segment = gpx.tracks[0].segments[0]
@@ -739,15 +739,15 @@ if GEOPANDAS_AVAILABLE:
         from zipfile import ZipFile
 
         with ZipFile(
-            os.path.join(data_path, data_set, "nga_admbnda_osgof_eha_itos.gdb.zip"), "r"
+            os.path.join(DATAPATH, data_set, "nga_admbnda_osgof_eha_itos.gdb.zip"), "r"
         ) as zip_ref:
             zip_ref.extractall(
-                os.path.join(data_path, data_set, "nga_admbnda_osgof_eha_itos.gdb")
+                os.path.join(DATAPATH, data_set, "nga_admbnda_osgof_eha_itos.gdb")
             )
         states_file = "nga_admbnda_osgof_eha_itos.gdb/nga_admbnda_osgof_eha_itos.gdb/nga_admbnda_osgof_eha_itos.gdb/nga_admbnda_osgof_eha_itos.gdb/"
         from geopandas import read_file
 
-        Y = read_file(os.path.join(data_path, data_set, states_file), layer=1)
+        Y = read_file(os.path.join(DATAPATH, data_set, states_file), layer=1)
         Y.crs = "EPSG:4326"
         Y.set_index("admin1Name_en")
         return data_details_return({"Y": Y}, data_set)
@@ -756,11 +756,10 @@ if GEOPANDAS_AVAILABLE:
 def nigerian_covid(data_set="nigerian_covid", refresh_data=False):
     if not data_available(data_set) and not refresh_data:
         download_data(data_set)
-    from pandas import read_csv
 
-    dir_path = os.path.join(data_path, data_set)
+    dir_path = os.path.join(DATAPATH, data_set)
     filename = os.path.join(dir_path, "line-list-nigeria.csv")
-    Y = read_csv(
+    Y = pd.read_csv(
         filename,
         parse_dates=[
             "date",
@@ -776,22 +775,20 @@ def nigerian_covid(data_set="nigerian_covid", refresh_data=False):
 def nigeria_nmis(data_set="nigeria_nmis", refresh_data=False):
     if not data_available(data_set) and not refresh_data:
         download_data(data_set)
-    from pandas import read_csv
 
-    dir_path = os.path.join(data_path, data_set)
+    dir_path = os.path.join(DATAPATH, data_set)
     filename = os.path.join(dir_path, "healthmopupandbaselinenmisfacility.csv")
-    Y = read_csv(filename)
+    Y = pd.read_csv(filename)
     return data_details_return({"Y": Y}, data_set)
 
 
 def nigerian_population_2016(data_set="nigerian_population_2016", refresh_data=False):
     if not data_available(data_set) and not refresh_data:
         download_data(data_set)
-    from pandas import read_csv
 
-    dir_path = os.path.join(data_path, data_set)
+    dir_path = os.path.join(DATAPATH, data_set)
     filename = os.path.join(dir_path, "nga_pop_adm1_2016.csv")
-    Y = read_csv(filename)
+    Y = pd.read_csv(filename)
     Y.columns = [
         "admin1Name_en",
         "admin1Pcode",
@@ -808,19 +805,13 @@ def pmlr(volumes="all", data_set="pmlr", refresh_data=False):
     if not data_available(data_set) and not refresh_data:
         download_data(data_set)
 
-    proceedings_file = open(os.path.join(data_path, data_set, "proceedings.yaml"), "r")
-    import yaml
-
+    proceedings_file = open(os.path.join(DATAPATH, data_set, "proceedings.yaml"), "r")
     proceedings = yaml.load(proceedings_file, Loader=yaml.FullLoader)
 
     # Create a new resources entry for downloading contents of proceedings.
-    data_name_full_stub = "pmlr_volume_"
+    data_name_full = "pmlr"
+    data_resources[data_set]["dirs"] = [['.']]
     for entry in proceedings:
-        data_name_full = data_name_full_stub + "v" + str(entry["volume"])
-        data_resources[data_name_full] = data_resources[data_set].copy()
-        data_resources[data_name_full]["files"] = []
-        data_resources[data_name_full]["dirs"] = []
-        data_resources[data_name_full]["urls"] = []
         if volumes == "all" or entry["volume"] in volumes:
             file = entry["yaml"].split("/")[-1]
             proto, url = entry["yaml"].split("//")
@@ -832,12 +823,12 @@ def pmlr(volumes="all", data_set="pmlr", refresh_data=False):
             data_resources[data_name_full]["urls"].append(urln)
         Y = []
         # Download the volume data
-        if not data_available(data_name_full):
-            download_data(data_name_full)
+    if not data_available(data_name_full):
+        download_data(data_name_full)
 
     for entry in reversed(proceedings):
         volume = entry["volume"]
-        data_name_full = data_name_full_stub + "v" + str(volume)
+        # data_name_full = data_name_full_stub + "v" + str(volume)
         if volumes == "all" or volume in volumes:
             file = entry["yaml"].split("/")[-1]
             proto, url = entry["yaml"].split("//")
@@ -845,25 +836,30 @@ def pmlr(volumes="all", data_set="pmlr", refresh_data=False):
             dirname = os.path.dirname("/".join(url.split("/")[1:]))
             urln = proto + "//" + url.split("/")[0]
             volume_file = open(
-                os.path.join(data_path, data_name_full, dirname, file), "r"
+                os.path.join(DATAPATH, data_name_full, dirname, file), "r"
             )
             Y += yaml.load(volume_file, Loader=yaml.FullLoader)
     Y = pd.DataFrame(Y)
     Y["published"] = pd.to_datetime(Y["published"])
     # Y.columns.values[4] = json_object('authors')
     # Y.columns.values[7] = json_object('editors')
-    Y["issued"] = Y["issued"].apply(
-        lambda x: np.datetime64(datetime.datetime(*x["date-parts"]))
-    )
+    try:
+        Y["issued"] = Y["issued"].apply(
+            lambda x: np.datetime64(datetime.datetime(*x["date-parts"]))
+        )
+    except TypeError:
+        raise TypeError("Type error for entry\n" + Y["issued"]) from e
+
+    def full_name(person):
+        order = ["given", "prefix", "family", "suffix"]
+        names = [str(person[key]) for key in order if key in person and person[key] is not None]
+        return " ".join(names)
+
     Y["author"] = Y["author"].apply(
-        lambda x: [
-            str(author["given"]) + " " + str(author["family"]) for author in x
-        ]
+        lambda x: ', '.join([full_name(author) for author in x])
     )
     Y["editor"] = Y["editor"].apply(
-        lambda x: [
-            str(editor["given"]) + " " + str(editor["family"]) for editor in x
-        ]
+        lambda x: ', '.join([full_name(editor) for editor in x])
     )
     columns = list(Y.columns)
     columns[14] = datetime64_("published")
@@ -913,9 +909,9 @@ def football_data(season="1617", data_set="football_data"):
         download_data(data_set_season)
     start = True
     for file in reversed(files):
-        filename = os.path.join(data_path, data_set_season, file)
+        filename = os.path.join(DATAPATH, data_set_season, file)
         # rewrite files removing blank rows.
-        writename = os.path.join(data_path, data_set_season, "temp.csv")
+        writename = os.path.join(DATAPATH, data_set_season, "temp.csv")
         input = open(filename, encoding="ISO-8859-1")
         output = open(writename, "w")
         writer = csv.writer(output)
@@ -962,11 +958,10 @@ def football_data(season="1617", data_set="football_data"):
 def sod1_mouse(data_set="sod1_mouse"):
     if not data_available(data_set):
         download_data(data_set)
-    from pandas import read_csv
 
-    dir_path = os.path.join(data_path, data_set)
+    dir_path = os.path.join(DATAPATH, data_set)
     filename = os.path.join(dir_path, "sod1_C57_129_exprs.csv")
-    Y = read_csv(filename, header=0, index_col=0)
+    Y = pd.read_csv(filename, header=0, index_col=0)
     num_repeats = 4
     num_time = 4
     num_cond = 4
@@ -977,11 +972,10 @@ def spellman_yeast(data_set="spellman_yeast"):
     """This is the classic Spellman et al 1998 Yeast Cell Cycle gene expression data that is widely used as a benchmark."""
     if not data_available(data_set):
         download_data(data_set)
-    from pandas import read_csv
 
-    dir_path = os.path.join(data_path, data_set)
+    dir_path = os.path.join(DATAPATH, data_set)
     filename = os.path.join(dir_path, "combined.txt")
-    Y = read_csv(filename, header=0, index_col=0, sep="\t")
+    Y = pd.read_csv(filename, header=0, index_col=0, sep="\t")
     return data_details_return({"Y": Y}, data_set)
 
 
@@ -989,11 +983,10 @@ def spellman_yeast_cdc15(data_set="spellman_yeast"):
     """These are the gene expression levels from the CDC-15 experiment of Spellman et al (1998)."""
     if not data_available(data_set):
         download_data(data_set)
-    from pandas import read_csv
 
-    dir_path = os.path.join(data_path, data_set)
+    dir_path = os.path.join(DATAPATH, data_set)
     filename = os.path.join(dir_path, "combined.txt")
-    Y = read_csv(filename, header=0, index_col=0, sep="\t")
+    Y = pd.read_csv(filename, header=0, index_col=0, sep="\t")
     t = np.asarray(
         [
             10,
@@ -1038,11 +1031,10 @@ def lee_yeast_ChIP(data_set="lee_yeast_ChIP"):
     """Yeast ChIP data from Lee et al."""
     if not data_available(data_set):
         download_data(data_set)
-    from pandas import read_csv
 
-    dir_path = os.path.join(data_path, data_set)
+    dir_path = os.path.join(DATAPATH, data_set)
     filename = os.path.join(dir_path, "binding_by_gene.tsv")
-    S = read_csv(filename, header=1, index_col=0, sep="\t")
+    S = pd.read_csv(filename, header=1, index_col=0, sep="\t")
     transcription_factors = [col for col in S.columns if col[:7] != "Unnamed"]
     annotations = S[["Unnamed: 1", "Unnamed: 2", "Unnamed: 3"]]
     S = S[transcription_factors]
@@ -1060,11 +1052,10 @@ def fruitfly_tomancak(data_set="fruitfly_tomancak", gene_number=None):
     """Fruitfly gene expression data from Tomancak et al."""
     if not data_available(data_set):
         download_data(data_set)
-    from pandas import read_csv
 
-    dir_path = os.path.join(data_path, data_set)
+    dir_path = os.path.join(DATAPATH, data_set)
     filename = os.path.join(dir_path, "tomancak_exprs.csv")
-    Y = read_csv(filename, header=0, index_col=0).T
+    Y = pd.read_csv(filename, header=0, index_col=0).T
     num_repeats = 3
     num_time = 12
     xt = np.linspace(0, num_time - 1, num_time)
@@ -1077,23 +1068,21 @@ def fruitfly_tomancak(data_set="fruitfly_tomancak", gene_number=None):
 def drosophila_protein(data_set="drosophila_protein"):
     if not data_available(data_set):
         download_data(data_set)
-    from pandas import read_csv
 
-    dir_path = os.path.join(data_path, data_set)
+    dir_path = os.path.join(DATAPATH, data_set)
     filename = os.path.join(dir_path, "becker_et_al.csv")
-    Y = read_csv(filename, header=0)
+    Y = pd.read_csv(filename, header=0)
     return data_details_return({"Y": Y}, data_set)
 
 
 def drosophila_knirps(data_set="drosophila_protein"):
     if not data_available(data_set):
         download_data(data_set)
-    from pandas import read_csv
 
-    dir_path = os.path.join(data_path, data_set)
+    dir_path = os.path.join(DATAPATH, data_set)
     filename = os.path.join(dir_path, "becker_et_al.csv")
     # in the csv file we have facts_kni and ext_kni. We treat facts_kni as protein and ext_kni as mRNA
-    df = read_csv(filename, header=0)
+    df = pd.read_csv(filename, header=0)
     t = df["t"].to_numpy()[:, np.newaxis]
     x = df["x"].to_numpy()[:, np.newaxis]
 
@@ -1134,13 +1123,12 @@ if PYTRENDS_AVAILABLE:
         """
 
         query_terms.sort()
-        import pandas as pd
         from pytrends.request import TrendReq
 
         pytrends = TrendReq(hl="en-US", tz=360)
 
         # Create directory name for data
-        dir_path = os.path.join(data_path, "google_trends")
+        dir_path = os.path.join(DATAPATH, "google_trends")
         if not os.path.isdir(dir_path):
             os.makedirs(dir_path)
         dir_name = "-".join(query_terms)
@@ -1232,12 +1220,12 @@ def oil(data_set="three_phase_oil_flow"):
     """The three phase oil data from Bishop and James (1993)."""
     if not data_available(data_set):
         download_data(data_set)
-    oil_train_file = os.path.join(data_path, data_set, "DataTrn.txt")
-    oil_trainlbls_file = os.path.join(data_path, data_set, "DataTrnLbls.txt")
-    oil_test_file = os.path.join(data_path, data_set, "DataTst.txt")
-    oil_testlbls_file = os.path.join(data_path, data_set, "DataTstLbls.txt")
-    oil_valid_file = os.path.join(data_path, data_set, "DataVdn.txt")
-    oil_validlbls_file = os.path.join(data_path, data_set, "DataVdnLbls.txt")
+    oil_train_file = os.path.join(DATAPATH, data_set, "DataTrn.txt")
+    oil_trainlbls_file = os.path.join(DATAPATH, data_set, "DataTrnLbls.txt")
+    oil_test_file = os.path.join(DATAPATH, data_set, "DataTst.txt")
+    oil_testlbls_file = os.path.join(DATAPATH, data_set, "DataTstLbls.txt")
+    oil_valid_file = os.path.join(DATAPATH, data_set, "DataVdn.txt")
+    oil_validlbls_file = os.path.join(DATAPATH, data_set, "DataVdnLbls.txt")
     fid = open(oil_train_file)
     X = np.fromfile(fid, sep="\t").reshape((-1, 12))
     fid.close()
@@ -1275,7 +1263,7 @@ def oil(data_set="three_phase_oil_flow"):
 def leukemia(data_set="leukemia"):
     if not data_available(data_set):
         download_data(data_set)
-    all_data = np.genfromtxt(os.path.join(data_path, data_set, "leuk.dat"))
+    all_data = np.genfromtxt(os.path.join(DATAPATH, data_set, "leuk.dat"))
     X = all_data[1:, 1:]
     censoring = all_data[1:, 1]
     Y = all_data[1:, 0]
@@ -1306,14 +1294,14 @@ def pumadyn(seed=default_seed, data_set="pumadyn-32nm"):
         import tarfile
 
         download_data(data_set)
-        path = os.path.join(data_path, data_set)
+        path = os.path.join(DATAPATH, data_set)
         tar = tarfile.open(os.path.join(path, "pumadyn-32nm.tar.gz"))
         print("Extracting file.")
         tar.extractall(path=path)
         tar.close()
     # Data is variance 1, no need to normalize.
     data = np.loadtxt(
-        os.path.join(data_path, data_set, "pumadyn-32nm", "Dataset.data.gz")
+        os.path.join(DATAPATH, data_set, "pumadyn-32nm", "Dataset.data.gz")
     )
     indices = permute(data.shape[0])
     indicesTrain = indices[0:7168]
@@ -1333,7 +1321,7 @@ def robot_wireless(data_set="robot_wireless"):
     # WiFi access point strengths on a tour around UW Paul Allen building.
     if not data_available(data_set):
         download_data(data_set)
-    file_name = os.path.join(data_path, data_set, "uw-floor.txt")
+    file_name = os.path.join(DATAPATH, data_set, "uw-floor.txt")
     all_time = np.genfromtxt(file_name, usecols=(0))
     macaddress = np.genfromtxt(file_name, usecols=(1), dtype=str)
     x = np.genfromtxt(file_name, usecols=(2))
@@ -1389,7 +1377,7 @@ def silhouette(data_set="ankur_pose_data"):
     if not data_available(data_set):
         download_data(data_set)
     mat_data = scipy.io.loadmat(
-        os.path.join(data_path, data_set, "ankurDataPoseSilhouette.mat")
+        os.path.join(DATAPATH, data_set, "ankurDataPoseSilhouette.mat")
     )
     inMean = np.mean(mat_data["Y"])
     inScales = np.sqrt(np.var(mat_data["Y"]))
@@ -1410,7 +1398,7 @@ def decampos_digits(
     """Digits data set from Teo de Campos"""
     if not data_available(data_set):
         download_data(data_set)
-    path = os.path.join(data_path, data_set)
+    path = os.path.join(DATAPATH, data_set)
     digits = np.load(os.path.join(path, "digits.npy"))
     digits = digits[which_digits, :, :, :]
     num_classes, num_samples, height, width = digits.shape
@@ -1434,10 +1422,10 @@ def ripley_synth(data_set="ripley_prnn_data"):
     """Synthetic classification data set generated by Brian Ripley for his Neural Networks book."""
     if not data_available(data_set):
         download_data(data_set)
-    train = np.genfromtxt(os.path.join(data_path, data_set, "synth.tr"), skip_header=1)
+    train = np.genfromtxt(os.path.join(DATAPATH, data_set, "synth.tr"), skip_header=1)
     X = train[:, 0:2]
     y = train[:, 2:3]
-    test = np.genfromtxt(os.path.join(data_path, data_set, "synth.te"), skip_header=1)
+    test = np.genfromtxt(os.path.join(DATAPATH, data_set, "synth.te"), skip_header=1)
     Xtest = test[:, 0:2]
     ytest = test[:, 2:3]
     return data_details_return(
@@ -1453,12 +1441,12 @@ def ripley_synth(data_set="ripley_prnn_data"):
 
 
 """def global_average_temperature(data_set='global_temperature', num_train=1000, refresh_data=False):
-    path = os.path.join(data_path, data_set)
+    path = os.path.join(DATAPATH, data_set)
     if data_available(data_set) and not refresh_data:
         print('Using cached version of the data set, to use latest version set refresh_data to True')
     else:
         download_data(data_set)
-    data = np.loadtxt(os.path.join(data_path, data_set, 'GLBTS.long.data'))
+    data = np.loadtxt(os.path.join(DATAPATH, data_set, 'GLBTS.long.data'))
     print('Most recent data observation from month ', data[-1, 1], ' in year ', data[-1, 0])
     allX = data[data[:, 3]!=-99.99, 2:3]
     allY = data[data[:, 3]!=-99.99, 3:4]
@@ -1472,14 +1460,14 @@ def ripley_synth(data_set="ripley_prnn_data"):
 
 def mauna_loa(data_set="mauna_loa", num_train=545, refresh_data=False):
     """CO2 concentrations from the Mauna Loa observatory."""
-    path = os.path.join(data_path, data_set)
+    path = os.path.join(DATAPATH, data_set)
     if data_available(data_set) and not refresh_data:
         print(
             "Using cached version of the data set, to use latest version set refresh_data to True"
         )
     else:
         download_data(data_set)
-    data = np.loadtxt(os.path.join(data_path, data_set, "co2_mm_mlo.txt"))
+    data = np.loadtxt(os.path.join(DATAPATH, data_set, "co2_mm_mlo.txt"))
     print(
         "Most recent data observation from month ",
         data[-1, 1],
@@ -1510,12 +1498,12 @@ def mauna_loa(data_set="mauna_loa", num_train=545, refresh_data=False):
 
 def osu_run1(data_set="osu_run1", sample_every=4):
     """Ohio State University's Run1 motion capture data set."""
-    path = os.path.join(data_path, data_set)
+    path = os.path.join(DATAPATH, data_set)
     if not data_available(data_set):
         import zipfile
 
         download_data(data_set)
-        zip = zipfile.ZipFile(os.path.join(data_path, data_set, "run1TXT.ZIP"), "r")
+        zip = zipfile.ZipFile(os.path.join(DATAPATH, data_set, "run1TXT.ZIP"), "r")
         for name in zip.namelist():
             zip.extract(name, path)
     from . import mocap
@@ -1550,11 +1538,10 @@ def singlecell(data_set="guo_qpcr_2010"):
     if not data_available(data_set):
         download_data(data_set)
 
-    from pandas import read_csv
 
-    dir_path = os.path.join(data_path, data_set)
+    dir_path = os.path.join(DATAPATH, data_set)
     filename = os.path.join(dir_path, "guo_qpcr.csv")
-    Y = read_csv(filename, header=0, index_col=0)
+    Y = pd.read_csv(filename, header=0, index_col=0)
     genes = Y.columns
     labels = Y.index
     # data = np.loadtxt(os.path.join(dir_path, 'singlecell.csv'), delimiter=",", dtype=str)
@@ -1577,7 +1564,7 @@ def swiss_roll(num_samples=3000, data_set="swiss_roll"):
     if not data_available(data_set):
         download_data(data_set)
     mat_data = scipy.io.loadmat(
-        os.path.join(data_path, data_set, "swiss_roll_data.mat")
+        os.path.join(DATAPATH, data_set, "swiss_roll_data.mat")
     )
     Y = mat_data["X_data"][:, 0:num_samples].transpose()
     return data_details_return(
@@ -1595,7 +1582,7 @@ def swiss_roll(num_samples=3000, data_set="swiss_roll"):
 def isomap_faces(num_samples=698, data_set="isomap_face_data"):
     if not data_available(data_set):
         download_data(data_set)
-    mat_data = scipy.io.loadmat(os.path.join(data_path, data_set, "face_data.mat"))
+    mat_data = scipy.io.loadmat(os.path.join(DATAPATH, data_set, "face_data.mat"))
     Y = mat_data["images"][:, 0:num_samples].transpose()
     return data_details_return(
         {
@@ -1689,13 +1676,11 @@ def airline_delay(
     if not data_available(data_set):
         download_data(data_set)
 
-    dir_path = os.path.join(data_path, data_set)
-    filename = os.path.join(dir_path, "filtered_data2.pickle")
+    dir_path = os.path.join(DATAPATH, data_set)
+    filename = os.path.join(dir_path, "airline_delay.hdf")
 
     # 1. Load the dataset
-    import pandas as pd
-
-    data = pd.read_pickle(filename)
+    data = pd.read_hdf(filename)
 
     # WARNING: removing year
     data.pop("Year")
@@ -1742,7 +1727,7 @@ def airline_delay(
 
 if NETPBMFILE_AVAILABLE:
     def olivetti_faces(data_set="olivetti_faces"):
-        path = os.path.join(data_path, data_set)
+        path = os.path.join(DATAPATH, data_set)
         if not data_available(data_set):
             import zipfile
 
@@ -1770,7 +1755,7 @@ if NETPBMFILE_AVAILABLE:
 def xw_pen(data_set="xw_pen"):
     if not data_available(data_set):
         download_data(data_set)
-    Y = np.loadtxt(os.path.join(data_path, data_set, "xw_pen_15.csv"), delimiter=",")
+    Y = np.loadtxt(os.path.join(DATAPATH, data_set, "xw_pen_15.csv"), delimiter=",")
     X = np.arange(485)[:, None]
     return data_details_return(
         {
@@ -1787,7 +1772,7 @@ def download_rogers_girolami_data(data_set="rogers_girolami_data"):
         import tarfile
 
         download_data(data_set)
-        path = os.path.join(data_path, data_set)
+        path = os.path.join(DATAPATH, data_set)
         tar_file = os.path.join(path, "firstcoursemldata.tar.gz")
         tar = tarfile.open(tar_file)
         print("Extracting file.")
@@ -1798,7 +1783,7 @@ def download_rogers_girolami_data(data_set="rogers_girolami_data"):
 def olympic_100m_men(data_set="rogers_girolami_data"):
     download_rogers_girolami_data()
     olympic_data = scipy.io.loadmat(
-        os.path.join(data_path, data_set, "data", "olympics.mat")
+        os.path.join(DATAPATH, data_set, "data", "olympics.mat")
     )["male100"]
 
     X = olympic_data[:, 0][:, None]
@@ -1818,7 +1803,7 @@ def olympic_100m_men(data_set="rogers_girolami_data"):
 def olympic_100m_women(data_set="rogers_girolami_data"):
     download_rogers_girolami_data()
     olympic_data = scipy.io.loadmat(
-        os.path.join(data_path, data_set, "data", "olympics.mat")
+        os.path.join(DATAPATH, data_set, "data", "olympics.mat")
     )["female100"]
 
     X = olympic_data[:, 0][:, None]
@@ -1838,7 +1823,7 @@ def olympic_100m_women(data_set="rogers_girolami_data"):
 def olympic_200m_women(data_set="rogers_girolami_data"):
     download_rogers_girolami_data()
     olympic_data = scipy.io.loadmat(
-        os.path.join(data_path, data_set, "data", "olympics.mat")
+        os.path.join(DATAPATH, data_set, "data", "olympics.mat")
     )["female200"]
 
     X = olympic_data[:, 0][:, None]
@@ -1856,7 +1841,7 @@ def olympic_200m_women(data_set="rogers_girolami_data"):
 def olympic_200m_men(data_set="rogers_girolami_data"):
     download_rogers_girolami_data()
     olympic_data = scipy.io.loadmat(
-        os.path.join(data_path, data_set, "data", "olympics.mat")
+        os.path.join(DATAPATH, data_set, "data", "olympics.mat")
     )["male200"]
 
     X = olympic_data[:, 0][:, None]
@@ -1876,7 +1861,7 @@ def olympic_200m_men(data_set="rogers_girolami_data"):
 def olympic_400m_women(data_set="rogers_girolami_data"):
     download_rogers_girolami_data()
     olympic_data = scipy.io.loadmat(
-        os.path.join(data_path, data_set, "data", "olympics.mat")
+        os.path.join(DATAPATH, data_set, "data", "olympics.mat")
     )["female400"]
 
     X = olympic_data[:, 0][:, None]
@@ -1896,7 +1881,7 @@ def olympic_400m_women(data_set="rogers_girolami_data"):
 def olympic_400m_men(data_set="rogers_girolami_data"):
     download_rogers_girolami_data()
     olympic_data = scipy.io.loadmat(
-        os.path.join(data_path, data_set, "data", "olympics.mat")
+        os.path.join(DATAPATH, data_set, "data", "olympics.mat")
     )["male400"]
 
     X = olympic_data[:, 0][:, None]
@@ -1917,7 +1902,7 @@ def olympic_marathon_men(data_set="olympic_marathon_men"):
     if not data_available(data_set):
         download_data(data_set)
     olympics = np.genfromtxt(
-        os.path.join(data_path, data_set, "olympicMarathonTimes.csv"), delimiter=","
+        os.path.join(DATAPATH, data_set, "olympicMarathonTimes.csv"), delimiter=","
     )
     X = olympics[:, 0:1]
     Y = olympics[:, 1:2]
@@ -1983,11 +1968,10 @@ def movie_body_count(data_set="movie_body_count"):
     if not data_available(data_set):
         download_data(data_set)
 
-    from pandas import read_csv
 
-    dir_path = os.path.join(data_path, data_set)
+    dir_path = os.path.join(DATAPATH, data_set)
     filename = os.path.join(dir_path, "film-death-counts-Python.csv")
-    Y = read_csv(filename)
+    Y = pd.read_csv(filename)
     Y["Actors"] = Y["Actors"].apply(lambda x: x.split("|"))
     Y["Genre"] = Y["Genre"].apply(lambda x: x.split("|"))
     Y["Director"] = Y["Director"].apply(lambda x: x.split("|"))
@@ -2003,8 +1987,6 @@ def movie_body_count(data_set="movie_body_count"):
 def movie_body_count_r_classify(data_set="movie_body_count"):
     """Data set of movies and body count for movies scraped from www.MovieBodyCounts.com created by Simon Garnier and Randy Olson for exploring differences between Python and R."""
     data = movie_body_count()["Y"]
-    import pandas as pd
-    import numpy as np
 
     X = data[["Year", "Body_Count"]]
     Y = data["MPAA_Rating"] == "R"  # set label to be positive for R rated films.
@@ -2038,14 +2020,13 @@ def movielens100k(data_set="movielens100k"):
         import zipfile
 
         download_data(data_set)
-        dir_path = os.path.join(data_path, data_set)
+        dir_path = os.path.join(DATAPATH, data_set)
         zip = zipfile.ZipFile(os.path.join(dir_path, "ml-100k.zip"), "r")
         for name in zip.namelist():
             zip.extract(name, dir_path)
-    import pandas as pd
 
     encoding = "latin-1"
-    movie_path = os.path.join(data_path, "movielens100k", "ml-100k")
+    movie_path = os.path.join(DATAPATH, "movielens100k", "ml-100k")
     items = pd.read_csv(
         os.path.join(movie_path, "u.item"),
         index_col="index",
@@ -2132,11 +2113,10 @@ def nigeria_nmis_facility_database(data_set="nigeria_nmis_facility_database"):
     if not data_available(data_set):
         download_data(data_set)
 
-    from pandas import read_csv
 
-    dir_path = os.path.join(data_path, data_set)
+    dir_path = os.path.join(DATAPATH, data_set)
     filename = os.path.join(dir_path, "healthmopupandbaselinenmisfacility.csv")
-    Y = read_csv(filename)
+    Y = pd.read_csv(filename)
     return data_details_return(
         {
             "Y": Y,
@@ -2205,12 +2185,12 @@ def creep_data(data_set="creep_rupture"):
         import tarfile
 
         download_data(data_set)
-        path = os.path.join(data_path, data_set)
+        path = os.path.join(DATAPATH, data_set)
         tar_file = os.path.join(path, "creeprupt.tar")
         tar = tarfile.open(tar_file)
         tar.extractall(path=path)
         tar.close()
-    all_data = np.loadtxt(os.path.join(data_path, data_set, "taka"))
+    all_data = np.loadtxt(os.path.join(DATAPATH, data_set, "taka"))
     y = all_data[:, 1:2].copy()
     features = [0]
     features.extend(list(range(2, 31)))
@@ -2263,10 +2243,9 @@ def ceres(data_set="ceres"):
     """Twenty two observations of the Dwarf planet Ceres as observed by Giueseppe Piazzi and published in the September edition of Monatlicher Correspondenz in 1801. These were the measurements used by Gauss to fit a model of the planets orbit through which the planet was recovered three months later."""
     if not data_available(data_set):
         download_data(data_set)
-    import pandas as pd
 
     data = pd.read_csv(
-        os.path.join(data_path, data_set, "ceresData.txt"),
+        os.path.join(DATAPATH, data_set, "ceresData.txt"),
         index_col="Tag",
         header=None,
         sep="\t",
@@ -2367,7 +2346,7 @@ def kepler_telescope(datasets, data_set="kepler_telescope"):
     """Load a given kepler_id's datasets."""
 
 
-    scan_dir = os.path.join(data_path, data_set)
+    scan_dir = os.path.join(DATAPATH, data_set)
 
     # Make sure the data is downloaded.
     resource = kepler_telescope_urls_files(datasets)
@@ -2377,7 +2356,7 @@ def kepler_telescope(datasets, data_set="kepler_telescope"):
     if resource["urls"]:
         download_data(data_set)
 
-    dataset_dir = os.path.join(data_path, "kepler_telescope")
+    dataset_dir = os.path.join(DATAPATH, "kepler_telescope")
     filenames = []
     for dataset in datasets:
         for kepler_id in datasets[dataset]:
@@ -2481,7 +2460,7 @@ def cmu_mocap(
 
     from . import mocap
 
-    subject_dir = os.path.join(data_path, data_set)
+    subject_dir = os.path.join(DATAPATH, data_set)
 
     # Make sure the data is downloaded.
     all_motions = train_motions + test_motions
@@ -2576,7 +2555,7 @@ def mcycle(data_set="mcycle", seed=default_seed):
         download_data(data_set)
 
     np.random.seed(seed=seed)
-    data = pd.read_csv(os.path.join(data_path, data_set, "motor.csv"))
+    data = pd.read_csv(os.path.join(DATAPATH, data_set, "motor.csv"))
     data = data.reindex(permute(data.shape[0]))  # Randomize so test isn't at the end
 
     X = data["times"].values[:, None]
@@ -2593,12 +2572,12 @@ def elevators(data_set="elevators", seed=default_seed):
         import tarfile
 
         download_data(data_set)
-        dir_path = os.path.join(data_path, data_set)
+        dir_path = os.path.join(DATAPATH, data_set)
         tar = tarfile.open(name=os.path.join(dir_path, "elevators.tgz"))
         tar.extractall(dir_path)
         tar.close()
 
-    elevator_path = os.path.join(data_path, "elevators", "Elevators")
+    elevator_path = os.path.join(DATAPATH, "elevators", "Elevators")
     elevator_train_path = os.path.join(elevator_path, "elevators.data")
     elevator_test_path = os.path.join(elevator_path, "elevators.test")
     train_data = pd.read_csv(elevator_train_path, header=None)
@@ -2652,7 +2631,6 @@ if False:
             * Relative Positon (to Chromosome) [base pairs]
         """
         try:
-            from pandas import read_pickle, DataFrame
             from sys import stdout
             import bz2
 
@@ -2665,7 +2643,7 @@ if False:
                 "Need pandas for hapmap dataset, make sure to install pandas (http://pandas.pydata.org/) before loading the hapmap dataset"
             )
 
-        dir_path = os.path.join(data_path, "hapmap3")
+        dir_path = os.path.join(DATAPATH, "hapmap3")
         hapmap_file_name = "hapmap3_r2_b36_fwd.consensus.qc.poly"
         unpacked_files = [
             os.path.join(dir_path, hapmap_file_name + ending)
@@ -2678,13 +2656,13 @@ if False:
         if not unpacked_files_exist and not data_available(data_set):
             download_data(data_set)
 
-        preprocessed_data_paths = [
+        preprocessed_DATAPATHs = [
             os.path.join(dir_path, hapmap_file_name + file_name)
             for file_name in [".snps.pickle", ".info.pickle", ".nan.pickle"]
         ]
 
         if not reduce(
-            lambda a, b: a and b, list(map(os.path.exists, preprocessed_data_paths))
+            lambda a, b: a and b, list(map(os.path.exists, preprocessed_DATAPATHs))
         ):
             if not overide_manual_authorize and not prompt_stdin(
                 "Preprocessing requires ~25GB "
@@ -2737,7 +2715,7 @@ if False:
             mapnp = np.loadtxt(unpacked_files[1], dtype=str)
             status = write_status("reading relationships.txt...", 42, status)
             # and metainfo:
-            infodf = DataFrame.from_csv(
+            infodf = pd.DataFrame.from_csv(
                 os.path.join(dir_path, "./relationships_w_pops_121708.txt"),
                 header=0,
                 sep="\t",
@@ -2766,27 +2744,27 @@ if False:
             metaheader = np.r_[
                 ["family_id", "iid", "paternal_id", "maternal_id", "sex", "phenotype"]
             ]
-            metadf = DataFrame(columns=metaheader, data=snpstrnp[:, :6])
+            metadf = pd.DataFrame(columns=metaheader, data=snpstrnp[:, :6])
             metadf.set_index("iid", inplace=1)
             metadf = metadf.join(infodf.population)
-            metadf.to_pickle(preprocessed_data_paths[1])
+            metadf.to_pickle(preprocessed_DATAPATHs[1])
             # put everything together:
             status = write_status("setting up snps...", 96, status)
-            snpsdf = DataFrame(index=metadf.index, data=snps, columns=mapnp[:, 1])
-            with open(preprocessed_data_paths[0], "wb") as f:
+            snpsdf = pd.DataFrame(index=metadf.index, data=snps, columns=mapnp[:, 1])
+            with open(preprocessed_DATAPATHs[0], "wb") as f:
                 pickle.dump(f, snpsdf, protocoll=-1)
             status = write_status("setting up snps...", 98, status)
-            inandf = DataFrame(index=metadf.index, data=inan, columns=mapnp[:, 1])
-            inandf.to_pickle(preprocessed_data_paths[2])
+            inandf = pd.DataFrame(index=metadf.index, data=inan, columns=mapnp[:, 1])
+            inandf.to_pickle(preprocessed_DATAPATHs[2])
             status = write_status("done :)", 100, status)
             print("")
         else:
             print("loading snps...")
-            snpsdf = read_pickle(preprocessed_data_paths[0])
+            snpsdf = pd.read_pickle(preprocessed_DATAPATHs[0])
             print("loading metainfo...")
-            metadf = read_pickle(preprocessed_data_paths[1])
+            metadf = pd.read_pickle(preprocessed_DATAPATHs[1])
             print("loading nan entries...")
-            inandf = read_pickle(preprocessed_data_paths[2])
+            inandf = pd.read_pickle(preprocessed_DATAPATHs[2])
         snps = snpsdf.values
         populations = metadf.population.values.astype("S3")
         hapmap = dict(
@@ -2808,7 +2786,7 @@ if False:
     def olivetti_glasses(
         data_set="olivetti_glasses", num_training=200, seed=default_seed
     ):
-        path = os.path.join(data_path, data_set)
+        path = os.path.join(DATAPATH, data_set)
         if not data_available(data_set):
             download_data(data_set)
         y = np.load(os.path.join(path, "has_glasses.np"))
@@ -2833,7 +2811,7 @@ if False:
         )
 
     def simulation_BGPLVM(data_set="bgplvm_simulation"):
-        mat_data = scipy.io.loadmat(os.path.join(data_path, "BGPLVMSimulation.mat"))
+        mat_data = scipy.io.loadmat(os.path.join(DATAPATH, "BGPLVMSimulation.mat"))
         Y = np.array(mat_data["Y"], dtype=float)
         S = np.array(mat_data["initS"], dtype=float)
         mu = np.array(mat_data["initMu"], dtype=float)
@@ -2848,7 +2826,6 @@ if False:
     def politics_twitter(data_set="politics_twitter"):
         # Bailout before downloading!
         import tweepy
-        import pandas as pd
         import time
         import progressbar as pb
         import sys
@@ -2878,7 +2855,7 @@ if False:
             # Load in the twitter data we want to join
 
             parsed_file_path = os.path.join(
-                data_path, data_set, "{}_twitter_parsed.csv".format(party)
+                DATAPATH, data_set, "{}_twitter_parsed.csv".format(party)
             )
             file_already_parsed = False
             if os.path.isfile(parsed_file_path):
@@ -2902,7 +2879,7 @@ if False:
                 )
 
                 raw_file_path = os.path.join(
-                    data_path, data_set, "{}_raw_ids.csv".format(party)
+                    DATAPATH, data_set, "{}_raw_ids.csv".format(party)
                 )
                 # data = pd.read_csv('./data_download/{}_raw_ids.csv'.format(party))
                 data = pd.read_csv(raw_file_path)
@@ -2970,7 +2947,7 @@ if False:
             import pickle
         else:
             import cPickle as pickle
-        dir_path = os.path.join(data_path, data_set)
+        dir_path = os.path.join(DATAPATH, data_set)
         filename = os.path.join(dir_path, "cifar-10-python.tar.gz")
         if not data_available(data_set):
             import tarfile
@@ -3008,11 +2985,10 @@ if False:
     ):
         """Data set of movie ratings as generated live in class by students."""
         download_data(data_set)
-        from pandas import read_csv
-
-        dir_path = os.path.join(data_path, data_set)
+    
+        dir_path = os.path.join(DATAPATH, data_set)
         filename = os.path.join(dir_path, "film-death-counts-Python.csv")
-        Y = read_csv(filename)
+        Y = pd.read_csv(filename)
         return data_details_return(
             {
                 "Y": Y,
