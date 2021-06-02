@@ -756,7 +756,6 @@ if GEOPANDAS_AVAILABLE:
 def nigerian_covid(data_set="nigerian_covid", refresh_data=False):
     if not data_available(data_set) and not refresh_data:
         download_data(data_set)
-    from pandas import read_csv
 
     dir_path = os.path.join(DATAPATH, data_set)
     filename = os.path.join(dir_path, "line-list-nigeria.csv")
@@ -776,7 +775,6 @@ def nigerian_covid(data_set="nigerian_covid", refresh_data=False):
 def nigeria_nmis(data_set="nigeria_nmis", refresh_data=False):
     if not data_available(data_set) and not refresh_data:
         download_data(data_set)
-    from pandas import read_csv
 
     dir_path = os.path.join(DATAPATH, data_set)
     filename = os.path.join(dir_path, "healthmopupandbaselinenmisfacility.csv")
@@ -787,7 +785,6 @@ def nigeria_nmis(data_set="nigeria_nmis", refresh_data=False):
 def nigerian_population_2016(data_set="nigerian_population_2016", refresh_data=False):
     if not data_available(data_set) and not refresh_data:
         download_data(data_set)
-    from pandas import read_csv
 
     dir_path = os.path.join(DATAPATH, data_set)
     filename = os.path.join(dir_path, "nga_pop_adm1_2016.csv")
@@ -960,11 +957,10 @@ def football_data(season="1617", data_set="football_data"):
 def sod1_mouse(data_set="sod1_mouse"):
     if not data_available(data_set):
         download_data(data_set)
-    from pandas import read_csv
 
     dir_path = os.path.join(DATAPATH, data_set)
     filename = os.path.join(dir_path, "sod1_C57_129_exprs.csv")
-    Y = read_csv(filename, header=0, index_col=0)
+    Y = pd.read_csv(filename, header=0, index_col=0)
     num_repeats = 4
     num_time = 4
     num_cond = 4
@@ -975,11 +971,10 @@ def spellman_yeast(data_set="spellman_yeast"):
     """This is the classic Spellman et al 1998 Yeast Cell Cycle gene expression data that is widely used as a benchmark."""
     if not data_available(data_set):
         download_data(data_set)
-    from pandas import read_csv
 
     dir_path = os.path.join(DATAPATH, data_set)
     filename = os.path.join(dir_path, "combined.txt")
-    Y = read_csv(filename, header=0, index_col=0, sep="\t")
+    Y = pd.read_csv(filename, header=0, index_col=0, sep="\t")
     return data_details_return({"Y": Y}, data_set)
 
 
@@ -987,11 +982,10 @@ def spellman_yeast_cdc15(data_set="spellman_yeast"):
     """These are the gene expression levels from the CDC-15 experiment of Spellman et al (1998)."""
     if not data_available(data_set):
         download_data(data_set)
-    from pandas import read_csv
 
     dir_path = os.path.join(DATAPATH, data_set)
     filename = os.path.join(dir_path, "combined.txt")
-    Y = read_csv(filename, header=0, index_col=0, sep="\t")
+    Y = pd.read_csv(filename, header=0, index_col=0, sep="\t")
     t = np.asarray(
         [
             10,
@@ -1036,11 +1030,10 @@ def lee_yeast_ChIP(data_set="lee_yeast_ChIP"):
     """Yeast ChIP data from Lee et al."""
     if not data_available(data_set):
         download_data(data_set)
-    from pandas import read_csv
 
     dir_path = os.path.join(DATAPATH, data_set)
     filename = os.path.join(dir_path, "binding_by_gene.tsv")
-    S = read_csv(filename, header=1, index_col=0, sep="\t")
+    S = pd.read_csv(filename, header=1, index_col=0, sep="\t")
     transcription_factors = [col for col in S.columns if col[:7] != "Unnamed"]
     annotations = S[["Unnamed: 1", "Unnamed: 2", "Unnamed: 3"]]
     S = S[transcription_factors]
@@ -1058,11 +1051,10 @@ def fruitfly_tomancak(data_set="fruitfly_tomancak", gene_number=None):
     """Fruitfly gene expression data from Tomancak et al."""
     if not data_available(data_set):
         download_data(data_set)
-    from pandas import read_csv
 
     dir_path = os.path.join(DATAPATH, data_set)
     filename = os.path.join(dir_path, "tomancak_exprs.csv")
-    Y = read_csv(filename, header=0, index_col=0).T
+    Y = pd.read_csv(filename, header=0, index_col=0).T
     num_repeats = 3
     num_time = 12
     xt = np.linspace(0, num_time - 1, num_time)
@@ -1075,23 +1067,21 @@ def fruitfly_tomancak(data_set="fruitfly_tomancak", gene_number=None):
 def drosophila_protein(data_set="drosophila_protein"):
     if not data_available(data_set):
         download_data(data_set)
-    from pandas import read_csv
 
     dir_path = os.path.join(DATAPATH, data_set)
     filename = os.path.join(dir_path, "becker_et_al.csv")
-    Y = read_csv(filename, header=0)
+    Y = pd.read_csv(filename, header=0)
     return data_details_return({"Y": Y}, data_set)
 
 
 def drosophila_knirps(data_set="drosophila_protein"):
     if not data_available(data_set):
         download_data(data_set)
-    from pandas import read_csv
 
     dir_path = os.path.join(DATAPATH, data_set)
     filename = os.path.join(dir_path, "becker_et_al.csv")
     # in the csv file we have facts_kni and ext_kni. We treat facts_kni as protein and ext_kni as mRNA
-    df = read_csv(filename, header=0)
+    df = pd.read_csv(filename, header=0)
     t = df["t"].to_numpy()[:, np.newaxis]
     x = df["x"].to_numpy()[:, np.newaxis]
 
@@ -1132,7 +1122,6 @@ if PYTRENDS_AVAILABLE:
         """
 
         query_terms.sort()
-        import pandas as pd
         from pytrends.request import TrendReq
 
         pytrends = TrendReq(hl="en-US", tz=360)
@@ -1548,11 +1537,10 @@ def singlecell(data_set="guo_qpcr_2010"):
     if not data_available(data_set):
         download_data(data_set)
 
-    from pandas import read_csv
 
     dir_path = os.path.join(DATAPATH, data_set)
     filename = os.path.join(dir_path, "guo_qpcr.csv")
-    Y = read_csv(filename, header=0, index_col=0)
+    Y = pd.read_csv(filename, header=0, index_col=0)
     genes = Y.columns
     labels = Y.index
     # data = np.loadtxt(os.path.join(dir_path, 'singlecell.csv'), delimiter=",", dtype=str)
@@ -1688,12 +1676,11 @@ def airline_delay(
         download_data(data_set)
 
     dir_path = os.path.join(DATAPATH, data_set)
-    filename = os.path.join(dir_path, "filtered_data2.pickle")
+    filename = os.path.join(dir_path, "airline_delay.hdf")
 
     # 1. Load the dataset
-    import pandas as pd
 
-    data = pd.read_pickle(filename)
+    data = pd.read_hdf(filename, data_set)
 
     # WARNING: removing year
     data.pop("Year")
@@ -1981,11 +1968,10 @@ def movie_body_count(data_set="movie_body_count"):
     if not data_available(data_set):
         download_data(data_set)
 
-    from pandas import read_csv
 
     dir_path = os.path.join(DATAPATH, data_set)
     filename = os.path.join(dir_path, "film-death-counts-Python.csv")
-    Y = read_csv(filename)
+    Y = pd.read_csv(filename)
     Y["Actors"] = Y["Actors"].apply(lambda x: x.split("|"))
     Y["Genre"] = Y["Genre"].apply(lambda x: x.split("|"))
     Y["Director"] = Y["Director"].apply(lambda x: x.split("|"))
@@ -2001,8 +1987,6 @@ def movie_body_count(data_set="movie_body_count"):
 def movie_body_count_r_classify(data_set="movie_body_count"):
     """Data set of movies and body count for movies scraped from www.MovieBodyCounts.com created by Simon Garnier and Randy Olson for exploring differences between Python and R."""
     data = movie_body_count()["Y"]
-    import pandas as pd
-    import numpy as np
 
     X = data[["Year", "Body_Count"]]
     Y = data["MPAA_Rating"] == "R"  # set label to be positive for R rated films.
@@ -2040,7 +2024,6 @@ def movielens100k(data_set="movielens100k"):
         zip = zipfile.ZipFile(os.path.join(dir_path, "ml-100k.zip"), "r")
         for name in zip.namelist():
             zip.extract(name, dir_path)
-    import pandas as pd
 
     encoding = "latin-1"
     movie_path = os.path.join(DATAPATH, "movielens100k", "ml-100k")
@@ -2130,11 +2113,10 @@ def nigeria_nmis_facility_database(data_set="nigeria_nmis_facility_database"):
     if not data_available(data_set):
         download_data(data_set)
 
-    from pandas import read_csv
 
     dir_path = os.path.join(DATAPATH, data_set)
     filename = os.path.join(dir_path, "healthmopupandbaselinenmisfacility.csv")
-    Y = read_csv(filename)
+    Y = pd.read_csv(filename)
     return data_details_return(
         {
             "Y": Y,
@@ -2261,7 +2243,6 @@ def ceres(data_set="ceres"):
     """Twenty two observations of the Dwarf planet Ceres as observed by Giueseppe Piazzi and published in the September edition of Monatlicher Correspondenz in 1801. These were the measurements used by Gauss to fit a model of the planets orbit through which the planet was recovered three months later."""
     if not data_available(data_set):
         download_data(data_set)
-    import pandas as pd
 
     data = pd.read_csv(
         os.path.join(DATAPATH, data_set, "ceresData.txt"),
@@ -2650,7 +2631,6 @@ if False:
             * Relative Positon (to Chromosome) [base pairs]
         """
         try:
-            from pandas import read_pickle, DataFrame
             from sys import stdout
             import bz2
 
@@ -2735,7 +2715,7 @@ if False:
             mapnp = np.loadtxt(unpacked_files[1], dtype=str)
             status = write_status("reading relationships.txt...", 42, status)
             # and metainfo:
-            infodf = DataFrame.from_csv(
+            infodf = pd.DataFrame.from_csv(
                 os.path.join(dir_path, "./relationships_w_pops_121708.txt"),
                 header=0,
                 sep="\t",
@@ -2764,27 +2744,27 @@ if False:
             metaheader = np.r_[
                 ["family_id", "iid", "paternal_id", "maternal_id", "sex", "phenotype"]
             ]
-            metadf = DataFrame(columns=metaheader, data=snpstrnp[:, :6])
+            metadf = pd.DataFrame(columns=metaheader, data=snpstrnp[:, :6])
             metadf.set_index("iid", inplace=1)
             metadf = metadf.join(infodf.population)
             metadf.to_pickle(preprocessed_DATAPATHs[1])
             # put everything together:
             status = write_status("setting up snps...", 96, status)
-            snpsdf = DataFrame(index=metadf.index, data=snps, columns=mapnp[:, 1])
+            snpsdf = pd.DataFrame(index=metadf.index, data=snps, columns=mapnp[:, 1])
             with open(preprocessed_DATAPATHs[0], "wb") as f:
                 pickle.dump(f, snpsdf, protocoll=-1)
             status = write_status("setting up snps...", 98, status)
-            inandf = DataFrame(index=metadf.index, data=inan, columns=mapnp[:, 1])
+            inandf = pd.DataFrame(index=metadf.index, data=inan, columns=mapnp[:, 1])
             inandf.to_pickle(preprocessed_DATAPATHs[2])
             status = write_status("done :)", 100, status)
             print("")
         else:
             print("loading snps...")
-            snpsdf = read_pickle(preprocessed_DATAPATHs[0])
+            snpsdf = pd.read_pickle(preprocessed_DATAPATHs[0])
             print("loading metainfo...")
-            metadf = read_pickle(preprocessed_DATAPATHs[1])
+            metadf = pd.read_pickle(preprocessed_DATAPATHs[1])
             print("loading nan entries...")
-            inandf = read_pickle(preprocessed_DATAPATHs[2])
+            inandf = pd.read_pickle(preprocessed_DATAPATHs[2])
         snps = snpsdf.values
         populations = metadf.population.values.astype("S3")
         hapmap = dict(
@@ -2846,7 +2826,6 @@ if False:
     def politics_twitter(data_set="politics_twitter"):
         # Bailout before downloading!
         import tweepy
-        import pandas as pd
         import time
         import progressbar as pb
         import sys
@@ -3006,11 +2985,10 @@ if False:
     ):
         """Data set of movie ratings as generated live in class by students."""
         download_data(data_set)
-        from pandas import read_csv
-
+    
         dir_path = os.path.join(DATAPATH, data_set)
         filename = os.path.join(dir_path, "film-death-counts-Python.csv")
-        Y = read_csv(filename)
+        Y = pd.read_csv(filename)
         return data_details_return(
             {
                 "Y": Y,
