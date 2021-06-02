@@ -847,9 +847,12 @@ def pmlr(volumes="all", data_set="pmlr", refresh_data=False):
     Y["published"] = pd.to_datetime(Y["published"])
     # Y.columns.values[4] = json_object('authors')
     # Y.columns.values[7] = json_object('editors')
-    Y["issued"] = Y["issued"].apply(
-        lambda x: np.datetime64(datetime.datetime(*x["date-parts"]))
-    )
+    try:
+        Y["issued"] = Y["issued"].apply(
+            lambda x: np.datetime64(datetime.datetime(*x["date-parts"]))
+        )
+    except TypeError:
+        raise TypeError("Type error for entry\n" + x) from e
     Y["author"] = Y["author"].apply(
         lambda x: [
             str(author["given"]) + " " + str(author["family"]) for author in x
