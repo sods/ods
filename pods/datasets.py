@@ -1676,11 +1676,10 @@ def airline_delay(
         download_data(data_set)
 
     dir_path = os.path.join(DATAPATH, data_set)
-    filename = os.path.join(dir_path, "airline_delay.json")
+    filename = os.path.join(dir_path, "airline_delay.hdf")
 
     # 1. Load the dataset
-
-    data = pd.read_json(filename)
+    data = pd.read_hdf(filename)
 
     # WARNING: removing year
     data.pop("Year")

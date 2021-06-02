@@ -4,13 +4,13 @@
         "details": "Flight arrival and departure times for every commercial flight in the USA from January 2008 to April 2008. This dataset contains extensive information about almost 2 million flights, including the delay (in minutes) in reaching the destination.",
         "files": [
             [
-                "airline_delay.json"
+                "airline_delay.hdf"
             ]
         ],
         "license": null,
-        "size": 285917964,
+        "size": 180913792,
 	"urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/airline_delay/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/airline_delay/"
         ]
     },
     "bmi_steps": {
@@ -24,7 +24,7 @@
         "license": null,
         "size": 18270,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/bmi_steps/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/bmi_steps/"
         ]
     },
     "ankur_pose_data": {
@@ -38,7 +38,7 @@
         "license": null,
         "size": 2802667,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/ankur_pose_data/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/ankur_pose_data/"
         ]
     },    
     "boston_housing": {
@@ -68,7 +68,7 @@
         "license": "You may copy and redistribute the data. You may make derivative works from the data. You may use the data for commercial purposes. You may not sublicence the data when redistributing it. You may not redistribute the data under a different license. Source attribution on any use of this data: Must refer source.",
         "size": 46779,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/boxjenkins_airline/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/boxjenkins_airline/"
         ]
     },
     "brendan_faces": {
@@ -96,7 +96,7 @@
         "license": null,
         "size": 2044,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/ceres/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/ceres/"
         ]
     },
     "cifar-10": {
@@ -153,7 +153,7 @@
         "license": null,
         "size": 2031872,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/decampos_digits/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/decampos_digits/"
         ]
     },
     "della_gatta": {
@@ -167,7 +167,7 @@
         "license": null,
         "size": 3729650,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/della_gatta/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/della_gatta/"
         ]
     },
     "drosophila_protein": {
@@ -181,7 +181,7 @@
         "license": null,
         "size": 20258,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/drosophila_protein/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/drosophila_protein/"
         ]
     },
     "spellman_yeast": {
@@ -227,7 +227,7 @@
         "license": null,
         "size": 2031872,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/epomeo_gpx/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/epomeo_gpx/"
         ]
     },
     "football_data": {
@@ -264,7 +264,7 @@
         "license": null,
         "size": 59000000,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/fruitfly_tomancak/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/fruitfly_tomancak/"
         ]
     },
     "fruitfly_tomancak_cel_files": {
@@ -373,7 +373,7 @@
         "license": null,
         "size": 24229368,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/isomap_face_data/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/isomap_face_data/"
         ]
     },
     "mauna_loa": {
@@ -447,7 +447,7 @@
         "license": null,
         "size": 8561331,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/olivetti_faces/",
+            "https://github.com/lawrennd/datasets_mirror/raw/main/olivetti_faces/",
             "http://www.cs.nyu.edu/~roweis/data/"
         ]
     },
@@ -465,7 +465,7 @@
         "license": null,
         "size": 4261047,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/olivetti_faces/",
+            "https://github.com/lawrennd/datasets_mirror/raw/main/olivetti_faces/",
             "http://www.cs.nyu.edu/~roweis/data/"
         ]
     },
@@ -480,7 +480,7 @@
         "license": null,
         "size": 584,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/olympic_marathon_men/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/olympic_marathon_men/"
         ]
     },
     "osu_accad": {
@@ -510,8 +510,8 @@
         "license": "Data is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License (http://creativecommons.org/licenses/by-nc-sa/3.0/).",
         "size": 15922790,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/osu_accad/",
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/stick/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/osu_accad/",
+            "https://github.com/lawrennd/datasets_mirror/raw/main/stick/"
         ]
     },
     "osu_run1": {
@@ -528,8 +528,8 @@
         "license": "Data is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License (http://creativecommons.org/licenses/by-nc-sa/3.0/).",
         "size": 338103,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/osu_accad/",
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/stick/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/osu_accad/",
+            "https://github.com/lawrennd/datasets_mirror/raw/main/stick/"
         ]
     },
     "nigerian_administrative_zones": {
@@ -652,7 +652,7 @@
         "license": null,
         "size": 284390,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/robot_wireless/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/robot_wireless/"
         ]
     },
     "rogers_girolami_data": {
@@ -701,7 +701,7 @@
         "license": null,
         "size": 0,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/sod1_mouse/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/sod1_mouse/"
         ]
     },
     "swiss_roll": {
@@ -734,7 +734,7 @@
         "license": null,
         "size": 712796,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/three_phase_oil_flow/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/three_phase_oil_flow/"
         ]
     },
     "xw_pen": {
@@ -748,7 +748,7 @@
         "license": null,
         "size": 3410,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/xw_pen/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/xw_pen/"
         ]
     },
     "leukemia": {
@@ -762,7 +762,7 @@
         "license": null,
         "size": 65354,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/leukemia_survival/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/leukemia_survival/"
         ]
     },
     "mcycle": {
@@ -807,7 +807,7 @@
         "license": null,
         "size": 7518372,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/twitter_data/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/twitter_data/"
         ]
     }
 }
