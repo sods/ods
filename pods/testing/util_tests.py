@@ -26,7 +26,7 @@ bogus_file = "http://www.bbc.co.uk/bogus_file.html"
 def test_downloard_url():
     """util_tests: Test downloading of a URL."""
 
-    pods.util.download_url(
+    pods.access.download_url(
         test_url, save_name=save_name, store_directory=store_directory
     )
     filename = os.path.join(store_directory, save_name)
@@ -47,13 +47,13 @@ def test_downloard_url():
 @raises(URLError, ValueError)
 def test_graceful_failure_fake_url():
     """util_tests: Test graceful failure of a fake url."""
-    pods.util.download_url(fake_url)
+    pods.access.download_url(fake_url)
 
 
 @raises(HTTPError, ValueError)
 def test_graceful_failure_bogus_file():
     """util_tests: Test graceful failure of a bogus file."""
-    pods.util.download_url(bogus_file)
+    pods.access.download_url(bogus_file)
 
 
 import filecmp
@@ -63,10 +63,10 @@ import unittest
 class UtilTests(unittest.TestCase):
     def test_download_url(self):
         """util_tests: Test the download url"""
-        filename = "util.py"
+        filename = "access.py"
         download_name = "tmp.py"
         # Download the file to current directory
-        pods.util.download_url(
+        pods.access.download_url(
             "https://raw.githubusercontent.com/sods/ods/master/pods/" + filename,
             dir_name=".",
             save_name=download_name,
