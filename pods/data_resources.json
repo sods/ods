@@ -129,7 +129,7 @@
     },
     "creep_rupture": {
         "citation": "Materials Algorithms Project Data Library: MAP_DATA_CREEP_RUPTURE. F. Brun and T. Yoshida.",
-        "details": "Provides 2066 creep rupture test results of steels (mainly of two kinds of steels: 2.25Cr and 9-12 wt% Cr ferritic steels). See http://www.msm.cam.ac.uk/map/data/materials/creeprupt-b.html.",
+        "details": "Provides 2066 creep rupture test results of steels (mainly of two kinds of steels: 2.25Cr and 9-12 wt% Cr ferritic steels). See https://www.phase-trans.msm.cam.ac.uk/map/data/materials/creeprupt-b.html.",
         "files": [
             [
                 "creeprupt.tar"
@@ -138,7 +138,7 @@
         "license": null,
         "size": 602797,
         "urls": [
-            "http://www.msm.cam.ac.uk/map/data/tar/"
+            "https://www.phase-trans.msm.cam.ac.uk/map/data/tar/"
         ]
     },
     "decampos_characters": {
