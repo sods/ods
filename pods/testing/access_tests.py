@@ -67,7 +67,7 @@ class AccessTests(unittest.TestCase):
         download_name = "tmp.py"
         # Download the file to current directory
         pods.access.download_url(
-            "https://raw.githubusercontent.com/sods/ods/master/pods/" + filename,
+            "https://raw.githubusercontent.com/lawrennd/ods/master/pods/" + filename,
             dir_name=".",
             save_name=download_name,
         )
