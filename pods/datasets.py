@@ -27,13 +27,13 @@ logging.basicConfig(
 from functools import reduce
 import pandas as pd
 
+
+
 from .config import *
+from . import access
+from . import util
 
 DATAPATH = os.path.expanduser(os.path.expandvars(config.get("datasets", "dir")))
-
-from . import access
-
-
 
 PYTRENDS_AVAILABLE = True
 try:
@@ -71,376 +71,6 @@ else:
 default_seed = 10000
 
 
-permute_data = True
-
-def data_details_return(data, data_set):
-    """Update the data component of the data dictionary with details drawn from the data_resources."""
-    data.update(access.data_resources[data_set])
-    return data
-
-
-# Some general utilities.
-def permute(num):
-    "Permutation for randomizing data order."
-    if permute_data:
-        return np.random.permutation(num)
-    else:
-        logging.warning("Warning not permuting data")
-        return np.arange(num)
-
-
-def integer(name):
-    """Return a class category that forces integer"""
-    return "integer(" + name + ")"
-
-def date2num(dt):
-    # Recreation of matplotlib.dates.date2num functionality.
-    # from matplotlib.dates import date2num
-    return (dt - datetime.datetime(1970,1,1)).days
-
-def num2date(num):
-    # Recreation of matplotlib.dates.num2date functionality.
-    # from matplotlib.dates import num2date
-    return datetime.datetime(1970,1,1) + datetime.timedelta(days=num)
-
-
-def json_object(name="object"):
-    """Returns a json object for general storage"""
-    import json
-
-    return "jsonobject" + name + ""
-
-
-def discrete(cats, name="discrete"):
-    """Return a class category that shows the encoding"""
-    import json
-
-    ks = list(cats)
-    for key in ks:
-        if isinstance(key, bytes):
-            cats[key.decode("utf-8")] = cats.pop(key)
-    return "discrete(" + json.dumps([cats, name]) + ")"
-
-
-def datenum(name="date", format="%Y-%m-%d"):
-    """Return a date category with format"""
-    return "datenum(" + name + "," + format + ")"
-
-
-def timestamp(name="date", format="%Y-%m-%d"):
-    """Return a date category with format"""
-    return "timestamp(" + name + "," + format + ")"
-
-
-def datetime64_(name="date", format="%Y-%m-%d"):
-    """Return a date category with format"""
-    return "datetime64(" + name + "," + format + ")"
-
-
-def decimalyear(name="date", format="%Y-%m-%d"):
-    """Return a date category with format"""
-    return "decimalyear(" + name + "," + format + ")"
-
-
-
-
-def df2arff(df, dataset_name, pods_data):
-    """Write an arff file from a data set loaded in from pods"""
-
-    def java_simple_date(date_format):
-        date_format = (
-            date_format.replace("%Y", "yyyy")
-            .replace("%m", "MM")
-            .replace("%d", "dd")
-            .replace("%H", "HH")
-        )
-        return (
-            date_format.replace("%h", "hh")
-            .replace("%M", "mm")
-            .replace("%S", "ss")
-            .replace("%f", "SSSSSS")
-        )
-
-    def tidy_field(atr):
-        return str(atr).replace(" / ", "/").replace(" ", "_")
-
-    types = {
-        "STRING": [str],
-        "INTEGER": [int, np.int64, np.uint8],
-        "REAL": [np.float64],
-    }
-    d = {}
-    d["attributes"] = []
-    for atr in df.columns:
-        if isinstance(atr, str):
-            if len(atr) > 8 and atr[:9] == "discrete(":
-                import json
-
-                elements = json.loads(atr[9:-1])
-                d["attributes"].append(
-                    (tidy_field(elements[1]), list(elements[0].keys()))
-                )
-                mask = {}
-                c = pd.Series(index=df.index)
-                for key, val in elements[0].items():
-                    mask = df[atr] == val
-                    c[mask] = key
-                df[atr] = c
-                continue
-            if len(atr) > 7 and atr[:8] == "integer(":
-                name = atr[8:-1]
-                d["attributes"].append((tidy_field(name), "INTEGER"))
-                df[atr] = df[atr].astype(int)
-                continue
-            if len(atr) > 7 and atr[:8] == "datenum(":
-                elements = atr[8:-1].split(",")
-                d["attributes"].append(
-                    (
-                        elements[0] + "_datenum_" + java_simple_date(elements[1]),
-                        "STRING",
-                    )
-                )
-                df[atr] = num2date(df[atr].values)  #
-                df[atr] = df[atr].dt.strftime(elements[1])
-                continue
-            if len(atr) > 9 and atr[:10] == "timestamp(":
-
-                def timestamp2date(values):
-                    """Convert timestamp into a date object"""
-                    new = []
-                    for value in values:
-                        new.append(
-                            np.datetime64(datetime.datetime.fromtimestamp(value))
-                        )
-                    return np.asarray(new)
-
-                elements = atr[10:-1].split(",")
-                d["attributes"].append(
-                    (
-                        elements[0] + "_datenum_" + java_simple_date(elements[1]),
-                        "STRING",
-                    )
-                )
-                df[atr] = timestamp2date(df[atr].values)  #
-                df[atr] = df[atr].dt.strftime(elements[1])
-                continue
-            if len(atr) > 10 and atr[:11] == "datetime64(":
-                elements = atr[11:-1].split(",")
-                d["attributes"].append(
-                    (
-                        elements[0] + "_datenum_" + java_simple_date(elements[1]),
-                        "STRING",
-                    )
-                )
-                df[atr] = df[atr].dt.strftime(elements[1])
-                continue
-            if len(atr) > 11 and atr[:12] == "decimalyear(":
-
-                def decyear2date(values):
-                    """Convert decimal year into a date object"""
-                    new = []
-                    for i, decyear in enumerate(values):
-                        year = int(np.floor(decyear))
-                        dec = decyear - year
-                        end = np.datetime64(str(year + 1) + "-01-01")
-                        start = np.datetime64(str(year) + "-01-01")
-                        diff = end - start
-                        days = dec * (diff / np.timedelta64(1, "D"))
-                        # round to nearest day
-                        add = np.timedelta64(int(np.round(days)), "D")
-                        new.append(start + add)
-                    return np.asarray(new)
-
-                elements = atr[12:-1].split(",")
-                d["attributes"].append(
-                    (
-                        elements[0] + "_datenum_" + java_simple_date(elements[1]),
-                        "STRING",
-                    )
-                )
-                df[atr] = decyear2date(df[atr].values)  #
-                df[atr] = df[atr].dt.strftime(elements[1])
-                continue
-
-        field = tidy_field(atr)
-        el = df[atr][0]
-        type_assigned = False
-        for t in types:
-            if isinstance(el, tuple(types[t])):
-                d["attributes"].append((field, t))
-                type_assigned = True
-                break
-        if not type_assigned:
-            import json
-
-            d["attributes"].append((field + "_json", "STRING"))
-            df[atr] = df[atr].apply(json.dumps)
-
-    d["data"] = []
-    for ind, row in df.iterrows():
-        d["data"].append(list(row))
-
-    import textwrap as tw
-
-    width = 78
-    d["description"] = dataset_name + "\n\n"
-    if "info" in pods_data and pods_data["info"]:
-        d["description"] += "\n".join(tw.wrap(pods_data["info"], width)) + "\n\n"
-    if "details" in pods_data and pods_data["details"]:
-        d["description"] += "\n".join(tw.wrap(pods_data["details"], width))
-    if "citation" in pods_data and pods_data["citation"]:
-        d["description"] += "\n\n" + "Citation" "\n\n" + "\n".join(
-            tw.wrap(pods_data["citation"], width)
-        )
-
-    d["relation"] = dataset_name
-    import arff
-
-    string = arff.dumps(d)
-    import re
-
-    string = re.sub(
-        r'\@ATTRIBUTE "?(.*)_datenum_(.*)"? STRING',
-        r'@ATTRIBUTE "\1" DATE [\2]',
-        string,
-    )
-    f = open(dataset_name + ".arff", "w")
-    f.write(string)
-    f.close()
-
-
-def to_arff(dataset, **kwargs):
-    """Take a pods data set and write it as an ARFF file"""
-    pods_data = dataset(**kwargs)
-    vals = list(kwargs.values())
-    for i, v in enumerate(vals):
-        if isinstance(v, list):
-            vals[i] = "|".join(v)
-        else:
-            vals[i] = str(v)
-    args = "_".join(vals)
-    n = dataset.__name__
-    if len(args) > 0:
-        n += "_" + args
-        n = n.replace(" ", "-")
-    ks = pods_data.keys()
-    d = None
-    if "Y" in ks and "X" in ks:
-        d = pd.DataFrame(pods_data["X"])
-        if "Xtest" in ks:
-            d = d.append(pd.DataFrame(pods_data["Xtest"]), ignore_index=True)
-        if "covariates" in ks:
-            d.columns = pods_data["covariates"]
-        dy = pd.DataFrame(pods_data["Y"])
-        if "Ytest" in ks:
-            dy = dy.append(pd.DataFrame(pods_data["Ytest"]), ignore_index=True)
-        if "response" in ks:
-            dy.columns = pods_data["response"]
-        for c in dy.columns:
-            if c not in d.columns:
-                d[c] = dy[c]
-            else:
-                d["y" + str(c)] = dy[c]
-    elif "Y" in ks:
-        d = pd.DataFrame(pods_data["Y"])
-        if "Ytest" in ks:
-            d = d.append(pd.DataFrame(pods_data["Ytest"]), ignore_index=True)
-
-    elif "data" in ks:
-        d = pd.DataFrame(pods_data["data"])
-    if d is not None:
-        df2arff(d, n, pods_data)
-
-
-def kepler_telescope_urls_files(datasets, messages=True):
-    """
-    Find which resources are missing on the local disk for the requested Kepler datasets.
-
-    :param star_datasets: the star data sets to be checked for.
-    :type star_datasets: tuple of lists containg kepler ids and data sets.
-    """
-
-    resource = access.data_resources["kepler_telescope_base"].copy()
-    kepler_url = resource["urls"][0]
-
-    resource["urls"] = []
-    resource["files"] =  []
-
-    dataset_dir = os.path.join(access.DATAPATH, "kepler_telescope")
-    if not os.path.isdir(dataset_dir):
-        os.makedirs(dataset_dir)
-    for dataset in datasets:
-        for kepler_id in datasets[dataset]: 
-            file_name = "kplr" + kepler_id + "-" + dataset + "_llc.fits"
-            cur_dataset_file = os.path.join(dataset_dir, file_name)
-            if not os.path.exists(cur_dataset_file):
-                file_download = [file_name]
-                resource["files"].append(file_download)
-                resource["urls"].append(
-                    kepler_url + "/" + kepler_id[:4] + "/" + kepler_id + "/"
-                )
-    return resource
-
-
-def cmu_urls_files(subj_motions, messages=True):
-    """
-    Find which resources are missing on the local disk for the requested CMU motion capture motions.
-
-    :param subj_motions: the subject motions to be checked for.
-    :type subj_motions: tuple of lists containing subject numbers and motion numbers.
-    """
-    dr = access.data_resources["cmu_mocap_full"]
-    cmu_url = dr["urls"][0]
-
-    subjects_num = subj_motions[0]
-    motions_num = subj_motions[1]
-
-    resource = {"urls": [], "files": []}
-    # Convert numbers to strings
-    subjects = []
-    motions = [list() for _ in range(len(subjects_num))]
-    for i in range(len(subjects_num)):
-        curSubj = str(int(subjects_num[i]))
-        if int(subjects_num[i]) < 10:
-            curSubj = "0" + curSubj
-        subjects.append(curSubj)
-        for j in range(len(motions_num[i])):
-            curMot = str(int(motions_num[i][j]))
-            if int(motions_num[i][j]) < 10:
-                curMot = "0" + curMot
-            motions[i].append(curMot)
-
-    all_skels = []
-
-    assert len(subjects) == len(motions)
-
-    all_motions = []
-
-    for i in range(len(subjects)):
-        skel_dir = os.path.join(access.DATAPATH, "cmu_mocap")
-        cur_skel_file = os.path.join(skel_dir, subjects[i] + ".asf")
-
-        url_required = False
-        file_download = []
-        if not os.path.exists(cur_skel_file):
-            # Current skel file doesn't exist.
-            if not os.path.isdir(skel_dir):
-                os.makedirs(skel_dir)
-            # Add skel file to list.
-            url_required = True
-            file_download.append(subjects[i] + ".asf")
-        for j in range(len(motions[i])):
-            file_name = subjects[i] + "_" + motions[i][j] + ".amc"
-            cur_motion_file = os.path.join(skel_dir, file_name)
-            if not os.path.exists(cur_motion_file):
-                url_required = True
-                file_download.append(subjects[i] + "_" + motions[i][j] + ".amc")
-        if url_required:
-            resource["urls"].append(cmu_url + "/" + subjects[i] + "/")
-            resource["files"].append(file_download)
-    return resource
-
-
 def bmi_steps(data_set="bmi_steps"):
     if not access.data_available(data_set):
         access.download_data(data_set)
@@ -452,7 +82,7 @@ def bmi_steps(data_set="bmi_steps"):
     )
     Y = data["gender"].values[:, None]
 
-    return data_details_return(
+    return access.data_details_return(
         {"X": X, "Y": Y, "covariates": ["steps", "bmi"], "response": ["gender"]},
         data_set,
     )
@@ -465,7 +95,7 @@ def boston_housing(data_set="boston_housing"):
     all_data = np.genfromtxt(os.path.join(access.DATAPATH, data_set, "housing.data"))
     X = all_data[:, 0:13]
     Y = all_data[:, 13:14]
-    return data_details_return({"X": X, "Y": Y}, data_set)
+    return access.data_details_return({"X": X, "Y": Y}, data_set)
 
 
 def boxjenkins_airline(data_set="boxjenkins_airline", num_train=96):
@@ -480,13 +110,13 @@ def boxjenkins_airline(data_set="boxjenkins_airline", num_train=96):
     Xtest = data[num_train:, 0:1]
     Ytest = data[num_train:, 1:2]
 
-    return data_details_return(
+    return access.data_details_return(
         {
             "X": X,
             "Y": Y,
             "Xtest": Xtest,
             "Ytest": Ytest,
-            "covariates": [decimalyear("year")],
+            "covariates": [util.decimalyear("year")],
             "response": ["AirPassengers"],
             "info": "Monthly airline passenger data from Box & Jenkins 1976.",
         },
@@ -499,7 +129,7 @@ def brendan_faces(data_set="brendan_faces"):
         access.download_data(data_set)
     mat_data = scipy.io.loadmat(os.path.join(access.DATAPATH, data_set, "frey_rawface.mat"))
     Y = mat_data["ff"].T
-    return data_details_return({"Y": Y}, data_set)
+    return access.data_details_return({"Y": Y}, data_set)
 
 
 def della_gatta_TRP63_gene_expression(data_set="della_gatta", gene_number=None):
@@ -513,7 +143,7 @@ def della_gatta_TRP63_gene_expression(data_set="della_gatta", gene_number=None):
         Y = mat_data["exprs_tp53_RMA"][:, gene_number]
         if len(Y.shape) == 1:
             Y = Y[:, None]
-    return data_details_return({"X": X, "Y": Y, "gene_number": gene_number}, data_set)
+    return access.data_details_return({"X": X, "Y": Y, "gene_number": gene_number}, data_set)
 
 
 def epomeo_gpx(data_set="epomeo_gpx", sample_every=4):
@@ -565,7 +195,7 @@ def epomeo_gpx(data_set="epomeo_gpx", sample_every=4):
         X[0], columns=["seconds", "latitude", "longitude", "elevation"]
     )
     X.set_index(keys="seconds", inplace=True)
-    return data_details_return(
+    return access.data_details_return(
         {
             "X": X,
             "info": "Data is an array containing time in seconds, latitude, longitude and elevation in that order.",
@@ -594,7 +224,7 @@ if GEOPANDAS_AVAILABLE:
         Y = read_file(os.path.join(access.DATAPATH, data_set, states_file), layer=1)
         Y.crs = "EPSG:4326"
         Y.set_index("admin1Name_en")
-        return data_details_return({"Y": Y}, data_set)
+        return access.data_details_return({"Y": Y}, data_set)
 
 
 def nigerian_covid(data_set="nigerian_covid", refresh_data=False):
@@ -613,7 +243,7 @@ def nigerian_covid(data_set="nigerian_covid", refresh_data=False):
             "death_date",
         ],
     )
-    return data_details_return({"Y": Y}, data_set)
+    return access.data_details_return({"Y": Y}, data_set)
 
 
 def nigeria_nmis(data_set="nigeria_nmis", refresh_data=False):
@@ -623,7 +253,7 @@ def nigeria_nmis(data_set="nigeria_nmis", refresh_data=False):
     dir_path = os.path.join(access.DATAPATH, data_set)
     filename = os.path.join(dir_path, "healthmopupandbaselinenmisfacility.csv")
     Y = pd.read_csv(filename)
-    return data_details_return({"Y": Y}, data_set)
+    return access.data_details_return({"Y": Y}, data_set)
 
 
 def nigerian_population_2016(data_set="nigerian_population_2016", refresh_data=False):
@@ -641,7 +271,7 @@ def nigerian_population_2016(data_set="nigerian_population_2016", refresh_data=F
         "population",
     ]
     Y = Y.set_index("admin1Name_en")
-    return data_details_return({"Y": Y}, data_set)
+    return access.data_details_return({"Y": Y}, data_set)
 
 
 def pmlr(volumes="all", data_set="pmlr", refresh_data=False):
@@ -685,8 +315,8 @@ def pmlr(volumes="all", data_set="pmlr", refresh_data=False):
             Y += yaml.load(volume_file, Loader=yaml.FullLoader)
     Y = pd.DataFrame(Y)
     Y["published"] = pd.to_datetime(Y["published"])
-    # Y.columns.values[4] = json_object('authors')
-    # Y.columns.values[7] = json_object('editors')
+    # Y.columns.values[4] = util.json_object('authors')
+    # Y.columns.values[7] = util.json_object('editors')
     try:
         Y["issued"] = Y["issued"].apply(
             lambda x: np.datetime64(datetime.datetime(*x["date-parts"]))
@@ -706,11 +336,11 @@ def pmlr(volumes="all", data_set="pmlr", refresh_data=False):
         lambda x: ', '.join([full_name(editor) for editor in x])
     )
     columns = list(Y.columns)
-    columns[14] = datetime64_("published")
-    columns[11] = datetime64_("issued")
+    columns[14] = util.datetime64_("published")
+    columns[11] = util.datetime64_("issued")
     Y.columns = columns
 
-    return data_details_return(
+    return access.data_details_return(
         {
             "Y": Y,
             "info": "Data is a pandas data frame containing each paper, its abstract, authors, volumes and venue.",
@@ -738,7 +368,7 @@ def football_data(season="1617", data_set="football_data"):
             return len(access.football_dict) + 1
 
     def datestr2num(s):
-        return date2num(datetime.datetime.strptime(s.decode("utf-8"), "%d/%m/%y"))
+        return util.date2num(datetime.datetime.strptime(s.decode("utf-8"), "%d/%m/%y"))
 
     data_set_season = data_set + "_" + season
     access.data_resources[data_set_season] = copy.deepcopy(access.data_resources[data_set])
@@ -783,17 +413,17 @@ def football_data(season="1617", data_set="football_data"):
         else:
             X = np.append(X, table[:, :4], axis=0)
             Y = np.append(Y, table[:, 4:], axis=0)
-    return data_details_return(
+    return access.data_details_return(
         {
             "X": X,
             "Y": Y,
             "covariates": [
-                discrete(league_dict, "league"),
-                datenum("match_day"),
-                discrete(access.football_dict, "home team"),
-                discrete(access.football_dict, "away team"),
+                util.discrete(league_dict, "league"),
+                util.datenum("match_day"),
+                util.discrete(access.football_dict, "home team"),
+                util.discrete(access.football_dict, "away team"),
             ],
-            "response": [integer("home score"), integer("away score")],
+            "response": [util.integer("home score"), util.integer("away score")],
         },
         data_set,
     )
@@ -809,7 +439,7 @@ def sod1_mouse(data_set="sod1_mouse"):
     num_repeats = 4
     num_time = 4
     num_cond = 4
-    return data_details_return({"Y": Y}, data_set)
+    return access.data_details_return({"Y": Y}, data_set)
 
 
 def spellman_yeast(data_set="spellman_yeast"):
@@ -820,7 +450,7 @@ def spellman_yeast(data_set="spellman_yeast"):
     dir_path = os.path.join(access.DATAPATH, data_set)
     filename = os.path.join(dir_path, "combined.txt")
     Y = pd.read_csv(filename, header=0, index_col=0, sep="\t")
-    return data_details_return({"Y": Y}, data_set)
+    return access.data_details_return({"Y": Y}, data_set)
 
 
 def spellman_yeast_cdc15(data_set="spellman_yeast"):
@@ -861,7 +491,7 @@ def spellman_yeast_cdc15(data_set="spellman_yeast"):
     times = ["cdc15_" + str(time) for time in t]
     Y = Y[times].T
     t = t[:, None]
-    return data_details_return(
+    return access.data_details_return(
         {
             "Y": Y,
             "t": t,
@@ -882,7 +512,7 @@ def lee_yeast_ChIP(data_set="lee_yeast_ChIP"):
     transcription_factors = [col for col in S.columns if col[:7] != "Unnamed"]
     annotations = S[["Unnamed: 1", "Unnamed: 2", "Unnamed: 3"]]
     S = S[transcription_factors]
-    return data_details_return(
+    return access.data_details_return(
         {
             "annotations": annotations,
             "Y": S,
@@ -906,7 +536,7 @@ def fruitfly_tomancak(data_set="fruitfly_tomancak", gene_number=None):
     xr = np.linspace(0, num_repeats - 1, num_repeats)
     xtime, xrepeat = np.meshgrid(xt, xr)
     X = np.vstack((xtime.flatten(), xrepeat.flatten())).T
-    return data_details_return({"X": X, "Y": Y, "gene_number": gene_number}, data_set)
+    return access.data_details_return({"X": X, "Y": Y, "gene_number": gene_number}, data_set)
 
 
 def drosophila_protein(data_set="drosophila_protein"):
@@ -916,7 +546,7 @@ def drosophila_protein(data_set="drosophila_protein"):
     dir_path = os.path.join(access.DATAPATH, data_set)
     filename = os.path.join(dir_path, "becker_et_al.csv")
     Y = pd.read_csv(filename, header=0)
-    return data_details_return({"Y": Y}, data_set)
+    return access.data_details_return({"Y": Y}, data_set)
 
 
 def drosophila_knirps(data_set="drosophila_protein"):
@@ -942,7 +572,7 @@ def drosophila_knirps(data_set="drosophila_protein"):
     inx[leng * 2 // 2 : leng * 2] = 1
     X = np.hstack([T, S, inx])
     Y = np.vstack([g, p])
-    return data_details_return({"Y": Y, "X": X}, data_set)
+    return access.data_details_return({"Y": Y, "X": X}, data_set)
 
 
 if PYTRENDS_AVAILABLE:
@@ -1020,7 +650,7 @@ if PYTRENDS_AVAILABLE:
             X = np.asarray(
                 [
                     (
-                        date2num(
+                        util.date2num(
                             datetime.datetime.strptime(df.iloc[row]["Date"], "%Y-%m-%d")
                         ),
                         i,
@@ -1032,7 +662,7 @@ if PYTRENDS_AVAILABLE:
         else:
             X = np.asarray(
                 [
-                    (date2num(df.iloc[row]["Date"]), i)
+                    (util.date2num(df.iloc[row]["Date"]), i)
                     for i in range(terms)
                     for row in df.index
                 ]
@@ -1044,7 +674,7 @@ if PYTRENDS_AVAILABLE:
         cats = {}
         for i in range(terms):
             cats[query_terms[i]] = i
-        return data_details_return(
+        return access.data_details_return(
             {
                 "data frame": df,
                 "X": X,
@@ -1053,7 +683,7 @@ if PYTRENDS_AVAILABLE:
                 "info": "Data downloaded from google trends with query terms: "
                 + ", ".join(query_terms)
                 + ".",
-                "covariates": [datenum("date"), discrete(cats, "query_terms")],
+                "covariates": [util.datenum("date"), util.discrete(cats, "query_terms")],
                 "response": ["normalized interest"],
             },
             data_set,
@@ -1088,7 +718,7 @@ def oil(data_set="three_phase_oil_flow"):
     fid = open(oil_validlbls_file)
     Yvalid = np.fromfile(fid, sep="\t").reshape((-1, 3)) * 2.0 - 1.0
     fid.close()
-    return data_details_return(
+    return access.data_details_return(
         {
             "X": X,
             "Y": Y,
@@ -1111,17 +741,17 @@ def leukemia(data_set="leukemia"):
     X = all_data[1:, 1:]
     censoring = all_data[1:, 1]
     Y = all_data[1:, 0]
-    return data_details_return({"X": X, "censoring": censoring, "Y": Y}, data_set)
+    return access.data_details_return({"X": X, "censoring": censoring, "Y": Y}, data_set)
 
 
 def oil_100(seed=default_seed, data_set="three_phase_oil_flow"):
     np.random.seed(seed=seed)
     data = oil()
-    indices = permute(1000)
+    indices = util.permute(1000)
     indices = indices[0:100]
     X = data["X"][indices, :]
     Y = data["Y"][indices, :]
-    return data_details_return(
+    return access.data_details_return(
         {
             "X": X,
             "Y": Y,
@@ -1147,7 +777,7 @@ def pumadyn(seed=default_seed, data_set="pumadyn-32nm"):
     data = np.loadtxt(
         os.path.join(access.DATAPATH, data_set, "pumadyn-32nm", "Dataset.data.gz")
     )
-    indices = permute(data.shape[0])
+    indices = util.permute(data.shape[0])
     indicesTrain = indices[0:7168]
     indicesTest = indices[7168:-1]
     indicesTrain.sort(axis=0)
@@ -1156,7 +786,7 @@ def pumadyn(seed=default_seed, data_set="pumadyn-32nm"):
     Y = data[indicesTrain, -1][:, None]
     Xtest = data[indicesTest, 0:-2]
     Ytest = data[indicesTest, -1][:, None]
-    return data_details_return(
+    return access.data_details_return(
         {"X": X, "Y": Y, "Xtest": Xtest, "Ytest": Ytest, "seed": seed}, data_set
     )
 
@@ -1201,7 +831,7 @@ def robot_wireless(data_set="robot_wireless"):
 
     Xtest = allX[215:, :]
     Ytest = allY[215:, :]
-    return data_details_return(
+    return access.data_details_return(
         {
             "X": X,
             "Y": Y,
@@ -1209,7 +839,7 @@ def robot_wireless(data_set="robot_wireless"):
             "Ytest": Ytest,
             "addresses": addresses,
             "times": times,
-            "covariates": [timestamp("time", "%H:%M:%S.%f"), "X", "Y"],
+            "covariates": [util.timestamp("time", "%H:%M:%S.%f"), "X", "Y"],
             "response": addresses,
         },
         data_set,
@@ -1231,7 +861,7 @@ def silhouette(data_set="ankur_pose_data"):
     Xtest = Xtest / inScales
     Y = mat_data["Z"]
     Ytest = mat_data["Z_test"]
-    return data_details_return(
+    return access.data_details_return(
         {"X": X, "Y": Y, "Xtest": Xtest, "Ytest": Ytest}, data_set
     )
 
@@ -1251,7 +881,7 @@ def decampos_digits(
     )
     lbls = np.array([[l] * num_samples for l in which_digits]).reshape(Y.shape[0], 1)
     str_lbls = np.array([[str(l)] * num_samples for l in which_digits])
-    return data_details_return(
+    return access.data_details_return(
         {
             "Y": Y,
             "lbls": lbls,
@@ -1272,7 +902,7 @@ def ripley_synth(data_set="ripley_prnn_data"):
     test = np.genfromtxt(os.path.join(access.DATAPATH, data_set, "synth.te"), skip_header=1)
     Xtest = test[:, 0:2]
     ytest = test[:, 2:3]
-    return data_details_return(
+    return access.data_details_return(
         {
             "X": X,
             "Y": y,
@@ -1298,7 +928,7 @@ def ripley_synth(data_set="ripley_prnn_data"):
     Xtest = allX[num_train:, 0:1]
     Y = allY[:num_train, 0:1]
     Ytest = allY[num_train:, 0:1]
-    return data_details_return({'X': X, 'Y': Y, 'Xtest': Xtest, 'Ytest': Ytest, 'info': "Global average temperature data with " + str(num_train) + " values used as training points."}, data_set)
+    return access.data_details_return({'X': X, 'Y': Y, 'Xtest': Xtest, 'Ytest': Ytest, 'info': "Global average temperature data with " + str(num_train) + " values used as training points."}, data_set)
 """
 
 
@@ -1324,13 +954,13 @@ def mauna_loa(data_set="mauna_loa", num_train=545, refresh_data=False):
     Xtest = allX[num_train:, 0:1]
     Y = allY[:num_train, 0:1]
     Ytest = allY[num_train:, 0:1]
-    return data_details_return(
+    return access.data_details_return(
         {
             "X": X,
             "Y": Y,
             "Xtest": Xtest,
             "Ytest": Ytest,
-            "covariates": [decimalyear("year", "%Y-%m")],
+            "covariates": [util.decimalyear("year", "%Y-%m")],
             "response": ["CO2/ppm"],
             "info": "Mauna Loa data with "
             + str(num_train)
@@ -1354,7 +984,7 @@ def osu_run1(data_set="osu_run1", sample_every=4):
 
     Y, connect = mocap.load_text_data("Aug210106", path)
     Y = Y[0:-1:sample_every, :]
-    return data_details_return({"Y": Y, "connect": connect}, data_set)
+    return access.data_details_return({"Y": Y, "connect": connect}, data_set)
 
 
 def swiss_roll_generated(num_samples=1000, sigma=0.0):
@@ -1389,7 +1019,7 @@ def singlecell(data_set="guo_qpcr_2010"):
     genes = Y.columns
     labels = Y.index
     # data = np.loadtxt(os.path.join(dir_path, 'singlecell.csv'), delimiter=",", dtype=str)
-    return data_details_return(
+    return access.data_details_return(
         {
             "Y": Y,
             "info": "qPCR singlecell experiment in Mouse, measuring 48 gene expressions in 1-64 cell states. The labels have been created as in Guo et al. [2010]",
@@ -1411,7 +1041,7 @@ def swiss_roll(num_samples=3000, data_set="swiss_roll"):
         os.path.join(access.DATAPATH, data_set, "swiss_roll_data.mat")
     )
     Y = mat_data["X_data"][:, 0:num_samples].transpose()
-    return data_details_return(
+    return access.data_details_return(
         {
             "Y": Y,
             "Full": mat_data["X_data"],
@@ -1428,7 +1058,7 @@ def isomap_faces(num_samples=698, data_set="isomap_face_data"):
         access.download_data(data_set)
     mat_data = scipy.io.loadmat(os.path.join(access.DATAPATH, data_set, "face_data.mat"))
     Y = mat_data["images"][:, 0:num_samples].transpose()
-    return data_details_return(
+    return access.data_details_return(
         {
             "Y": Y,
             "poses": mat_data["poses"],
@@ -1476,7 +1106,7 @@ if GPY_AVAILABLE:
     def toy_rbf_1d_50(seed=default_seed):
         np.random.seed(seed=seed)
         data = toy_rbf_1d()
-        indices = permute(data["X"].shape[0])
+        indices = util.permute(data["X"].shape[0])
         indices = indices[0:50]
         indices.sort(axis=0)
         X = data["X"][indices, :]
@@ -1507,7 +1137,7 @@ def toy_linear_1d_classification(seed=default_seed):
         "Y": sample_class(2.0 * X),
         "F": 2.0 * X,
         "covariates": ["X"],
-        "response": [discrete({"positive": 1, "negative": -1})],
+        "response": [util.discrete({"positive": 1, "negative": -1})],
         "seed": seed,
     }
 
@@ -1540,7 +1170,7 @@ def airline_delay(
 
     # Get testing points
     np.random.seed(seed=seed)
-    N_shuffled = permute(Yall.shape[0])
+    N_shuffled = util.permute(Yall.shape[0])
     train, test = N_shuffled[num_test:], N_shuffled[:num_test]
     X, Y = Xall[train], Yall[train]
     Xtest, Ytest = Xall[test], Yall[test]
@@ -1555,7 +1185,7 @@ def airline_delay(
         "age of aircraft / years",
     ]
     response = ["delay"]
-    return data_details_return(
+    return access.data_details_return(
         {
             "X": X,
             "Y": Y,
@@ -1591,7 +1221,7 @@ if NETPBMFILE_AVAILABLE:
                 lbls.append(subject)
         Y = np.asarray(Y)
         lbls = np.asarray(lbls)[:, None]
-        return data_details_return(
+        return access.data_details_return(
             {"Y": Y, "lbls": lbls, "info": "ORL Faces processed to 64x64 images."}, data_set
         )
 
@@ -1601,7 +1231,7 @@ def xw_pen(data_set="xw_pen"):
         access.download_data(data_set)
     Y = np.loadtxt(os.path.join(access.DATAPATH, data_set, "xw_pen_15.csv"), delimiter=",")
     X = np.arange(485)[:, None]
-    return data_details_return(
+    return access.data_details_return(
         {
             "Y": Y,
             "X": X,
@@ -1632,11 +1262,11 @@ def olympic_100m_men(data_set="rogers_girolami_data"):
 
     X = olympic_data[:, 0][:, None]
     Y = olympic_data[:, 1][:, None]
-    return data_details_return(
+    return access.data_details_return(
         {
             "X": X,
             "Y": Y,
-            "covariates": [decimalyear("year", "%Y")],
+            "covariates": [util.decimalyear("year", "%Y")],
             "response": ["time"],
             "info": "Olympic sprint times for 100 m men from 1896 until 2008. Example is from Rogers and Girolami's First Course in Machine Learning.",
         },
@@ -1652,11 +1282,11 @@ def olympic_100m_women(data_set="rogers_girolami_data"):
 
     X = olympic_data[:, 0][:, None]
     Y = olympic_data[:, 1][:, None]
-    return data_details_return(
+    return access.data_details_return(
         {
             "X": X,
             "Y": Y,
-            "covariates": [decimalyear("year", "%Y")],
+            "covariates": [util.decimalyear("year", "%Y")],
             "response": ["time"],
             "info": "Olympic sprint times for 100 m women from 1896 until 2008. Example is from Rogers and Girolami's First Course in Machine Learning.",
         },
@@ -1672,7 +1302,7 @@ def olympic_200m_women(data_set="rogers_girolami_data"):
 
     X = olympic_data[:, 0][:, None]
     Y = olympic_data[:, 1][:, None]
-    return data_details_return(
+    return access.data_details_return(
         {
             "X": X,
             "Y": Y,
@@ -1690,11 +1320,11 @@ def olympic_200m_men(data_set="rogers_girolami_data"):
 
     X = olympic_data[:, 0][:, None]
     Y = olympic_data[:, 1][:, None]
-    return data_details_return(
+    return access.data_details_return(
         {
             "X": X,
             "Y": Y,
-            "covariates": [decimalyear("year", "%Y")],
+            "covariates": [util.decimalyear("year", "%Y")],
             "response": ["time"],
             "info": "Male 200 m winning times for women from 1896 until 2008. Data is from Rogers and Girolami's First Course in Machine Learning.",
         },
@@ -1710,11 +1340,11 @@ def olympic_400m_women(data_set="rogers_girolami_data"):
 
     X = olympic_data[:, 0][:, None]
     Y = olympic_data[:, 1][:, None]
-    return data_details_return(
+    return access.data_details_return(
         {
             "X": X,
             "Y": Y,
-            "covariates": [decimalyear("year", "%Y")],
+            "covariates": [util.decimalyear("year", "%Y")],
             "response": ["time"],
             "info": "Olympic 400 m winning times for women until 2008. Data is from Rogers and Girolami's First Course in Machine Learning.",
         },
@@ -1730,11 +1360,11 @@ def olympic_400m_men(data_set="rogers_girolami_data"):
 
     X = olympic_data[:, 0][:, None]
     Y = olympic_data[:, 1][:, None]
-    return data_details_return(
+    return access.data_details_return(
         {
             "X": X,
             "Y": Y,
-            "covariates": [decimalyear("year", "%Y")],
+            "covariates": [util.decimalyear("year", "%Y")],
             "response": ["time"],
             "info": "Male 400 m winning times for women until 2008. Data is from Rogers and Girolami's First Course in Machine Learning.",
         },
@@ -1750,11 +1380,11 @@ def olympic_marathon_men(data_set="olympic_marathon_men"):
     )
     X = olympics[:, 0:1]
     Y = olympics[:, 1:2]
-    return data_details_return(
+    return access.data_details_return(
         {
             "X": X,
             "Y": Y,
-            "covariates": [decimalyear("year", "%Y")],
+            "covariates": [util.decimalyear("year", "%Y")],
             "response": ["time"],
         },
         data_set,
@@ -1787,11 +1417,11 @@ def olympic_sprints(data_set="rogers_girolami_data"):
     data[
         "info"
     ] = "Olympics sprint event winning for men and women to 2008. Data is from Rogers and Girolami's First Course in Machine Learning."
-    return data_details_return(
+    return access.data_details_return(
         {
             "X": X,
             "Y": Y,
-            "covariates": [decimalyear("year", "%Y"), discrete(cats, "event")],
+            "covariates": [util.decimalyear("year", "%Y"), util.discrete(cats, "event")],
             "response": ["time"],
             "info": "Olympics sprint event winning for men and women to 2008. Data is from Rogers and Girolami's First Course in Machine Learning.",
             "output_info": {
@@ -1819,7 +1449,7 @@ def movie_body_count(data_set="movie_body_count"):
     Y["Actors"] = Y["Actors"].apply(lambda x: x.split("|"))
     Y["Genre"] = Y["Genre"].apply(lambda x: x.split("|"))
     Y["Director"] = Y["Director"].apply(lambda x: x.split("|"))
-    return data_details_return(
+    return access.data_details_return(
         {
             "Y": Y,
             "info": "Data set of movies and body count for movies scraped from www.MovieBodyCounts.com created by Simon Garnier and Randy Olson for exploring differences between Python and R.",
@@ -1848,7 +1478,7 @@ def movie_body_count_r_classify(data_set="movie_body_count"):
         values = pd.Series(np.zeros(X.shape[0]), index=X.index)
         values[index] = 1
         X[genre] = values
-    return data_details_return(
+    return access.data_details_return(
         {
             "X": X,
             "Y": Y,
@@ -1941,7 +1571,7 @@ def movielens100k(data_set="movielens100k"):
         rate_part["split"] = part
         ratings.append(rate_part)
     Y = pd.concat(ratings)
-    return data_details_return(
+    return access.data_details_return(
         {
             "Y": Y,
             "film_info": items,
@@ -1961,7 +1591,7 @@ def nigeria_nmis_facility_database(data_set="nigeria_nmis_facility_database"):
     dir_path = os.path.join(access.DATAPATH, data_set)
     filename = os.path.join(dir_path, "healthmopupandbaselinenmisfacility.csv")
     Y = pd.read_csv(filename)
-    return data_details_return(
+    return access.data_details_return(
         {
             "Y": Y,
             "info": "Geo-referenced baseline facility inventory across Nigeria giving Nigeria's first nation-wide inventory of health facilities.",
@@ -2019,7 +1649,7 @@ Data set formed from a mixture of four Gaussians. In each class two of the Gauss
         "X": X,
         "Y": Y,
         "info": "Two separate classes of data formed approximately in the shape of two crescents.",
-        "response": [discrete(cats, "class")],
+        "response": [util.discrete(cats, "class")],
     }
 
 
@@ -2063,16 +1693,16 @@ def creep_data(data_set="creep_rupture"):
         "Oxygen / wt%",
         "Normalising temperature / Kelvin",
         "Normalising time / hours",
-        discrete(cats, "Cooling rate of normalisation"),
+        util.discrete(cats, "Cooling rate of normalisation"),
         "Tempering temperature / Kelvin",
         "Tempering time / hours",
-        discrete(cats, "Cooling rate of tempering"),
+        util.discrete(cats, "Cooling rate of tempering"),
         "Annealing temperature / Kelvin",
         "Annealing time / hours",
-        discrete(cats, "Cooling rate of annealing"),
+        util.discrete(cats, "Cooling rate of annealing"),
         "Rhenium / wt%",
     ]
-    return data_details_return(
+    return access.data_details_return(
         {
             "X": X,
             "Y": y,
@@ -2107,7 +1737,7 @@ def ceres(data_set="ceres"):
         parse_dates=True,
         dayfirst=False,
     )
-    return data_details_return({"data": data}, data_set)
+    return access.data_details_return({"data": data}, data_set)
 
 
 def kepler_lightcurves(data_set="kepler_telescope"):
@@ -2183,7 +1813,7 @@ def kepler_lightcurves(data_set="kepler_telescope"):
     data["citation"] = "Data from Kepler space mission used by David Hogg and Kate Storey-Fisher for their NeurIPS tutorial https://dwh.gg/NeurIPSastro1"
     data["info"] = """The following wget lines were obtained by doing a simple search at this web form: http://archive.stsci.edu/kepler/data_search/search.php
 where we put "< 8" into the field "KEP_Mag" and "Quarter" into the field "User-specified field 1" and "3" into the "Field descriptions" box associated with that."""
-    return data_details_return(data, data_set)
+    return access.data_details_return(data, data_set)
 
 
 def kepler_telescope(datasets, data_set="kepler_telescope"):
@@ -2193,7 +1823,7 @@ def kepler_telescope(datasets, data_set="kepler_telescope"):
     scan_dir = os.path.join(access.DATAPATH, data_set)
 
     # Make sure the data is downloaded.
-    resource = kepler_telescope_urls_files(datasets)
+    resource = access.kepler_telescope_urls_files(datasets)
     access.data_resources[data_set] = access.data_resources["kepler_telescope_base"].copy()
     access.data_resources[data_set]["files"] = resource["files"]
     access.data_resources[data_set]["urls"] = resource["urls"]
@@ -2210,7 +1840,7 @@ def kepler_telescope(datasets, data_set="kepler_telescope"):
     from astropy.table import Table
     
     Y = pd.DataFrame({dataset: {kepler_id: Table.read(os.path.join(dataset_dir, "kplr" + kepler_id + "-" + dataset + "_llc.fits"), format='fits').to_pandas() for kepler_id in datasets[dataset]} for dataset in datasets})
-    return data_details_return(
+    return access.data_details_return(
         {
             "Y": Y,
         },
@@ -2308,7 +1938,7 @@ def cmu_mocap(
 
     # Make sure the data is downloaded.
     all_motions = train_motions + test_motions
-    resource = cmu_urls_files(([subject], [all_motions]))
+    resource = access.cmu_urls_files(([subject], [all_motions]))
     access.data_resources[data_set] = access.data_resources["cmu_mocap_full"].copy()
     access.data_resources[data_set]["files"] = resource["files"]
     access.data_resources[data_set]["urls"] = resource["urls"]
@@ -2381,7 +2011,7 @@ def cmu_mocap(
         info += "."
     if sample_every != 1:
         info += " Data is sub-sampled to every " + str(sample_every) + " frames."
-    return data_details_return(
+    return access.data_details_return(
         {
             "Y": Y,
             "lbls": lbls,
@@ -2400,12 +2030,12 @@ def mcycle(data_set="mcycle", seed=default_seed):
 
     np.random.seed(seed=seed)
     data = pd.read_csv(os.path.join(access.DATAPATH, data_set, "motor.csv"))
-    data = data.reindex(permute(data.shape[0]))  # Randomize so test isn't at the end
+    data = data.reindex(util.permute(data.shape[0]))  # Randomize so test isn't at the end
 
     X = data["times"].values[:, None]
     Y = data["accel"].values[:, None]
 
-    return data_details_return(
+    return access.data_details_return(
         {"X": X, "Y": Y, "covariates": ["times"], "response": ["acceleration"]},
         data_set,
     )
@@ -2431,12 +2061,12 @@ def elevators(data_set="elevators", seed=default_seed):
     np.random.seed(seed=seed)
     # Want to choose test and training data sizes, so just concatenate them together and mix them up
     data = data.reset_index()
-    data = data.reindex(permute(data.shape[0]))  # Randomize so test isn't at the end
+    data = data.reindex(util.permute(data.shape[0]))  # Randomize so test isn't at the end
 
     X = data.iloc[:, :-1].values
     Y = data.iloc[:, -1].values[:, None]
 
-    return data_details_return({"X": X, "Y": Y}, data_set)
+    return access.data_details_return({"X": X, "Y": Y}, data_set)
 
 
 if False:
@@ -2637,12 +2267,12 @@ if False:
         y = np.where(y == "y", 1, 0).reshape(-1, 1)
         faces = scipy.io.loadmat(os.path.join(path, "olivettifaces.mat"))["faces"].T
         np.random.seed(seed=seed)
-        index = permute(faces.shape[0])
+        index = util.permute(faces.shape[0])
         X = faces[index[:num_training], :]
         Xtest = faces[index[num_training:], :]
         Y = y[index[:num_training], :]
         Ytest = y[index[num_training:]]
-        return data_details_return(
+        return access.data_details_return(
             {
                 "X": X,
                 "Y": Y,
@@ -2659,7 +2289,7 @@ if False:
         Y = np.array(mat_data["Y"], dtype=float)
         S = np.array(mat_data["initS"], dtype=float)
         mu = np.array(mat_data["initMu"], dtype=float)
-        # return data_details_return({'S': S, 'Y': Y, 'mu': mu}, data_set)
+        # return access.data_details_return({'S': S, 'Y': Y, 'mu': mu}, data_set)
         return {
             "Y": Y,
             "S": S,
@@ -2783,7 +2413,7 @@ if False:
 
             data_dict[party] = data
 
-        return data_details_return(data_dict, data_set)
+        return access.data_details_return(data_dict, data_set)
 
     def cifar10_patches(data_set="cifar-10"):
         """The Candian Institute for Advanced Research 10 image data set. Code for loading in this data is taken from this Boris Babenko's blog post, original code available here: http://bbabenko.tumblr.com/post/86756017649/learning-low-level-vision-feautres-in-10-lines-of-code"""
@@ -2816,7 +2446,7 @@ if False:
                     (patches, images[:, x : x + 5, y : y + 5, :]), axis=0
                 )
         patches = patches.reshape((patches.shape[0], -1))
-        return data_details_return(
+        return access.data_details_return(
             {
                 "Y": patches,
                 "info": "32x32 pixel patches extracted from the CIFAR-10 data by Boris Babenko to demonstrate k-means features.",
@@ -2833,7 +2463,7 @@ if False:
         dir_path = os.path.join(access.DATAPATH, data_set)
         filename = os.path.join(dir_path, "film-death-counts-Python.csv")
         Y = pd.read_csv(filename)
-        return data_details_return(
+        return access.data_details_return(
             {
                 "Y": Y,
                 "info": "Data set of movie ratings as summarized from Google doc spreadheets of students in class.",

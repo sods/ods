@@ -190,6 +190,12 @@ def download_url(
         print(status)
         # if we wanted to get more sophisticated maybe we should check the response code here again even for successes.
 
+def data_details_return(data, data_set):
+    """Update the data details component of the data dictionary with details drawn from the data_resources.json file."""
+    data.update(data_resources[data_set])
+    return data
+
+
 
 def download_data(dataset_name=None, prompt=prompt_stdin):
     """Check with the user that the are happy with terms and conditions for the data set, then download it."""
@@ -225,11 +231,6 @@ def download_data(dataset_name=None, prompt=prompt_stdin):
                     store_directory=dataset_name,
                 )
     return True
-
-
-
-
-
 
 def clear_cache(dataset_name=None):
     """Remove a data set from the cache"""
@@ -307,3 +308,94 @@ def authorize_download(dataset_name=None, prompt=prompt_stdin):
             print("")
         return prompt("Do you wish to proceed with the download? [yes/no]")
 
+def pmlr_proceedings_list(data_set):
+    proceedings_file = open(os.path.join(data_path, data_set, "proceedings.yaml"), "r")
+    proceedings = yaml.load(proceedings_file, Loader=yaml.FullLoader)
+
+def kepler_telescope_urls_files(datasets, messages=True):
+    """
+    Find which resources are missing on the local disk for the requested Kepler datasets.
+
+    :param star_datasets: the star data sets to be checked for.
+    :type star_datasets: tuple of lists containg kepler ids and data sets.
+    """
+
+    resource = data_resources["kepler_telescope_base"].copy()
+    kepler_url = resource["urls"][0]
+
+    resource["urls"] = []
+    resource["files"] =  []
+
+    dataset_dir = os.path.join(DATAPATH, "kepler_telescope")
+    if not os.path.isdir(dataset_dir):
+        os.makedirs(dataset_dir)
+    for dataset in datasets:
+        for kepler_id in datasets[dataset]: 
+            file_name = "kplr" + kepler_id + "-" + dataset + "_llc.fits"
+            cur_dataset_file = os.path.join(dataset_dir, file_name)
+            if not os.path.exists(cur_dataset_file):
+                file_download = [file_name]
+                resource["files"].append(file_download)
+                resource["urls"].append(
+                    kepler_url + "/" + kepler_id[:4] + "/" + kepler_id + "/"
+                )
+    return resource
+
+
+def cmu_urls_files(subj_motions, messages=True):
+    """
+    Find which resources are missing on the local disk for the requested CMU motion capture motions.
+
+    :param subj_motions: the subject motions to be checked for.
+    :type subj_motions: tuple of lists containing subject numbers and motion numbers.
+    """
+    dr = data_resources["cmu_mocap_full"]
+    cmu_url = dr["urls"][0]
+
+    subjects_num = subj_motions[0]
+    motions_num = subj_motions[1]
+
+    resource = {"urls": [], "files": []}
+    # Convert numbers to strings
+    subjects = []
+    motions = [list() for _ in range(len(subjects_num))]
+    for i in range(len(subjects_num)):
+        curSubj = str(int(subjects_num[i]))
+        if int(subjects_num[i]) < 10:
+            curSubj = "0" + curSubj
+        subjects.append(curSubj)
+        for j in range(len(motions_num[i])):
+            curMot = str(int(motions_num[i][j]))
+            if int(motions_num[i][j]) < 10:
+                curMot = "0" + curMot
+            motions[i].append(curMot)
+
+    all_skels = []
+
+    assert len(subjects) == len(motions)
+
+    all_motions = []
+
+    for i in range(len(subjects)):
+        skel_dir = os.path.join(DATAPATH, "cmu_mocap")
+        cur_skel_file = os.path.join(skel_dir, subjects[i] + ".asf")
+
+        url_required = False
+        file_download = []
+        if not os.path.exists(cur_skel_file):
+            # Current skel file doesn't exist.
+            if not os.path.isdir(skel_dir):
+                os.makedirs(skel_dir)
+            # Add skel file to list.
+            url_required = True
+            file_download.append(subjects[i] + ".asf")
+        for j in range(len(motions[i])):
+            file_name = subjects[i] + "_" + motions[i][j] + ".amc"
+            cur_motion_file = os.path.join(skel_dir, file_name)
+            if not os.path.exists(cur_motion_file):
+                url_required = True
+                file_download.append(subjects[i] + "_" + motions[i][j] + ".amc")
+        if url_required:
+            resource["urls"].append(cmu_url + "/" + subjects[i] + "/")
+            resource["files"].append(file_download)
+    return resource
