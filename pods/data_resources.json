@@ -574,12 +574,12 @@
             "https://energydata.info/dataset/f85d1796-e7f2-4630-be84-79420174e3bd/resource/6e640a13-cab4-457b-b9e6-0336051bac27/download/"
         ]
     },
-   "nigerian_population_2016": {
-        "citation": "Nigeria - Subnational Population Statistics by administrative level 1 and 2. A projection based on the 2006 Census conucted by the National Population Commission of Nigeria. Available from The Humanitarian Data Exchange http://data.humdata.org",
+   "nigerian_population_2020": {
+        "citation": "Nigeria - Subnational Population Statistics by administrative level 1 and 2. A projection based on the 2006 Census conducted by the National Population Commission of Nigeria. Available from The Humanitarian Data Exchange http://data.humdata.org",
         "details": "Projection of administrative level 1 population statistics in Nigeria based on 2006 Census conducted by the National Population Commission (NPC) of Nigeria. Available from https://data.humdata.org/dataset/a7c3de5e-ff27-4746-99cd-05f2ad9b1066",
         "files": [
             [
-                "nga_pop_adm1_2016.csv"
+                "nga_pop_adm1_2020.csv"
             ]
         ],
         "license": null,
