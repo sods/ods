@@ -263,13 +263,18 @@ def nigerian_population(data_set="nigerian_population", refresh_data=False):
     dir_path = os.path.join(access.DATAPATH, data_set)
     filename = os.path.join(dir_path, "nga_admpop_adm1_2020.csv")
     Y = pd.read_csv(filename)
-    Y.rename(columns = {'ADM0_NAME':'admin0Name_en', 
-                        'ADM0_PCODE' : 'admin0Pcode', 
-                        'ADM1_NAME' : 'admin1Name_en', 
-                        'ADM1_PCODE' : 'admin1Pcode', 
-                        'T_TL' :'population'},
+    Y.dropna(axis=1, how='all', inplace=True)
+    Y.dropna(axis=0, how='any', inplace=True)
+    Y.rename(columns = {"ADM0_NAME":"admin0Name_en", 
+                        "ADM0_PCODE" : "admin0Pcode", 
+                        "ADM1_NAME" : "admin1Name_en", 
+                        "ADM1_PCODE" : "admin1Pcode", 
+                        "T_TL" :"population"},
             inplace=True)
+    Y["admin0Name_en"] = Y["admin0Name_en"].str.capitalize()
+    Y["admin1Name_en"] = Y["admin1Name_en"].str.capitalize()
     Y = Y.set_index("admin1Name_en")
+
     return access.data_details_return({"Y": Y}, data_set)
 
 
