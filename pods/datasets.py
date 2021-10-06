@@ -256,20 +256,19 @@ def nigeria_nmis(data_set="nigeria_nmis", refresh_data=False):
     return access.data_details_return({"Y": Y}, data_set)
 
 
-def nigerian_population_2016(data_set="nigerian_population_2016", refresh_data=False):
+def nigerian_population(data_set="nigerian_population", refresh_data=False):
     if not access.data_available(data_set) and not refresh_data:
         access.download_data(data_set)
 
     dir_path = os.path.join(access.DATAPATH, data_set)
-    filename = os.path.join(dir_path, "nga_pop_adm1_2016.csv")
+    filename = os.path.join(dir_path, "nga_admpop_adm1_2020.csv")
     Y = pd.read_csv(filename)
-    Y.columns = [
-        "admin1Name_en",
-        "admin1Pcode",
-        "admin0Name_en",
-        "admin0Pcode",
-        "population",
-    ]
+    Y.rename(columns = {'ADM0_NAME':'admin0Name_en', 
+                        'ADM0_PCODE' : 'admin0Pcode', 
+                        'ADM1_NAME' : 'admin1Name_en', 
+                        'ADM1_PCODE' : 'admin1Pcode', 
+                        'T_TL' :'population'},
+            inplace=True)
     Y = Y.set_index("admin1Name_en")
     return access.data_details_return({"Y": Y}, data_set)
 

@@ -17,11 +17,11 @@ from setuptools import find_packages, setup, Command
 # Package meta-data.
 NAME = "pods"
 DESCRIPTION = "Python software for Open Data Science"
-URL = "https://github.com/sods/ods"
+URL = "https://github.com/lawrennd/ods"
 EMAIL = "lawrennd@gmail.com"
 AUTHOR = "Neil D. Lawrence"
 REQUIRES_PYTHON = ">=3.6.0"
-VERSION = "v0.1.0"
+VERSION = "v0.1.1"
 
 # What packages are required for this module to be executed?
 REQUIRED = [
