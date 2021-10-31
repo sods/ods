@@ -39,6 +39,7 @@ if not (on_rtd):
     football_dict = json.loads(json_data)
 
 
+    
 def prompt_stdin(prompt):
     """Ask user for agreeing to data set licenses."""
     # raw_input returns the empty string for "enter"
@@ -68,7 +69,7 @@ def prompt_stdin(prompt):
         print("Please respond with 'yes', 'y' or 'no', 'n'")
 
 def download_url(
-    url, dir_name=".", save_name=None, store_directory=None, messages=True, suffix=""
+        url, dir_name=".", save_name=None, store_directory=None, messages=True, suffix=""
 ):
     """Download a file from a url and save it to disk."""
     if sys.version_info >= (3, 0):
@@ -205,29 +206,32 @@ def download_data(dataset_name=None, prompt=prompt_stdin):
         raise Exception("Permission to download data set denied.")
 
     if "suffices" in dr:
-        for url, files, suffices in zip(dr["urls"], dr["files"], dr["suffices"]):
-            for file, suffix in zip(files, suffices):
+        for url, filenames, suffices in zip(dr["urls"], dr["files"], dr["suffices"]):
+            for filename, suffix in zip(filenames, suffices):
                 download_url(
-                    url=os.path.join(url, file),
-                    dir_name=DATAPATH,
+                    url=os.path.join(url, filename).replace(" ", "%20"),
+                    dir_name = DATAPATH,
+                    save_name = filename,
                     store_directory=dataset_name,
                     suffix=suffix,
                 )
     elif "dirs" in dr:
-        for url, dirs, files in zip(dr["urls"], dr["dirs"], dr["files"]):
-            for file, dir in zip(files, dirs):
-                print(file, dir)
+        for url, dirnames, filenames in zip(dr["urls"], dr["dirs"], dr["files"]):
+            for filename, dirname in zip(filenames, dirnames):
+                print(filename, dirname)
                 download_url(
-                    url=os.path.join(url, dir, file),
+                    url=os.path.join(url, dirname, filename).replace(" ", "%20"),
                     dir_name=DATAPATH,
-                    store_directory=os.path.join(dataset_name, dir),
+                    save_name = filename,
+                    store_directory=os.path.join(dataset_name, dirname),
                 )
     else:
-        for url, files in zip(dr["urls"], dr["files"]):
-            for file in files:
+        for url, filenames in zip(dr["urls"], dr["files"]):
+            for filename in filenames:
                 download_url(
-                    url=os.path.join(url, file),
+                    url=os.path.join(url, filename).replace(" ", "%20"),
                     dir_name=DATAPATH,
+                    save_name = filename,
                     store_directory=dataset_name,
                 )
     return True
@@ -236,22 +240,22 @@ def clear_cache(dataset_name=None):
     """Remove a data set from the cache"""
     dr = data_resources[dataset_name]
     if "dirs" in dr:
-        for dirs, files in zip(dr["dirs"], dr["files"]):
-            for dir, file in zip(dirs, files):
-                path = os.path.join(DATAPATH, dataset_name, dir, file)
+        for dirnames, filenames in zip(dr["dirs"], dr["files"]):
+            for dirname, filename in zip(dirnames, filenames):
+                path = os.path.join(DATAPATH, dataset_name, dirname, filename)
                 if os.path.exists(path):
                     logging.info("clear_cache: removing " + path)
                     os.unlink(path)
-            for dir in dirs:
-                path = os.path.join(DATAPATH, dataset_name, dir)
+            for dirname in dirnames:
+                path = os.path.join(DATAPATH, dataset_name, dirname)
                 if os.path.exists(path):
                     logging.info("clear_cache: remove directory " + path)
                     os.rmdir(path)
 
     else:
-        for file_list in dr["files"]:
-            for file in file_list:
-                path = os.path.join(DATAPATH, dataset_name, file)
+        for filenames in dr["files"]:
+            for filename in filenames:
+                path = os.path.join(DATAPATH, dataset_name, filename)
                 if os.path.exists(path):
                     logging.info("clear_cache: remove " + path)
                     os.unlink(path)
@@ -261,14 +265,14 @@ def data_available(dataset_name=None):
     """Check if the data set is available on the local machine already."""
     dr = data_resources[dataset_name]
     if "dirs" in dr:
-        for dirs, files in zip(dr["dirs"], dr["files"]):
-            for dir, file in zip(dirs, files):
-                if not os.path.exists(os.path.join(DATAPATH, dataset_name, dir, file)):
+        for dirnames, filenames in zip(dr["dirs"], dr["files"]):
+            for dirname, filename in zip(dirnames, filenames):
+                if not os.path.exists(os.path.join(DATAPATH, dataset_name, dirname, filename)):
                     return False
     else:
-        for file_list in dr["files"]:
-            for file in file_list:
-                if not os.path.exists(os.path.join(DATAPATH, dataset_name, file)):
+        for filenames in dr["files"]:
+            for filename in filenames:
+                if not os.path.exists(os.path.join(DATAPATH, dataset_name, filename)):
                     return False
     return True
 
