@@ -283,8 +283,7 @@ def pmlr(volumes="all", data_set="pmlr", refresh_data=False):
     if not access.data_available(data_set) and not refresh_data:
         access.download_data(data_set)
 
-    proceedings_file = open(os.path.join(access.DATAPATH, data_set, "proceedings.yaml"), "r")
-    proceedings = yaml.load(proceedings_file, Loader=yaml.FullLoader)
+    proceedings = access.pmlr_proceedings_list(data_set)
 
     # Create a new resources entry for downloading contents of proceedings.
     data_name_full = "pmlr"

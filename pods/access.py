@@ -309,8 +309,14 @@ def authorize_download(dataset_name=None, prompt=prompt_stdin):
         return prompt("Do you wish to proceed with the download? [yes/no]")
 
 def pmlr_proceedings_list(data_set):
-    proceedings_file = open(os.path.join(data_path, data_set, "proceedings.yaml"), "r")
-    proceedings = yaml.load(proceedings_file, Loader=yaml.FullLoader)
+    """Open the proceedings list from a yaml file."""
+    with open(os.path.join(DATAPATH, data_set, "proceedings.yaml"), "r") as f:
+        try:
+            proceedings = yaml.safe_load(f)
+        except yaml.YAMLError as exc:
+            print(exc)
+            proceedings = {}
+    return proceedings
 
 def kepler_telescope_urls_files(datasets, messages=True):
     """
