@@ -675,6 +675,7 @@ if PYTRENDS_AVAILABLE:
         Y = np.asarray(
             [[df.iloc[row][query_terms[i]]] for i in range(terms) for row in df.index]
         )
+        df.Date = pd.to_datetime(df.Date)
         output_info = columns[1:]
         cats = {}
         for i in range(terms):
