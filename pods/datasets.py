@@ -353,12 +353,24 @@ def pmlr(volumes="all", data_set="pmlr", refresh_data=False):
         data_set,
     )
 
-def erich_friedman_packing_data(data_set="erich_friedman_data"):
+def erich_friedman_packing_data(series="squares-in-squares", data_set="erich_friedman_data"):
     """Data from Erich Friedman's website about packing squares in squares."""
     if not access.data_available(data_set):
         access.download_data(data_set)
-    dir_path = os.path.join(access.DATAPATH, data_set)
-    filename = os.path.join(dir_path, "squares-in-squares.csv")
+    squares = np.genfromtxt(
+        os.path.join(access.DATAPATH, data_set, "olympicMarathonTimes.csv"), delimiter=","
+    )
+    X = squares[:, 0:1]
+    Y = squares[:, 1:2]
+    return access.data_details_return(
+        {
+            "X": X,
+            "Y": Y,
+            "covariates": ["n")],
+            "response": ["s"],
+        },
+        data_set,
+    )
     Y = pd.read_csv(filename, header=0, index_col=0)
     return access.data_details_return({"Y": Y}, data_set)
 
@@ -1801,7 +1813,7 @@ def olympic_marathon_men(data_set="olympic_marathon_men"):
             "X": X,
             "Y": Y,
             "covariates": [util.decimalyear("year", "%Y")],
-            "response": ["time"],
+            "response": ["pace"],
         },
         data_set,
     )
