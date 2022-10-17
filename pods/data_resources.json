@@ -230,6 +230,20 @@
             "https://github.com/lawrennd/datasets_mirror/raw/main/epomeo_gpx/"
         ]
     },
+    "erich_friedman_data": {
+        "citation": "Data taken from Erich Friedman's website on packing and covering https://erich-friedman.github.io/. Hand copied by Neil.",
+        "details": "Packing data from Erich Friedman's website.",
+        "files": [
+            [
+                "squares-in-squares.csv",
+            ]
+        ],
+        "license": null,
+        "size": 1,
+        "urls": [
+            "https://github.com/lawrennd/datasets_mirror/raw/main/erich_friedman_data"
+        ]
+    },
     "football_data": {
         "citation": "",
         "details": "Results of English football matches since 1993/94 season.",

@@ -353,6 +353,15 @@ def pmlr(volumes="all", data_set="pmlr", refresh_data=False):
         data_set,
     )
 
+def erich_friedman_packing_data(data_set="erich_friedman_data"):
+    """Data from Erich Friedman's website about packing squares in squares."""
+    if not access.data_available(data_set):
+        access.download_data(data_set)
+    dir_path = os.path.join(access.DATAPATH, data_set)
+    filename = os.path.join(dir_path, "squares-in-squares.csv")
+    Y = pd.read_csv(filename, header=0, index_col=0)
+    return access.data_details_return({"Y": Y}, data_set)
+
 
 def football_data(season="1617", data_set="football_data"):
     """Football data from English games since 1993. This downloads data from football-data.co.uk for the given season. """
