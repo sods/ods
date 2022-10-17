@@ -358,7 +358,7 @@ def erich_friedman_packing_data(series="squares-in-squares", data_set="erich_fri
     if not access.data_available(data_set):
         access.download_data(data_set)
     squares = np.genfromtxt(
-        os.path.join(access.DATAPATH, data_set, "olympicMarathonTimes.csv"), delimiter=","
+        os.path.join(access.DATAPATH, data_set, "squares-in-squares.csv"), delimiter=",", skip_header=1
     )
     X = squares[:, 0:1]
     Y = squares[:, 1:2]
@@ -366,7 +366,7 @@ def erich_friedman_packing_data(series="squares-in-squares", data_set="erich_fri
         {
             "X": X,
             "Y": Y,
-            "covariates": ["n")],
+            "covariates": ["n"],
             "response": ["s"],
         },
         data_set,
