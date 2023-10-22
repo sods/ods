@@ -1,0 +1,42 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "pods"
+version = "0.1.13"
+description = "Python software for Open Data Science"
+authors = ["Neil D. Lawrence <lawrennd@gmail.com>"]
+readme = "README.md"
+homepage = "https://github.com/lawrennd/ods"
+license = "MIT"
+include = [
+    "pods/defaults.cfg",
+    "pods/data_resources.json",
+    "pods/football_teams.json"
+]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy"
+]
+
+[tool.poetry.dependencies]
+python = ">=3.9"
+pandas = "*"
+PyYAML = "*"
+scipy = "*"
+tables = "*"
+
+[tool.poetry.dev-dependencies]
+twine = "*"
+
+[tool.poetry.extras]
+"google trends interface" = ["pytrends"]
+"Nigerian NMIS data" = ["geopandas"]
+"Kepler telescope light curves" = ["astropy"]
+"Olivetti Faces" = ["netpbmfile"]
+
