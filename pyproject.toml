@@ -29,12 +29,12 @@ python = ">=3.9"
 pandas = "*"
 PyYAML = "*"
 scipy = "*"
-tables = "*"
 
 [tool.poetry.dev-dependencies]
 twine = "*"
 
 [tool.poetry.extras]
+"hdf5 compatability" = ["tables"]
 "google trends interface" = ["pytrends"]
 "Nigerian NMIS data" = ["geopandas"]
 "Kepler telescope light curves" = ["astropy"]

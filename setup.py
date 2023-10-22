@@ -22,7 +22,7 @@ if __name__ == "__main__":
     elif "build" in sys.argv:
         print("Emulating setup.py with poetry. Try running poetry build instead.")
         os.system("poetry build")
-    elif "publish" in sys.argv:
+    elif "upload" in sys.argv:
         print("Using twine to publish. Please consider switching to using poetry.")
         os.system("poetry build")
         os.system("twine upload dist/*")
