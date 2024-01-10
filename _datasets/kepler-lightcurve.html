@@ -1,11 +1,11 @@
 ---
-title: "Data from WiFi Access Points at University of Washington"
-edit_url: https://github.com/lawrennd/talks/edit/gh-pages/_datasets/robot-wireless.md
-date: 2021-05-22
-published: 2021-05-22
+title: "Kepler Lightcurve Data"
+edit_url: https://github.com/lawrennd/talks/edit/gh-pages/_datasets/kepler-lightcurve.md
+date: 2021-05-25
+published: 2021-05-25
 week: 0
-ipynb: robot-wireless.ipynb
-edit_url: https://github.com/lawrennd/talks/edit/gh-pages/_datasets/robot-wireless.md
+ipynb: kepler-lightcurve.ipynb
+edit_url: https://github.com/lawrennd/talks/edit/gh-pages/_datasets/kepler-lightcurve.md
 layout: dataset
 categories:
 - notes
@@ -63,47 +63,53 @@ sns.set_palette('colorblind')}-->
 <p>The code is also available on GitHub: <a href="https://github.com/lawrennd/mlai" class="uri">https://github.com/lawrennd/mlai</a></p>
 <p>Once <code>mlai</code> is installed, it can be imported in the usual manner.</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> mlai</span></code></pre></div>
-<h2 id="robot-wireless-data">Robot Wireless Data</h2>
+<h2 id="kepler-lightcurve-data">Kepler Lightcurve Data</h2>
 <div style="text-align:right">
-<span class="editsection-bracket" style="">[</span><span class="editsection" style=""><a href="https://github.com/lawrennd/talks/edit/gh-pages/_datasets/includes/robot-wireless-data.md" target="_blank" onclick="ga('send', 'event', 'Edit Page', 'Edit', 'https://github.com/lawrennd/talks/edit/gh-pages/_datasets/includes/robot-wireless-data.md', 13);">edit</a></span><span class="editsection-bracket" style="">]</span>
+<span class="editsection-bracket" style="">[</span><span class="editsection" style=""><a href="https://github.com/lawrennd/talks/edit/gh-pages/_datasets/includes/kepler-lightcurve-data.md" target="_blank" onclick="ga('send', 'event', 'Edit Page', 'Edit', 'https://github.com/lawrennd/talks/edit/gh-pages/_datasets/includes/kepler-lightcurve-data.md', 13);">edit</a></span><span class="editsection-bracket" style="">]</span>
 </div>
-<p>The robot wireless data is taken from an experiment run by Brian Ferris at University of Washington. It consists of the measurements of WiFi access point signal strengths as Brian walked in a loop. It was published at IJCAI in 2007 <span class="citation" data-cites="Ferris:wifi07">(Ferris et al., 2007)</span>.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pods</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span></code></pre></div>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>data<span class="op">=</span>pods.datasets.robot_wireless()</span></code></pre></div>
-<p>The ground truth is recorded in the data, the actual loop is given in the plot below.</p>
-<h2 id="robot-wireless-ground-truth">Robot Wireless Ground Truth</h2>
+<p>This data set is from the Kepler Telescope. it was used by David W. Hogg and Kate Storey-Fisher in their NeurIPS Tutorial “Machine Learning for Astrophysics and Astrophysics Problems for Machine Learning.”</p>
+<p>Their notebook associated with the tutorial can be found here: <a href="https://colab.research.google.com/drive/1TimsiQhhcK6qX_lD951H-WJDHd92my61" class="uri">https://colab.research.google.com/drive/1TimsiQhhcK6qX_lD951H-WJDHd92my61</a>.</p>
+<p>From their tutorial:</p>
+<ul>
+<li>This is an introduction to working with time-series data.</li>
+<li>Here we obtain a set of stellar photometry (light curves) from the NASA Kepler Mission.</li>
+<li>This is just a tiny teaser: There are more than a hundred thousand stars observed, and most light curves span 4 years!</li>
+</ul>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pods</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> pods.datasets.kepler_lightcurves()</span></code></pre></div>
+<p>In <code>pods</code> the data is returned with the usual additional information, and also the field “datasets” which includes which Kepler IDs are in the data set.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(data[<span class="st">&quot;datasets&quot;</span>])</span></code></pre></div>
+<p>We can plot the first few stars for visualization.</p>
 <div class="figure">
-<div id="robot-wireless-ground-truth-figure" class="figure-frame">
-<object class="svgplot " data="https://inverseprobability.com/talks/./slides/diagrams//datasets/robot-wireless-ground-truth.svg" width="60%" style=" ">
+<div id="kepler-lightcurve-data-001720554-figure" class="figure-frame">
+<object class="svgplot " data="https://inverseprobability.com/talks/./slides/diagrams//datasets/kepler-lightcurve-data-001720554.svg" width="60%" style=" ">
 </object>
 </div>
-<div id="robot-wireless-ground-truth-magnify" class="magnify" onclick="magnifyFigure(&#39;robot-wireless-ground-truth&#39;)">
+<div id="kepler-lightcurve-data-001720554-magnify" class="magnify" onclick="magnifyFigure(&#39;kepler-lightcurve-data-001720554&#39;)">
 <img class="img-button" src="{{ '/assets/images/Magnify_Large.svg' | relative_url }}" style="width:1.5ex">
 </div>
-<div id="robot-wireless-ground-truth-caption" class="caption-frame">
-<p>Figure: Ground truth movement for the position taken while recording the multivariate time-course of wireless access point signal strengths.</p>
+<div id="kepler-lightcurve-data-001720554-caption" class="caption-frame">
+<p>Figure: Light curve from Kepler ID 001720554.</p>
 </div>
 </div>
-<p>We will ignore this ground truth in making our predictions, but see if the model can recover something similar in one of the latent layers.</p>
-<h2 id="robot-wifi-data">Robot WiFi Data</h2>
-<p>One challenge with the data is that the signal strength ‘drops out.’ This is because the device only tracks a limited number of wifi access points, when one of the access points falls outside the track, the value disappears (in the plot below it reads -0.5). The data is missing, but it is not missing at random because the implication is that the wireless access point must be weak to have dropped from the list of those that are tracked.</p>
+<p>In the notebook associated with their tutorial, Storey-Fisher and Hogg note that barycentric time is different from earth centric time, to illustrate, the plot the differences between time values for two different stars in the same data set, showing that over time, despite the Earth-centric time staying the same, the barycentric time is varying for the two different stars.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>kepler_id0 <span class="op">=</span> data[<span class="st">&quot;datasets&quot;</span>][dataset][<span class="dv">0</span>]</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>kepler_id1 <span class="op">=</span> data[<span class="st">&quot;datasets&quot;</span>][dataset][<span class="dv">1</span>]</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>X0 <span class="op">=</span> data[<span class="st">&quot;Y&quot;</span>][dataset][kepler_id0]</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>X1 <span class="op">=</span> data[<span class="st">&quot;Y&quot;</span>][dataset][kepler_id1]</span></code></pre></div>
 <div class="figure">
-<div id="robot-wireless-data-dim-1-figure" class="figure-frame">
-<object class="svgplot " data="https://inverseprobability.com/talks/./slides/diagrams//datasets/robot-wireless-dim-1.svg" width="60%" style=" ">
+<div id="barycentric-time-difference-figure" class="figure-frame">
+<object class="svgplot " data="https://inverseprobability.com/talks/./slides/diagrams//datasets/barycentric-time-difference.svg" width="60%" style=" ">
 </object>
 </div>
-<div id="robot-wireless-data-dim-1-magnify" class="magnify" onclick="magnifyFigure(&#39;robot-wireless-data-dim-1&#39;)">
+<div id="barycentric-time-difference-magnify" class="magnify" onclick="magnifyFigure(&#39;barycentric-time-difference&#39;)">
 <img class="img-button" src="{{ '/assets/images/Magnify_Large.svg' | relative_url }}" style="width:1.5ex">
 </div>
-<div id="robot-wireless-data-dim-1-caption" class="caption-frame">
-<p>Figure: Output dimension 1 from the robot wireless data. This plot shows signal strength changing over time.</p>
+<div id="barycentric-time-difference-caption" class="caption-frame">
+<p>Figure: Difference between Barycentric time values for Kepler ID 001720554 and Kepler ID 002696955.</p>
 </div>
 </div>
-<h1 class="unnumbered" id="references">References</h1>
-<div id="refs" class="references csl-bib-body hanging-indent" role="doc-bibliography">
-<div id="ref-Ferris:wifi07" class="csl-entry" role="doc-biblioentry">
-Ferris, B.D., Fox, D., Lawrence, N.D., 2007. <span>WiFi-SLAM</span> using <span>G</span>aussian process latent variable models, in: Veloso, M.M. (Ed.), Proceedings of the 20th International Joint Conference on Artificial Intelligence (IJCAI 2007). pp. 2480–2485.
-</div>
-</div>
+<h1 id="references">References</h1>
 

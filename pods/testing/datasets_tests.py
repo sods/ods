@@ -166,34 +166,34 @@ class DatasetsTests(unittest.TestCase):
 
     def download_data(self, dataset_name):
         """datasets_tests: Test the data download."""
-        pods.datasets.clear_cache(dataset_name)
-        self.assertFalse(pods.datasets.data_available(dataset_name))
+        pods.access.clear_cache(dataset_name)
+        self.assertFalse(pods.access.data_available(dataset_name))
         with mock.patch('builtins.input', return_value="Y"):
-            pods.datasets.download_data(dataset_name)
-        self.assertTrue(pods.datasets.data_available(dataset_name))
+            pods.access.download_data(dataset_name)
+        self.assertTrue(pods.access.data_available(dataset_name))
 
     def test_input(self):
         """datasets_tests: Test the prompt input checking code"""
         for v in positive_return_values:
             with mock.patch('builtins.input', return_value=v):
-                self.assertTrue(pods.datasets.prompt_stdin("Do you pass?"))
+                self.assertTrue(pods.access.prompt_stdin("Do you pass?"))
 
         for v in negative_return_values:
             with mock.patch('builtins.input', return_value=v):
-                self.assertFalse(pods.datasets.prompt_stdin("Do you fail?"))
+                self.assertFalse(pods.access.prompt_stdin("Do you fail?"))
 
     def test_authorize_download(self):
         """datasets_tests: Test the download authorization code."""
         with mock.patch('builtins.input', return_value="Y"):
             for dataset_name in dataset_selection:
-                self.assertTrue(pods.datasets.authorize_download(dataset_name))
+                self.assertTrue(pods.access.authorize_download(dataset_name))
 
     def test_clear_cache(self):
         """datasets_tests: Test the clearing of the data cache for a data set"""
         for dataset_name in dataset_selection:
             print("Remove data", dataset_name)
-            pods.datasets.clear_cache(dataset_name)
-            self.assertFalse(pods.datasets.data_available(dataset_name))
+            pods.access.clear_cache(dataset_name)
+            self.assertFalse(pods.access.data_available(dataset_name))
 
     def test_data_downloads(self):
         """datasets_tests: Test the data download."""

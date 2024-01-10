@@ -21,5 +21,5 @@ pip install pods
 
 ## Release Notes
 
-Note that some functionality has been moved to other packages. Check [`goggles`](https://github.com/lawrennd/goggles), [`assessor`](https://github.com/lawrennd/assessor) and [`notutils`](https://github.com/lawrennd/notutils).
+Note that from version 0.0.32-alpha non-data set loading functionality has been moved to other packages. Check [`goggles`](https://github.com/lawrennd/goggles), [`assessor`](https://github.com/lawrennd/assessor) and [`notutils`](https://github.com/lawrennd/notutils).
 

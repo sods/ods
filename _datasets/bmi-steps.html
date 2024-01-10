@@ -1,11 +1,11 @@
 ---
-title: "Data from WiFi Access Points at University of Washington"
-edit_url: https://github.com/lawrennd/talks/edit/gh-pages/_datasets/robot-wireless.md
-date: 2021-05-22
-published: 2021-05-22
+title: "BMI vs Steps Data"
+edit_url: https://github.com/lawrennd/talks/edit/gh-pages/_datasets/bmi-steps.md
+date: 2021-05-16
+published: 2021-05-16
 week: 0
-ipynb: robot-wireless.ipynb
-edit_url: https://github.com/lawrennd/talks/edit/gh-pages/_datasets/robot-wireless.md
+ipynb: bmi-steps.ipynb
+edit_url: https://github.com/lawrennd/talks/edit/gh-pages/_datasets/bmi-steps.md
 layout: dataset
 categories:
 - notes
@@ -63,47 +63,26 @@ sns.set_palette('colorblind')}-->
 <p>The code is also available on GitHub: <a href="https://github.com/lawrennd/mlai" class="uri">https://github.com/lawrennd/mlai</a></p>
 <p>Once <code>mlai</code> is installed, it can be imported in the usual manner.</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> mlai</span></code></pre></div>
-<h2 id="robot-wireless-data">Robot Wireless Data</h2>
+<h2 id="bmi-steps-data">BMI Steps Data</h2>
 <div style="text-align:right">
-<span class="editsection-bracket" style="">[</span><span class="editsection" style=""><a href="https://github.com/lawrennd/talks/edit/gh-pages/_datasets/includes/robot-wireless-data.md" target="_blank" onclick="ga('send', 'event', 'Edit Page', 'Edit', 'https://github.com/lawrennd/talks/edit/gh-pages/_datasets/includes/robot-wireless-data.md', 13);">edit</a></span><span class="editsection-bracket" style="">]</span>
+<span class="editsection-bracket" style="">[</span><span class="editsection" style=""><a href="https://github.com/lawrennd/talks/edit/gh-pages/_datasets/includes/bmi-steps-data.md" target="_blank" onclick="ga('send', 'event', 'Edit Page', 'Edit', 'https://github.com/lawrennd/talks/edit/gh-pages/_datasets/includes/bmi-steps-data.md', 13);">edit</a></span><span class="editsection-bracket" style="">]</span>
 </div>
-<p>The robot wireless data is taken from an experiment run by Brian Ferris at University of Washington. It consists of the measurements of WiFi access point signal strengths as Brian walked in a loop. It was published at IJCAI in 2007 <span class="citation" data-cites="Ferris:wifi07">(Ferris et al., 2007)</span>.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pods</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span></code></pre></div>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>data<span class="op">=</span>pods.datasets.robot_wireless()</span></code></pre></div>
-<p>The ground truth is recorded in the data, the actual loop is given in the plot below.</p>
-<h2 id="robot-wireless-ground-truth">Robot Wireless Ground Truth</h2>
-<div class="figure">
-<div id="robot-wireless-ground-truth-figure" class="figure-frame">
-<object class="svgplot " data="https://inverseprobability.com/talks/./slides/diagrams//datasets/robot-wireless-ground-truth.svg" width="60%" style=" ">
-</object>
-</div>
-<div id="robot-wireless-ground-truth-magnify" class="magnify" onclick="magnifyFigure(&#39;robot-wireless-ground-truth&#39;)">
-<img class="img-button" src="{{ '/assets/images/Magnify_Large.svg' | relative_url }}" style="width:1.5ex">
-</div>
-<div id="robot-wireless-ground-truth-caption" class="caption-frame">
-<p>Figure: Ground truth movement for the position taken while recording the multivariate time-course of wireless access point signal strengths.</p>
-</div>
-</div>
-<p>We will ignore this ground truth in making our predictions, but see if the model can recover something similar in one of the latent layers.</p>
-<h2 id="robot-wifi-data">Robot WiFi Data</h2>
-<p>One challenge with the data is that the signal strength ‘drops out.’ This is because the device only tracks a limited number of wifi access points, when one of the access points falls outside the track, the value disappears (in the plot below it reads -0.5). The data is missing, but it is not missing at random because the implication is that the wireless access point must be weak to have dropped from the list of those that are tracked.</p>
-<div class="figure">
-<div id="robot-wireless-data-dim-1-figure" class="figure-frame">
-<object class="svgplot " data="https://inverseprobability.com/talks/./slides/diagrams//datasets/robot-wireless-dim-1.svg" width="60%" style=" ">
-</object>
-</div>
-<div id="robot-wireless-data-dim-1-magnify" class="magnify" onclick="magnifyFigure(&#39;robot-wireless-data-dim-1&#39;)">
-<img class="img-button" src="{{ '/assets/images/Magnify_Large.svg' | relative_url }}" style="width:1.5ex">
-</div>
-<div id="robot-wireless-data-dim-1-caption" class="caption-frame">
-<p>Figure: Output dimension 1 from the robot wireless data. This plot shows signal strength changing over time.</p>
-</div>
-</div>
+<p>The BMI Steps example is taken from <span class="citation" data-cites="Yanai-hypothesis20">Yanai and Lercher (2020)</span>. We are given a data set of body-mass index measurements against step counts. For convenience we have packaged the data so that it can be easily downloaded.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pods</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> pods.datasets.bmi_steps()</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> data[<span class="st">&#39;X&#39;</span>] </span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> data[<span class="st">&#39;Y&#39;</span>]</span></code></pre></div>
+<p>It is good practice to give our variables interpretable names so that the analysis may be clearly understood by others. Here the <code>steps</code> count is the first dimension of the covariate, the <code>bmi</code> is the second dimension and the <code>gender</code> is stored in <code>y</code> with <code>1</code> for female and <code>0</code> for male.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>steps <span class="op">=</span> X[:, <span class="dv">0</span>]</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>bmi <span class="op">=</span> X[:, <span class="dv">1</span>]</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>gender <span class="op">=</span> y[:, <span class="dv">0</span>]</span></code></pre></div>
+<p>We can check the mean steps and the mean of the BMI.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&#39;Steps mean is </span><span class="sc">{mean}</span><span class="st">.&#39;</span>.<span class="bu">format</span>(mean<span class="op">=</span>steps.mean()))</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&#39;BMI mean is </span><span class="sc">{mean}</span><span class="st">.&#39;</span>.<span class="bu">format</span>(mean<span class="op">=</span>bmi.mean()))</span></code></pre></div>
 <h1 class="unnumbered" id="references">References</h1>
 <div id="refs" class="references csl-bib-body hanging-indent" role="doc-bibliography">
-<div id="ref-Ferris:wifi07" class="csl-entry" role="doc-biblioentry">
-Ferris, B.D., Fox, D., Lawrence, N.D., 2007. <span>WiFi-SLAM</span> using <span>G</span>aussian process latent variable models, in: Veloso, M.M. (Ed.), Proceedings of the 20th International Joint Conference on Artificial Intelligence (IJCAI 2007). pp. 2480–2485.
+<div id="ref-Yanai-hypothesis20" class="csl-entry" role="doc-biblioentry">
+Yanai, I., Lercher, M., 2020. A hypothesis is a liability. Genome Biology 21.
 </div>
 </div>
 
