@@ -126,7 +126,7 @@ datasets:
   license: null
   size: 2510955
   urls:
-    - http://genome-www.stanford.edu/cellcycle/data/rawdata/
+    - https://github.com/lawrennd/datasets_mirror/raw/main/spellman_yeast/
 - name: lee_yeast_ChIP
   citation: 'Tong Ihn Lee, Nicola J. Rinaldi, Francois Robert, Duncan T. Odom, Ziv Bar-Joseph, Georg K. Gerber, Nancy M. Hannett, Christopher T. Harbison, Craig M. Thompson, Itamar Simon, Julia Zeitlinger, Ezra G. Jennings, Heather L. Murray, D. Benjamin Gordon, Bing Ren, John J. Wyrick, Jean-Bosco Tagne, Thomas L. Volkert, Ernest Fraenkel, David K. Gifford, Richard A. Young ''Transcriptional Regulatory Networks in Saccharomyces cerevisiae'' Science 298 (5594) pg 799--804. DOI: 10.1126/science.1075090'
   details: Binding location analysis for 106 regulators in yeast. The data consists of p-values for binding of regulators to genes derived from ChIP-chip experiments.
