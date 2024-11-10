@@ -195,7 +195,7 @@
         "license": null,
         "size": 2510955,
         "urls": [
-            "http://genome-www.stanford.edu/cellcycle/data/rawdata/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/spellman_yeast/"
         ]
     },
     "lee_yeast_ChIP": {
