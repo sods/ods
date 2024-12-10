@@ -1,4 +1,39 @@
 #!/usr/bin/env python
+import os
+import sys
+import toml
+
+
+def get_version_from_toml(file_path='pyproject.toml'):
+    data = toml.load(file_path)
+    return data['tool']['poetry']['version']
+
+
+if __name__ == "__main__":
+    print("This project has transitioned to using Poetry for package management.")
+    print("setup.py is now just a wrapper for backwards compatibility.")    
+    print("Switching to Poetry for package management...")
+    
+    os.system("pip install poetry")
+    
+    if "install" in sys.argv:
+        print("Emulating setup.py with poetry. Try running poetry install instead.")
+        os.system("poetry install")
+    elif "build" in sys.argv:
+        print("Emulating setup.py with poetry. Try running poetry build instead.")
+        os.system("poetry build")
+    elif "upload" in sys.argv:
+        print("Using twine to publish. Please consider switching to using poetry.")
+        os.system("poetry build")
+        os.system("twine upload dist/*")
+        print("Pushing git tags.")
+        version = get_version_from_toml()
+        os.system(f"git tag v{version}")
+        os.system("git push --tags")
+        #os.system("poetry publish")
+    else:
+        print("Unsupported command. Please use poetry directly or update this setup.py accordingly.")
+'''#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # https://github.com/navdeep-G/setup.py
@@ -21,26 +56,22 @@ URL = "https://github.com/lawrennd/ods"
 EMAIL = "lawrennd@gmail.com"
 AUTHOR = "Neil D. Lawrence"
 REQUIRES_PYTHON = ">=3.6.0"
-VERSION = "v0.0.21-alpha"
+VERSION = "0.1.14"
 
 # What packages are required for this module to be executed?
 REQUIRED = [
     "pandas",
+    "PyYAML",
+    "scipy",
+    "tables",
 ]
 
 # What packages are optional?
 EXTRAS = {
-    "google docs interface": [
-        "gspread",
-        "httplib2",
-        "oauth2client",
-        "pandas",
-        "google-api-python-client",
-    ],
-    "pandas google sheet interface": ["gdata"],
     "google trends interface": ["pytrends"],
     "Nigerian NMIS data": ["geopandas"],
     "Kepler telescope light curves": ["astropy"],
+    "Olivetti Faces": ["netpbmfile"],
 }
 
 PACKAGE_DATA = {"pods": ["defaults.cfg", "data_resources.json", "football_teams.json"]}
@@ -151,3 +182,4 @@ setup(
     # $ setup.py publish support.
     cmdclass={"upload": UploadCommand,},
 )
+'''

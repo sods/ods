@@ -1,130 +1,271 @@
-from __future__ import print_function
-from __future__ import absolute_import, division
-import sys
-import os
+import datetime
+import numpy as np
+import pandas as pd
 
-from .config import *
+import json
 
-
-def download_url(
-    url, dir_name=".", save_name=None, store_directory=None, messages=True, suffix=""
-):
-    """Download a file from a url and save it to disk."""
-    if sys.version_info >= (3, 0):
-        from urllib.parse import quote
-        from urllib.request import urlopen
-        from urllib.error import HTTPError, URLError
+# Some general utilities.
+PERMUTE_DATA = True
+def permute(num):
+    "Permutation for randomizing data order."
+    if PERMUTE_DATA:
+        return np.random.permutation(num)
     else:
-        from urllib2 import quote
-        from urllib2 import urlopen
-        from urllib2 import URLError as HTTPError
-    i = url.rfind("/")
-    file = url[i + 1 :]
-    if store_directory is not None:
-        dir_name = os.path.join(dir_name, store_directory)
-    if save_name is None:
-        save_name = file
-    save_name = os.path.join(dir_name, save_name)
-    print("Downloading ", url, "->", save_name)
-    if not os.path.exists(dir_name):
-        os.makedirs(dir_name)
-    try:
-        response = urlopen(url + suffix)
-    except HTTPError as e:
-        if not hasattr(e, "code"):
-            raise
-        if e.code > 399 and e.code < 500:
-            raise ValueError(
-                "Tried url "
-                + url
-                + suffix
-                + " and received client error "
-                + str(e.code)
-            )
-        elif e.code > 499:
-            raise ValueError(
-                "Tried url "
-                + url
-                + suffix
-                + " and received server error "
-                + str(e.code)
-            )
-    except URLError as e:
-        raise ValueError(
-            "Tried url " + url + suffix + " and failed with error " + str(e.reason)
+        logging.warning("Warning not permuting data")
+        return np.arange(num)
+
+
+def integer(name):
+    """Return a class category that forces integer"""
+    return "integer(" + name + ")"
+
+def date2num(dt):
+    # Recreation of matplotlib.dates.date2num functionality.
+    # from matplotlib.dates import date2num
+    return (dt - datetime.datetime(1970,1,1)).days
+
+def num2date(num):
+    # Recreation of matplotlib.dates.num2date functionality.
+    # from matplotlib.dates import num2date
+    return datetime.datetime(1970,1,1) + datetime.timedelta(days=num)
+
+
+def json_object(name="object"):
+    """Returns a json object for general storage"""
+
+    return "jsonobject" + name + ""
+
+
+def discrete(cats, name="discrete"):
+    """Return a class category that shows the encoding"""
+
+    ks = list(cats)
+    for key in ks:
+        if isinstance(key, bytes):
+            cats[key.decode("utf-8")] = cats.pop(key)
+    return "discrete(" + json.dumps([cats, name]) + ")"
+
+
+def datenum(name="date", format="%Y-%m-%d"):
+    """Return a date category with format"""
+    return "datenum(" + name + "," + format + ")"
+
+def timestamp(name="date", format="%Y-%m-%d"):
+    """Return a date category with format"""
+    return "timestamp(" + name + "," + format + ")"
+
+def datetime64_(name="date", format="%Y-%m-%d"):
+    """Return a date category with format"""
+    return "datetime64(" + name + "," + format + ")"
+
+def decimalyear(name="date", format="%Y-%m-%d"):
+    """Return a date category with format"""
+    return "decimalyear(" + name + "," + format + ")"
+
+
+def df2arff(df, dataset_name, pods_data):
+    """Write an arff file from a data set loaded in from pods"""
+
+    def java_simple_date(date_format):
+        date_format = (
+            date_format.replace("%Y", "yyyy")
+            .replace("%m", "MM")
+            .replace("%d", "dd")
+            .replace("%H", "HH")
         )
-    with open(save_name, "wb") as f:
-        meta = response.info()
-        content_length_str = meta.get("Content-Length")
-        if content_length_str:
-            # if sys.version_info>=(3,0):
-            try:
-                file_size = int(content_length_str)
-            except:
-                try:
-                    file_size = int(content_length_str[0])
-                except:
-                    file_size = None
-            if file_size == 1:
-                file_size = None
-            # else:
-            #    file_size = int(content_length_str)
-        else:
-            file_size = None
+        return (
+            date_format.replace("%h", "hh")
+            .replace("%M", "mm")
+            .replace("%S", "ss")
+            .replace("%f", "SSSSSS")
+        )
 
-        status = ""
-        file_size_dl = 0
-        block_sz = 8192
-        line_length = 30
-        percentage = 1.0 / line_length
+    def tidy_field(atr):
+        return str(atr).replace(" / ", "/").replace(" ", "_")
 
-        if file_size:
-            print(
-                "|"
-                + "{:^{ll}}".format(
-                    "Downloading {:7.3f}MB".format(file_size / (1048576.0)),
-                    ll=line_length,
+    types = {
+        "STRING": [str],
+        "INTEGER": [int, np.int64, np.uint8],
+        "REAL": [np.float64],
+    }
+    d = {}
+    d["attributes"] = []
+    for atr in df.columns:
+        if isinstance(atr, str):
+            if len(atr) > 8 and atr[:9] == "discrete(":
+                import json
+
+                elements = json.loads(atr[9:-1])
+                d["attributes"].append(
+                    (tidy_field(elements[1]), list(elements[0].keys()))
                 )
-                + "|"
-            )
-            from itertools import cycle
+                mask = {}
+                c = pd.Series(index=df.index)
+                for key, val in elements[0].items():
+                    mask = df[atr] == val
+                    c[mask] = key
+                df[atr] = c
+                continue
+            if len(atr) > 7 and atr[:8] == "integer(":
+                name = atr[8:-1]
+                d["attributes"].append((tidy_field(name), "INTEGER"))
+                df[atr] = df[atr].astype(int)
+                continue
+            if len(atr) > 7 and atr[:8] == "datenum(":
+                elements = atr[8:-1].split(",")
+                d["attributes"].append(
+                    (
+                        elements[0] + "_datenum_" + java_simple_date(elements[1]),
+                        "STRING",
+                    )
+                )
+                df[atr] = num2date(df[atr].values)  #
+                df[atr] = df[atr].dt.strftime(elements[1])
+                continue
+            if len(atr) > 9 and atr[:10] == "timestamp(":
 
-            cycle_str = cycle(">")
-            sys.stdout.write("|")
+                def timestamp2date(values):
+                    """Convert timestamp into a date object"""
+                    new = []
+                    for value in values:
+                        new.append(
+                            np.datetime64(datetime.datetime.fromtimestamp(value))
+                        )
+                    return np.asarray(new)
 
-        while True:
-            buff = response.read(block_sz)
-            if not buff:
+                elements = atr[10:-1].split(",")
+                d["attributes"].append(
+                    (
+                        elements[0] + "_datenum_" + java_simple_date(elements[1]),
+                        "STRING",
+                    )
+                )
+                df[atr] = timestamp2date(df[atr].values)  #
+                df[atr] = df[atr].dt.strftime(elements[1])
+                continue
+            if len(atr) > 10 and atr[:11] == "datetime64(":
+                elements = atr[11:-1].split(",")
+                d["attributes"].append(
+                    (
+                        elements[0] + "_datenum_" + java_simple_date(elements[1]),
+                        "STRING",
+                    )
+                )
+                df[atr] = df[atr].dt.strftime(elements[1])
+                continue
+            if len(atr) > 11 and atr[:12] == "decimalyear(":
+
+                def decyear2date(values):
+                    """Convert decimal year into a date object"""
+                    new = []
+                    for i, decyear in enumerate(values):
+                        year = int(np.floor(decyear))
+                        dec = decyear - year
+                        end = np.datetime64(str(year + 1) + "-01-01")
+                        start = np.datetime64(str(year) + "-01-01")
+                        diff = end - start
+                        days = dec * (diff / np.timedelta64(1, "D"))
+                        # round to nearest day
+                        add = np.timedelta64(int(np.round(days)), "D")
+                        new.append(start + add)
+                    return np.asarray(new)
+
+                elements = atr[12:-1].split(",")
+                d["attributes"].append(
+                    (
+                        elements[0] + "_datenum_" + java_simple_date(elements[1]),
+                        "STRING",
+                    )
+                )
+                df[atr] = decyear2date(df[atr].values)  #
+                df[atr] = df[atr].dt.strftime(elements[1])
+                continue
+
+        field = tidy_field(atr)
+        el = df[atr][0]
+        type_assigned = False
+        for t in types:
+            if isinstance(el, tuple(types[t])):
+                d["attributes"].append((field, t))
+                type_assigned = True
                 break
-            file_size_dl += len(buff)
-            f.write(buff)
+        if not type_assigned:
+            import json
 
-            # If content_length_str was incorrect, we can end up with many too many equals signs, catches this edge case
-            # correct_meta = float(file_size_dl)/file_size <= 1.0
+            d["attributes"].append((field + "_json", "STRING"))
+            df[atr] = df[atr].apply(json.dumps)
 
-            if file_size:
-                if (float(file_size_dl) / file_size) >= percentage:
-                    sys.stdout.write(next(cycle_str))
-                    sys.stdout.flush()
-                    percentage += 1.0 / line_length
-                # percentage = "="*int(line_length*float(file_size_dl)/file_size)
-                # status = r"[{perc: <{ll}}] {dl:7.3f}/{full:.3f}MB".format(dl=file_size_dl/(1048576.), full=file_size/(1048576.), ll=line_length, perc=percentage)
+    d["data"] = []
+    for ind, row in df.iterrows():
+        d["data"].append(list(row))
+
+    import textwrap as tw
+
+    width = 78
+    d["description"] = dataset_name + "\n\n"
+    if "info" in pods_data and pods_data["info"]:
+        d["description"] += "\n".join(tw.wrap(pods_data["info"], width)) + "\n\n"
+    if "details" in pods_data and pods_data["details"]:
+        d["description"] += "\n".join(tw.wrap(pods_data["details"], width))
+    if "citation" in pods_data and pods_data["citation"]:
+        d["description"] += "\n\n" + "Citation" "\n\n" + "\n".join(
+            tw.wrap(pods_data["citation"], width)
+        )
+
+    d["relation"] = dataset_name
+    import arff
+
+    string = arff.dumps(d)
+    import re
+
+    string = re.sub(
+        r'\@ATTRIBUTE "?(.*)_datenum_(.*)"? STRING',
+        r'@ATTRIBUTE "\1" DATE [\2]',
+        string,
+    )
+    f = open(dataset_name + ".arff", "w")
+    f.write(string)
+    f.close()
+
+
+def to_arff(dataset, **kwargs):
+    """Take a pods data set and write it as an ARFF file"""
+    pods_data = dataset(**kwargs)
+    vals = list(kwargs.values())
+    for i, v in enumerate(vals):
+        if isinstance(v, list):
+            vals[i] = "|".join(v)
+        else:
+            vals[i] = str(v)
+    args = "_".join(vals)
+    n = dataset.__name__
+    if len(args) > 0:
+        n += "_" + args
+        n = n.replace(" ", "-")
+    ks = pods_data.keys()
+    d = None
+    if "Y" in ks and "X" in ks:
+        d = pd.DataFrame(pods_data["X"])
+        if "Xtest" in ks:
+            d = d.append(pd.DataFrame(pods_data["Xtest"]), ignore_index=True)
+        if "covariates" in ks:
+            d.columns = pods_data["covariates"]
+        dy = pd.DataFrame(pods_data["Y"])
+        if "Ytest" in ks:
+            dy = dy.append(pd.DataFrame(pods_data["Ytest"]), ignore_index=True)
+        if "response" in ks:
+            dy.columns = pods_data["response"]
+        for c in dy.columns:
+            if c not in d.columns:
+                d[c] = dy[c]
             else:
-                sys.stdout.write(" " * (len(status)) + "\r")
-                status = r"{dl:7.3f}MB".format(
-                    dl=file_size_dl / (1048576.0),
-                    ll=line_length,
-                    perc="."
-                    * int(line_length * float(file_size_dl / (10 * 1048576.0))),
-                )
-                sys.stdout.write(status)
-                sys.stdout.flush()
+                d["y" + str(c)] = dy[c]
+    elif "Y" in ks:
+        d = pd.DataFrame(pods_data["Y"])
+        if "Ytest" in ks:
+            d = d.append(pd.DataFrame(pods_data["Ytest"]), ignore_index=True)
 
-            # sys.stdout.write(status)
-
-        if file_size:
-            sys.stdout.write("|")
-            sys.stdout.flush()
-
-        print(status)
-        # if we wanted to get more sophisticated maybe we should check the response code here again even for successes.
+    elif "data" in ks:
+        d = pd.DataFrame(pods_data["data"])
+    if d is not None:
+        df2arff(d, n, pods_data)

@@ -1,0 +1,24 @@
+name: code-tests
+on: [push]
+jobs:
+  run-code-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - run: pip install codecov
+      - run: pip install coveralls
+      - run: pip install nose-show-skipped
+      - run: pip install mock
+      - run: pip install pytrends
+      - run: pip install gpxpy
+      - run: pip install astropy
+      - run: pip install geopandas
+      - run: pip install netpbmfile
+      - run: python setup.py install
+      - run: coverage run code-tests.py
+      - run: codecov
+#      - run: coveralls
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            

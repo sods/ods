@@ -4,13 +4,13 @@
         "details": "Flight arrival and departure times for every commercial flight in the USA from January 2008 to April 2008. This dataset contains extensive information about almost 2 million flights, including the delay (in minutes) in reaching the destination.",
         "files": [
             [
-                "filtered_data2.pickle"
+                "airline_delay.hdf"
             ]
         ],
         "license": null,
-        "size": 180905168,
+        "size": 180913792,
 	"urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/airline_delay/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/airline_delay/"
         ]
     },
     "bmi_steps": {
@@ -24,7 +24,7 @@
         "license": null,
         "size": 18270,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/bmi_steps/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/bmi_steps/"
         ]
     },
     "ankur_pose_data": {
@@ -38,7 +38,7 @@
         "license": null,
         "size": 2802667,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/ankur_pose_data/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/ankur_pose_data/"
         ]
     },    
     "boston_housing": {
@@ -68,7 +68,7 @@
         "license": "You may copy and redistribute the data. You may make derivative works from the data. You may use the data for commercial purposes. You may not sublicence the data when redistributing it. You may not redistribute the data under a different license. Source attribution on any use of this data: Must refer source.",
         "size": 46779,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/boxjenkins_airline/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/boxjenkins_airline/"
         ]
     },
     "brendan_faces": {
@@ -96,7 +96,7 @@
         "license": null,
         "size": 2044,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/ceres/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/ceres/"
         ]
     },
     "cifar-10": {
@@ -129,7 +129,7 @@
     },
     "creep_rupture": {
         "citation": "Materials Algorithms Project Data Library: MAP_DATA_CREEP_RUPTURE. F. Brun and T. Yoshida.",
-        "details": "Provides 2066 creep rupture test results of steels (mainly of two kinds of steels: 2.25Cr and 9-12 wt% Cr ferritic steels). See http://www.msm.cam.ac.uk/map/data/materials/creeprupt-b.html.",
+        "details": "Provides 2066 creep rupture test results of steels (mainly of two kinds of steels: 2.25Cr and 9-12 wt% Cr ferritic steels). See https://www.phase-trans.msm.cam.ac.uk/map/data/materials/creeprupt-b.html.",
         "files": [
             [
                 "creeprupt.tar"
@@ -138,7 +138,7 @@
         "license": null,
         "size": 602797,
         "urls": [
-            "http://www.msm.cam.ac.uk/map/data/tar/"
+            "https://www.phase-trans.msm.cam.ac.uk/map/data/tar/"
         ]
     },
     "decampos_characters": {
@@ -153,7 +153,7 @@
         "license": null,
         "size": 2031872,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/decampos_digits/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/decampos_digits/"
         ]
     },
     "della_gatta": {
@@ -167,7 +167,7 @@
         "license": null,
         "size": 3729650,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/della_gatta/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/della_gatta/"
         ]
     },
     "drosophila_protein": {
@@ -181,7 +181,7 @@
         "license": null,
         "size": 20258,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/drosophila_protein/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/drosophila_protein/"
         ]
     },
     "spellman_yeast": {
@@ -227,7 +227,21 @@
         "license": null,
         "size": 2031872,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/epomeo_gpx/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/epomeo_gpx/"
+        ]
+    },
+    "erich_friedman_data": {
+        "citation": "Data taken from Erich Friedman's website on packing and covering https://erich-friedman.github.io/. Hand copied by Neil.",
+        "details": "Packing data from Erich Friedman's website.",
+        "files": [
+            [
+                "squares-in-squares.csv"
+            ]
+        ],
+        "license": null,
+        "size": 1,
+        "urls": [
+            "https://github.com/lawrennd/datasets_mirror/raw/main/erich_friedman_data"
         ]
     },
     "football_data": {
@@ -264,7 +278,7 @@
         "license": null,
         "size": 59000000,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/fruitfly_tomancak/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/fruitfly_tomancak/"
         ]
     },
     "fruitfly_tomancak_cel_files": {
@@ -352,6 +366,23 @@
             "http://hapmap.ncbi.nlm.nih.gov/downloads/genotypes/latest_phaseIII_ncbi_b36/plink_format/"
         ]
     },
+    "hospitalized_covid": {
+	"citation": "Israeli data: How can efficacy vs. severe disease be strong when 60% of hospitalized are vaccinated? by Jeffrey Morris 17th August 2021 available from https://www.covid-datascience.com/post/israeli-data-how-can-efficacy-vs-severe-disease-be-strong-when-60-of-hospitalized-are-vaccinated",
+	"details": "Datasets from the Israeli government data dashboard (https://datadashboard.health.gov.il/COVID-19/) showing the number of hospitalized Covid19 patients grouped by age and vaccination status as downloaded by Jeffrey Morris to analyze disease efficacy of vaccinated vs non-vaccinated.",
+	"files" : [
+	    [
+		"Israeli_data_August_15_2021 original.xlsx",
+		"Israeli_data_August_15_2021.xlsx",
+		"Downloaded data 9-3-21.xlsx",
+		"Israel data September 2.xlsx"
+	    ]
+	],
+	"license": "The service is offered to the public 'as is'('As Is').The State of Israel will not be responsible for adjusting the service For the user's needs. Also, noThe State of Israel shall be responsible for errors or omissions in the material presented in the service. The State of Israel shall not be liable for changes made to the material presented in the service by the user or by any Third party'.The user alone will be responsible for the way he uses the service. The State of Israel will not be held responsibleFor any damage causedTo the user or to any third party as a direct or indirect result of the use of the service, including damage Caused by the use of software applications downloaded directly through the service or activated as a result of the use In the service, including applicationsActive-X, JavaScript, Java.For the purposes of this section, 'State of Israel' means, including its employees And its representatives.pay attentionA: In case of conflict or failure-Match between information published in the database and what appears in publications The written form of the State of Israel, only the wording and content appearing in such official publications will be considered As true. The firm will not be liable for any liability or liability of any kind for such non-compliance.",
+	"size" : 0,
+	"urls": [
+	    "https://github.com/lawrennd/datasets_mirror/raw/main/hospitalized_covid/"
+	]
+    },
     "kepler_telescope_base": {
         "citation": "",
         "details": "The Kepler spacecraft was launched into an earth trailing orbit and stared at a 100 sq. degree patch of sky near Cygnus in order to measure the brightness variations of about 200,000 stars.  It's primary mission was to find exoplanets transiting these stars and to determine the prevalence of exoplanets in the Galaxy.  The Kepler spacecraft rotated by 90 degrees every 90 days in order to keep the solar panels pointing at the sun and thus the Kepler data is divided into 90-day quarters. Kepler only downloaded the pixels surrounding selected stars of interest at either a 30-minute or 1-minute cadence. The mission produced a flux time series for each star and searched these light curves for the presence of a transiting exoplanet.  In addition to discovering exoplanets, Kepler data has been used to study the variability of stars and eclipsing binaries.",
@@ -373,7 +404,7 @@
         "license": null,
         "size": 24229368,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/isomap_face_data/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/isomap_face_data/"
         ]
     },
     "mauna_loa": {
@@ -447,7 +478,7 @@
         "license": null,
         "size": 8561331,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/olivetti_faces/",
+            "https://github.com/lawrennd/datasets_mirror/raw/main/olivetti_faces/",
             "http://www.cs.nyu.edu/~roweis/data/"
         ]
     },
@@ -465,7 +496,7 @@
         "license": null,
         "size": 4261047,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/olivetti_faces/",
+            "https://github.com/lawrennd/datasets_mirror/raw/main/olivetti_faces/",
             "http://www.cs.nyu.edu/~roweis/data/"
         ]
     },
@@ -480,7 +511,7 @@
         "license": null,
         "size": 584,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/olympic_marathon_men/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/olympic_marathon_men/"
         ]
     },
     "osu_accad": {
@@ -510,8 +541,8 @@
         "license": "Data is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License (http://creativecommons.org/licenses/by-nc-sa/3.0/).",
         "size": 15922790,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/osu_accad/",
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/stick/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/osu_accad/",
+            "https://github.com/lawrennd/datasets_mirror/raw/main/stick/"
         ]
     },
     "osu_run1": {
@@ -528,8 +559,8 @@
         "license": "Data is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License (http://creativecommons.org/licenses/by-nc-sa/3.0/).",
         "size": 338103,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/osu_accad/",
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/stick/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/osu_accad/",
+            "https://github.com/lawrennd/datasets_mirror/raw/main/stick/"
         ]
     },
     "nigerian_administrative_zones": {
@@ -574,16 +605,16 @@
             "https://energydata.info/dataset/f85d1796-e7f2-4630-be84-79420174e3bd/resource/6e640a13-cab4-457b-b9e6-0336051bac27/download/"
         ]
     },
-   "nigerian_population_2016": {
-        "citation": "Nigeria - Subnational Population Statistics by administrative level 1 and 2. A projection based on the 2006 Census conucted by the National Population Commission of Nigeria. Available from The Humanitarian Data Exchange http://data.humdata.org",
-        "details": "Projection of administrative level 1 population statistics in Nigeria based on 2006 Census conducted by the National Population Commission (NPC) of Nigeria. Available from https://data.humdata.org/dataset/a7c3de5e-ff27-4746-99cd-05f2ad9b1066",
+   "nigerian_population": {
+        "citation": "Nigeria - Subnational Population Statistics by administrative level 1 and 2. A projection based on the 2006 Census conducted by the National Population Commission of Nigeria. Available from The Humanitarian Data Exchange http://data.humdata.org",
+        "details": "Projection of administrative level 1 population statistics in Nigeria based on 2006 Census conducted by the National Population Commission (NPC) of Nigeria. Available from https://data.humdata.org/dataset/nigeria-2016-population-data",
         "files": [
             [
-                "nga_pop_adm1_2016.csv"
+                "nga_admpop_adm1_2020.csv"
             ]
         ],
         "license": null,
-        "size": 1244,
+        "size": 73592,
         "urls": [
             "https://data.humdata.org/dataset/a7c3de5e-ff27-4746-99cd-05f2ad9b1066/resource/d9fc551a-b5e4-4bed-9d0d-b047b6961817/download/"
         ]
@@ -652,7 +683,7 @@
         "license": null,
         "size": 284390,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/robot_wireless/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/robot_wireless/"
         ]
     },
     "rogers_girolami_data": {
@@ -701,7 +732,7 @@
         "license": null,
         "size": 0,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/sod1_mouse/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/sod1_mouse/"
         ]
     },
     "swiss_roll": {
@@ -734,7 +765,7 @@
         "license": null,
         "size": 712796,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/three_phase_oil_flow/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/three_phase_oil_flow/"
         ]
     },
     "xw_pen": {
@@ -748,7 +779,7 @@
         "license": null,
         "size": 3410,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/xw_pen/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/xw_pen/"
         ]
     },
     "leukemia": {
@@ -762,7 +793,7 @@
         "license": null,
         "size": 65354,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/leukemia_survival/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/leukemia_survival/"
         ]
     },
     "mcycle": {
@@ -807,7 +838,7 @@
         "license": null,
         "size": 7518372,
         "urls": [
-            "https://raw.githubusercontent.com/lawrennd/datasets_mirror/main/twitter_data/"
+            "https://github.com/lawrennd/datasets_mirror/raw/main/twitter_data/"
         ]
     }
 }
