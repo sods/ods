@@ -842,19 +842,54 @@ def pmlr(volumes="all", data_set="pmlr", refresh_data=False):
         Y["published"] = pd.to_datetime(Y["published"])
         # Y.columns.values[4] = json_object('authors')
         # Y.columns.values[7] = json_object('editors')
-        Y["issued"] = Y["issued"].apply(
-            lambda x: np.datetime64(datetime.datetime(*x["date-parts"]))
-        )
-        Y["author"] = Y["author"].apply(
-            lambda x: [
-                str(author["given"]) + " " + str(author["family"]) for author in x
-            ]
-        )
-        Y["editor"] = Y["editor"].apply(
-            lambda x: [
-                str(editor["given"]) + " " + str(editor["family"]) for editor in x
-            ]
-        )
+        def convert_date(x):
+            if x is None:
+                print("Warning: Found None value in issued field")
+                return None
+            try:
+                return np.datetime64(datetime.datetime(*x["date-parts"]))
+            except (TypeError, KeyError) as e:
+                print(f"Warning: Could not convert date value: {x}")
+                return None    
+        Y["issued"] = Y["issued"].apply(convert_date)
+        def process_people(x):
+            if x is None:
+                print("Warning: Found None value in people field")
+                return []
+
+            try:
+                names = []
+                for person in x:
+                    if not isinstance(person, dict):
+                        continue
+
+                    # Get all possible name parts with empty string defaults
+                    given = str(person.get("given", ""))
+                    family = str(person.get("family", ""))
+                    prefix = str(person.get("prefix", ""))
+                    suffix = str(person.get("suffix", ""))
+
+                    # Build name parts, filtering out empty strings
+                    name_parts = []
+                    if given: name_parts.append(given)
+                    if prefix: name_parts.append(prefix)
+                    if family: name_parts.append(family)
+                    if suffix: name_parts.append(suffix)
+
+                    full_name = " ".join(name_parts).strip()
+                    if full_name:  # Only add non-empty names
+                        names.append(full_name)
+
+                return names
+
+            except Exception as e:
+                print(f"Warning: Error processing people entry: {x}")
+                print(f"Error was: {str(e)}")
+                return []
+
+        # Apply the function and join the results
+        Y["author"] = Y["author"].apply(lambda x: ", ".join(process_people(x)))
+        Y["editor"] = Y["editor"].apply(lambda x: ", ".join(process_people(x)))
         columns = list(Y.columns)
         columns[14] = datetime64_("published")
         columns[11] = datetime64_("issued")
