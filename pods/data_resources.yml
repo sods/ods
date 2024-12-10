@@ -1,0 +1,958 @@
+datasets:
+- name: airline_delay
+  citation: Gaussian Processes for Big Data (In UAI'13). J. Hensman, N. Fusi and N. D. Lawrence
+  details: >-
+    Flight arrival and departure times for every commercial flight in the USA from January 2008 to April 2008. This dataset contains extensive information about almost 2 million flights, including the delay (in minutes) in reaching the destination.
+  files:
+    - [airline_delay.hdf]
+  license: null
+  size: 180913792
+  urls:
+    - https://github.com/lawrennd/datasets_mirror/raw/main/airline_delay/
+- name: bmi_steps
+  citation: A Hypothesis is a Liability. I. Yanai and M. Lercher
+  details: Data for two genders of steps against BMI.
+  files:
+    - [steps-bmi-data.csv]
+  license: null
+  size: 18270
+  urls:
+    - https://github.com/lawrennd/datasets_mirror/raw/main/bmi_steps/
+- name: ankur_pose_data
+  citation: Agarwal, A. and Triggs, B. 'Recovering 3D Human Pose from Monocular Images', IEEE TPAMI vol 28(1), 44-58, 2006.
+  details: The Agarwal and Triggs pose data provides artificially generated silhouettes alongside motion capture positions for a range of poses.
+  files:
+    - [ankurDataPoseSilhouette.mat]
+  license: null
+  size: 2802667
+  urls:
+    - https://github.com/lawrennd/datasets_mirror/raw/main/ankur_pose_data/
+- name: boston_housing
+  citation: Harrison, D. and Rubinfeld, D.L. 'Hedonic prices and the demand for clean air', J. Environ. Economics & Management, vol.5, 81-102, 1978.
+  details: The Boston Housing data relates house values in Boston to a range of input variables.
+  files:
+    - [Index, housing.data, housing.names]
+  license: null
+  size: 51276
+  urls:
+    - http://archive.ics.uci.edu/ml/machine-learning-databases/housing/
+- name: boxjenkins_airline
+  citation: 'Box & Jenkins (1976), in file: data/airpass, Description: International airline passengers: monthly totals in thousands. Jan 49 \u2013 Dec 60'
+  details: International airline passengers, monthly totals from January 1949 to December 1960.
+  files:
+    - [boxjenkins_airline.csv]
+  license: 'You may copy and redistribute the data. You may make derivative works from the data. You may use the data for commercial purposes. You may not sublicence the data when redistributing it. You may not redistribute the data under a different license. Source attribution on any use of this data: Must refer source.'
+  size: 46779
+  urls:
+    - https://github.com/lawrennd/datasets_mirror/raw/main/boxjenkins_airline/
+- name: brendan_faces
+  citation: Frey, B. J., Colmenarez, A and Huang, T. S. Mixtures of Local Linear Subspaces for Face Recognition. Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition 1998, 32-37, June 1998. Computer Society Press, Los Alamitos, CA.
+  details: A video of Brendan Frey's face popularized as a benchmark for visualization by the Locally Linear Embedding.
+  files:
+    - [frey_rawface.mat]
+  license: null
+  size: 1100584
+  urls:
+    - http://www.cs.nyu.edu/~roweis/data/
+- name: ceres
+  citation: Monatlicher Correspondenz September 1801. Franz von Zach (editor). Summary of data from a Letter of Giuseppe Piazzi.
+  details: Twenty two celestial observations of the dwarf planet Ceres as observed by Giuseppe Piazzi from his Palermo observatory from January 1st to February 11th 1801. Transcribed (perhaps with errors) by Neil Lawrence.
+  files:
+    - [ceresData.txt]
+  license: null
+  size: 2044
+  urls:
+    - https://github.com/lawrennd/datasets_mirror/raw/main/ceres/
+- name: cifar-10
+  citation: 'Learning Multiple Layers of Features from Tiny Images, Alex Krizhevsky, 2009, Tech report available here: http://www.cs.toronto.edu/~kriz/learning-features-2009-TR.pdf'
+  details: 'The CIFAR-10 and CIFAR-100 are labeled subsets of the 80 million tiny images dataset. They were collected by Alex Krizhevsky, Vinod Nair, and Geoffrey Hinton. Details are available on this webpage: http://www.cs.toronto.edu/~kriz/cifar.html. The CIFAR-10 dataset consists of 60000 32x32 colour images in 10 classes, with 6000 images per class. There are 50000 training images and 10000 test images.'
+  files:
+    - [cifar-10-python.tar.gz]
+  license: null
+  size: 0
+  urls:
+    - http://www.cs.toronto.edu/~kriz/
+- name: cmu_mocap_full
+  citation: 'Please include this in your acknowledgements: The data used in this project was obtained from mocap.cs.cmu.edu.\nThe database was created with funding from NSF EIA-0196217.'
+  details: CMU Motion Capture data base. Captured by a Vicon motion capture system consisting of 12 infrared MX-40 cameras, each of which is capable of recording at 120 Hz with images of 4 megapixel resolution. Motions are captured in a working volume of approximately 3m x 8m. The capture subject wears 41 markers and a stylish black garment.
+  files:
+    - [allasfamc.zip]
+  license: 'From http://mocap.cs.cmu.edu. This data is free for use in research projects. You may include this data in commercially-sold products, but you may not resell this data directly, even in converted form. If you publish results obtained using this data, we would appreciate it if you would send the citation to your published paper to jkh+mocap@cs.cmu.edu, and also would add this text to your acknowledgments section: The data used in this project was obtained from mocap.cs.cmu.edu. The database was created with funding from NSF EIA-0196217.'
+  size: null
+  urls:
+    - http://mocap.cs.cmu.edu/subjects
+- name: creep_rupture
+  citation: 'Materials Algorithms Project Data Library: MAP_DATA_CREEP_RUPTURE. F. Brun and T. Yoshida.'
+  details: 'Provides 2066 creep rupture test results of steels (mainly of two kinds of steels: 2.25Cr and 9-12 wt% Cr ferritic steels). See https://www.phase-trans.msm.cam.ac.uk/map/data/materials/creeprupt-b.html.'
+  files:
+    - [creeprupt.tar]
+  license: null
+  size: 602797
+  urls:
+    - https://www.phase-trans.msm.cam.ac.uk/map/data/tar/
+- name: decampos_characters
+  citation: T. de Campos, B. R. Babu, and M. Varma. Character recognition in natural images. VISAPP 2009.
+  details: Examples of hand written digits taken from the de Campos et al paper on Character Recognition in Natural Images.
+  files:
+    - [characters.npy, digits.npy]
+  license: null
+  size: 2031872
+  urls:
+    - https://github.com/lawrennd/datasets_mirror/raw/main/decampos_digits/
+- name: della_gatta
+  citation: Direct targets of the TRP63 transcription factor revealed by a combination of gene expression profiling and reverse engineering. Giusy Della Gatta, Mukesh Bansal, Alberto Ambesi-Impiombato, Dario Antonini, Caterina Missero, and Diego di Bernardo, Genome Research 2008
+  details: The full gene expression data set from della Gatta et al (http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2413161/) processed by RMA.
+  files:
+    - [DellaGattadata.mat]
+  license: null
+  size: 3729650
+  urls:
+    - https://github.com/lawrennd/datasets_mirror/raw/main/della_gatta/
+- name: drosophila_protein
+  citation: 'Becker K, Balsa-Canto E, Cicin-Sain D, Hoermann A, Janssens H, et al. (2013) Reverse-Engineering Post-Transcriptional Regulation of Gap Genes in Drosophila melanogaster. PLoS Comput Biol 9(10): e1003281. doi:10.1371/journal.pcbi.1003281'
+  details: Expression of the gap genes Krüppel, knirps, and giant in Drosophila melanogaster. Data includes quantitative datasets of gap gene mRNA and protein expression to solve and fit a model of post-transcriptional regulation, and establish its structural and practical identifiability
+  files:
+    - [becker_et_al.csv]
+  license: null
+  size: 20258
+  urls:
+    - https://github.com/lawrennd/datasets_mirror/raw/main/drosophila_protein/
+- name: spellman_yeast
+  citation: Paul T. Spellman, Gavin Sherlock, Michael Q. Zhang, Vishwanath R. Iyer, Kirk Anders, Michael B. Eisen, Patrick O. Brown, David Botstein, and Bruce Futcher 'Comprehensive Identification of Cell Cycle-regulated Genes of the Yeast Saccharomyces cerevisiae by Microarray Hybridization.'  Molecular Biology of the Cell 9, 3273-3297
+  details: Two colour spotted cDNA array data set of a series of experiments to identify which genes in Yeast are cell cycle regulated.
+  files:
+    - [combined.txt]
+  license: null
+  size: 2510955
+  urls:
+    - https://github.com/lawrennd/datasets_mirror/raw/main/spellman_yeast/
+- name: lee_yeast_ChIP
+  citation: 'Tong Ihn Lee, Nicola J. Rinaldi, Francois Robert, Duncan T. Odom, Ziv Bar-Joseph, Georg K. Gerber, Nancy M. Hannett, Christopher T. Harbison, Craig M. Thompson, Itamar Simon, Julia Zeitlinger, Ezra G. Jennings, Heather L. Murray, D. Benjamin Gordon, Bing Ren, John J. Wyrick, Jean-Bosco Tagne, Thomas L. Volkert, Ernest Fraenkel, David K. Gifford, Richard A. Young ''Transcriptional Regulatory Networks in Saccharomyces cerevisiae'' Science 298 (5594) pg 799--804. DOI: 10.1126/science.1075090'
+  details: Binding location analysis for 106 regulators in yeast. The data consists of p-values for binding of regulators to genes derived from ChIP-chip experiments.
+  files:
+    - [binding_by_gene.tsv]
+  license: null
+  size: 1674161
+  urls:
+    - http://jura.wi.mit.edu/young_public/regulatory_network/
+- name: epomeo_gpx
+  citation: ""
+  details: Five different GPS traces of the same run up Mount Epomeo in Ischia. The traces are from different sources. endomondo_1 and endomondo_2 are traces from the mobile phone app Endomondo, with a split in the middle. garmin_watch_via_endomondo is the trace from a Garmin watch, with a segment missing about 4 kilometers in. viewranger_phone and viewranger_tablet are traces from a phone and a tablet through the viewranger app. The viewranger_phone data comes from the same mobile phone as the Endomondo data (i.e. there are 3 GPS devices, but one device recorded two traces).
+  files:
+    - [endomondo_1.gpx, endomondo_2.gpx, garmin_watch_via_endomondo.gpx, viewranger_phone.gpx, viewranger_tablet.gpx]
+  license: null
+  size: 2031872
+  urls:
+    - https://github.com/lawrennd/datasets_mirror/raw/main/epomeo_gpx/
+- name: football_data
+  citation: ""
+  details: Results of English football matches since 1993/94 season.
+  files:
+    - [E0.csv, E1.csv, E2.csv, E3.csv]
+  license: null
+  size: 1
+  urls:
+    - http://www.football-data.co.uk/mmz4281/
+- name: fruitfly_tomancak
+  citation: ""
+  details: ""
+  files:
+    - [tomancak_exprs.csv,  tomancak_se.csv, tomancak_prctile5.csv, tomancak_prctile25.csv, tomancak_prctile50.csv,  tomancak_prctile75.csv, tomancak_prctile95.csv]
+  license: null
+  size: 59000000
+  urls:
+    - https://github.com/lawrennd/datasets_mirror/raw/main/fruitfly_tomancak/
+- name: fruitfly_tomancak_cel_files
+  citation: '''Systematic determination of patterns of gene expression during Drosophila embryogenesis'' Pavel Tomancak, Amy Beaton, Richard Weiszmann, Elaine Kwan, ShengQiang Shu, Suzanna E Lewis, Stephen Richards, Michael Ashburner, Volker Hartenstein, Susan E Celniker, and Gerald M Rubin'
+  details: Gene expression results from blastoderm development in Drosophila Melanogaster.
+  files:
+    - [embryo_tc_4_1.CEL, embryo_tc_4_2.CEL, embryo_tc_4_3.CEL, embryo_tc_4_4.CEL, embryo_tc_4_5.CEL, embryo_tc_4_6.CEL, embryo_tc_4_7.CEL, embryo_tc_4_8.CEL, embryo_tc_4_9.CEL, embryo_tc_4_10.CEL, embryo_tc_4_11.CEL, embryo_tc_4_12.CEL, embryo_tc_6_1.CEL, embryo_tc_6_2.CEL, embryo_tc_6_3.CEL, embryo_tc_6_4.CEL, embryo_tc_6_5.CEL, embryo_tc_6_6.CEL, embryo_tc_6_7.CEL, embryo_tc_6_8.CEL, embryo_tc_6_9.CEL, embryo_tc_6_10.CEL, embryo_tc_6_11.CEL, embryo_tc_6_12.CEL, embryo_tc_8_1.CEL, embryo_tc_8_2.CEL, embryo_tc_8_3.CEL, embryo_tc_8_4.CEL, embryo_tc_8_5.CEL, embryo_tc_8_6.CEL, embryo_tc_8_7.CEL, embryo_tc_8_8.CEL, embryo_tc_8_9.CEL, embryo_tc_8_10.CEL, embryo_tc_8_11.CEL, embryo_tc_8_12.CEL, CG_AffyOligo_Gadfly3_01_13_03, embryo_tc_rma_release2.txt, embryo_tc_rma_release3.txt, na_affy_oligo.dros, README.TXT]
+  license: null
+  size: 389000000
+  urls:
+    - ftp://ftp.fruitfly.org/pub/embryo_tc_array_data/
+- name: google_trends
+  citation: ""
+  details: Google trends results.
+  files:
+    - []
+  license: null
+  size: 0
+  urls:
+    - http://www.google.com/trends/
+- name: hapmap3
+  citation: 'Gibbs, Richard A., et al. ''The international HapMap project.'' Nature 426.6968 (2003): 789-796.'
+  details: |
+    HapMap Project: Single Nucleotide Polymorphism sequenced in all human populations. 
+            The HapMap phase three SNP dataset - 1184 samples out of 11 populations.
+            See http://www.nature.com/nature/journal/v426/n6968/abs/nature02168.html for details.
+            
+            SNP_matrix (A) encoding [see Paschou et all. 2007 (PCA-Correlated SNPs...)]:
+            Let (B1,B2) be the alphabetically sorted bases, which occur in the j-th SNP, then
+            
+                  /  1, iff SNPij==(B1,B1)
+            Aij = |  0, iff SNPij==(B1,B2)
+                  \\\\ -1, iff SNPij==(B2,B2)
+                  
+            The SNP data and the meta information (such as iid, sex and phenotype) are
+            stored in the dataframe datadf, index is the Individual ID, 
+            with following columns for metainfo:
+              
+              SNP_matrix (A) encoding [see Paschou et all. 2007 (PCA-Correlated SNPs...)]:
+              Let (B1,B2) be the alphabetically sorted bases, which occur in the j-th SNP, then
+              
+                    /  1, iff SNPij==(B1,B1)
+              Aij = |  0, iff SNPij==(B1,B2)
+                    \\\\ -1, iff SNPij==(B2,B2)
+                    
+              The SNP data and the meta information (such as iid, sex and phenotype) are
+              stored in the dataframe datadf, index is the Individual ID, 
+              with following columns for metainfo:
+                
+                  * family_id   -> Family ID
+                  * paternal_id -> Paternal ID
+                  * maternal_id -> Maternal ID
+                  * sex         -> Sex (1=male; 2=female; other=unknown)
+                  * phenotype   -> Phenotype (-9, or 0 for unknown)
+                  * population  -> Population string (e.g. 'ASW' - 'YRI')
+                  * rest are SNP rs (ids)
+                  
+              More information is given in infodf:
+                
+                  * Chromosome:
+                      - autosomal chromosemes                -> 1-22
+                      - X    X chromosome                    -> 23
+                      - Y    Y chromosome                    -> 24
+                      - XY   Pseudo-autosomal region of X    -> 25
+                      - MT   Mitochondrial                   -> 26
+                  * Relative Positon (to Chromosome) [base pairs]
+    files:
+      - - hapmap3_r2_b36_fwd.consensus.qc.poly.map.bz2
+        - hapmap3_r2_b36_fwd.consensus.qc.poly.ped.bz2
+        - relationships_w_pops_121708.txt
+    license: >-
+      International HapMap Project Public Access License
+      (http://hapmap.ncbi.nlm.nih.gov/cgi-perl/registration#licence)
+    size: 3458246739
+    urls:
+      - >-
+        http://hapmap.ncbi.nlm.nih.gov/downloads/genotypes/latest_phaseIII_ncbi_b36/plink_format/
+  - name: hospitalized_covid
+    citation: >-
+      Israeli data: How can efficacy vs. severe disease be strong when 60% of
+      hospitalized are vaccinated? by Jeffrey Morris 17th August 2021 available
+      from
+      https://www.covid-datascience.com/post/israeli-data-how-can-efficacy-vs-severe-disease-be-strong-when-60-of-hospitalized-are-vaccinated
+    details: >-
+      Datasets from the Israeli government data dashboard
+      (https://datadashboard.health.gov.il/COVID-19/) showing the number of
+      hospitalized Covid19 patients grouped by age and vaccination status as
+      downloaded by Jeffrey Morris to analyze disease efficacy of vaccinated vs
+      non-vaccinated.
+    files:
+      - - Israeli_data_August_15_2021 original.xlsx
+        - Israeli_data_August_15_2021.xlsx
+        - Downloaded data 9-3-21.xlsx
+        - Israel data September 2.xlsx
+    license: >-
+      The service is offered to the public 'as is'('As Is').The State of Israel
+      will not be responsible for adjusting the service For the user's needs.
+      Also, noThe State of Israel shall be responsible for errors or omissions
+      in the material presented in the service. The State of Israel shall not be
+      liable for changes made to the material presented in the service by the
+      user or by any Third party'.The user alone will be responsible for the way
+      he uses the service. The State of Israel will not be held responsibleFor
+      any damage causedTo the user or to any third party as a direct or indirect
+      result of the use of the service, including damage Caused by the use of
+      software applications downloaded directly through the service or activated
+      as a result of the use In the service, including applicationsActive-X,
+      JavaScript, Java.For the purposes of this section, 'State of Israel'
+      means, including its employees And its representatives.pay attentionA: In
+      case of conflict or failure-Match between information published in the
+      database and what appears in publications The written form of the State of
+      Israel, only the wording and content appearing in such official
+      publications will be considered As true. The firm will not be liable for
+      any liability or liability of any kind for such non-compliance.
+    size: 0
+    urls:
+      - 'https://github.com/lawrennd/datasets_mirror/raw/main/hospitalized_covid/'
+  - name: isomap_face_data
+    citation: >-
+      A Global Geometric Framework for Nonlinear Dimensionality Reduction, J. B.
+      Tenenbaum, V. de Silva and J. C. Langford, Science 290 (5500): 2319-2323,
+      22 December 2000
+    details: >-
+      Face data made available by Tenenbaum, de Silva and Langford to
+      demonstrate isomap, available from
+      http://isomap.stanford.edu/datasets.html.
+    files:
+      - - face_data.mat
+    license: null
+    size: 24229368
+    urls:
+      - 'https://github.com/lawrennd/datasets_mirror/raw/main/isomap_face_data/'
+  - name: mauna_loa
+    citation: >-
+      Mauna Loa Data. Dr. Pieter Tans, NOAA/ESRL
+      (www.esrl.noaa.gov/gmd/ccgg/trends/) and Dr. Ralph Keeling, Scripps
+      Institution of Oceanography (scrippsco2.ucsd.edu/).
+    details: >
+      The 'average' column contains the monthly mean CO2 mole fraction
+      determined from daily averages.  The mole fraction of CO2, expressed as
+      parts per million (ppm) is the number of molecules of CO2 in every one
+      million molecules of dried air (water vapor removed).  If there are
+      missing days concentrated either early or late in the month, the monthly
+      mean is corrected to the middle of the month using the average seasonal
+      cycle.  Missing months are denoted by -99.99. The 'interpolated' column
+      includes average values from the preceding column and interpolated values
+      where data are missing.  Interpolated values are computed in two steps. 
+      First, we compute for each month the average seasonal cycle in a 7-year
+      window around each monthly value.  In this way the seasonal cycle is
+      allowed to change slowly over time.  We then determine the 'trend' value
+      for each month by removing the seasonal cycle; this result is shown in the
+      'trend' column.  Trend values are linearly interpolated for missing
+      months. The interpolated monthly mean is then the sum of the average
+      seasonal cycle value and the trend value for the missing month.
+
+
+      NOTE: In general, the data presented for the last year are subject to
+      change, depending on recalibration of the reference gas mixtures used, and
+      other quality control procedures. Occasionally, earlier years may also be
+      changed for the same reasons.  Usually these changes are minor.
+
+
+      CO2 expressed as a mole fraction in dry air, micromol/mol, abbreviated as
+      ppm
+
+       (-99.99 missing data;  -1 no data for daily means in month)
+    files:
+      - - co2_mm_mlo.txt
+    license: >-
+      -------------------------------------------------------------------- USE
+      OF NOAA ESRL DATA
+
+        These data are made freely available to the public and the scientific community in the belief that their wide dissemination will lead to greater understanding and new scientific insights. The availability of these data does not constitute publication of the data.  NOAA relies on the ethics and integrity of the user to insure that ESRL receives fair credit for their work.  If the data  are obtained for potential use in a publication or presentation,  ESRL should be informed at the outset of the nature of this work.   If the ESRL data are essential to the work, or if an important  result or conclusion depends on the ESRL data, co-authorship may be appropriate.  This should be discussed at an early stage in the work.  Manuscripts using the ESRL data should be sent to ESRL for review before they are submitted for publication so we can insure that the quality and limitations of the data are accurately represented.
+
+        Contact:   Pieter Tans (303 497 6678; pieter.tans@noaa.gov)
+
+        RECIPROCITY  Use of these data implies an agreement to reciprocate. Laboratories making similar measurements agree to make their own data available to the general public and to the scientific community in an equally complete and easily accessible form. Modelers are encouraged to make available to the community, upon request, their own tools used in the interpretation of the ESRL data, namely well documented model code, transport fields, and additional information necessary for other scientists to repeat the work and to run modified versions. Model availability includes collaborative support for new users of the models.
+       --------------------------------------------------------------------
+
+           See www.esrl.noaa.gov/gmd/ccgg/trends/ for additional details.
+    size: 46779
+    urls:
+      - 'ftp://aftp.cmdl.noaa.gov/products/trends/co2/'
+  - name: mnist
+    citation: >-
+      THE MNIST DATABASE of handwritten digits by Yann LeCun, Corinna Cortes and
+      Christopher J. C. Burges
+    details: >
+      This is the MNIST data. For further details see
+      http://yann.lecun.com/exdb/mnist/
+    urls:
+      - 'https://github.com/golbin/TensorFlow-MNIST/raw/master/mnist/data/'
+    files:
+      - - train-images-idx3-ubyte.gz
+        - train-labels-idx1-ubyte.gz
+        - t10k-images-idx3-ubyte.gz
+        - t10k-labels-idx1-ubyte.gz
+    size: 11594722
+    license: null
+    version: null
+  - name: usps
+    citation: >-
+      J. J. Hull, A database for handwritten text recognition research, in IEEE
+      Transactions on Pattern Analysis and Machine Intelligence, vol. 16, no. 5,
+      pp. 550-554, May 1994, doi: 10.1109/34.291440.
+    details: >
+      The dataset has 7291 train and 2007 test images. The images are 16x16
+      grayscale pixels.
+    urls:
+      - 'https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/'
+    files:
+      - - usps.t.bz2
+        - usps.bz2
+    size: 8411109
+    license: null
+    version: null
+  - name: movielens100k
+    citation: >-
+      Herlocker, J., Konstan, J., Borchers, A., Riedl, J.. An Algorithmic
+      Framework for Performing Collaborative Filtering. Proceedings of the 1999
+      Conference on Research and Development in Information Retrieval. Aug.
+      1999.
+    details: >
+      MovieLens data sets were collected by the GroupLens Research Project at
+      the University of Minnesota.
+
+
+      This data set consists of:
+        * 100,000 ratings (1-5) from 943 users on 1682 movies.
+        * Each user has rated at least 20 movies. 
+        * Simple demographic info for the users (age, gender, occupation, zip)
+
+      The data was collected through the MovieLens web site (movielens.umn.edu)
+      during the seven-month period from September 19th, 1997 through April
+      22nd, 1998. This data has been cleaned up - users who had less than 20
+      ratings or did not have complete demographic information were removed from
+      this data set.
+    files:
+      - - ml-100k.zip
+        - ml-100k-README.txt
+    license: >-
+      Neither the University of Minnesota nor any of the researchers involved
+      can guarantee the correctness of the data, its suitability for any
+      particular purpose, or the validity of results based on the use of the
+      data set.  The data set may be used for any research purposes under the
+      following conditions:
+
+           * The user may not state or imply any endorsement from the
+             University of Minnesota or the GroupLens Research Group.
+
+           * The user must acknowledge the use of the data set in
+             publications resulting from the use of the data set, and must
+             send us an electronic or paper copy of those publications.
+
+           * The user may not redistribute the data without separate
+             permission.
+
+           * The user may not use this information for any commercial or
+             revenue-bearing purposes without first obtaining permission
+             from a faculty member of the GroupLens Research Project at the
+             University of Minnesota.
+
+      If you have any further questions or comments, please contact GroupLens
+      <grouplens-info@cs.umn.edu>.
+    size: 536272
+    urls:
+      - 'http://files.grouplens.org/datasets/movielens/'
+  - name: movie_body_count
+    citation: >-
+      Simon Garnier and Randy Olson, Blog Post: R vs Python Round 2, February
+      2nd 2014 (http://www.theswarmlab.com/r-vs-python-round-2-22/)
+    details: >-
+      Data scraped from www.MovieBodyCounts.com and www.imdb.com using scripts
+      provided on a github repository (in both Python and R) at
+      https://github.com/morpionZ/R-vs-Python/tree/master/Deadliest%20movies%20scrape/code.
+      This script pulls down the scraped data.
+    files:
+      - - film-death-counts-Python.csv
+    license: null
+    size: 536272
+    urls:
+      - >-
+        https://github.com/sjmgarnier/R-vs-Python/raw/master/Deadliest%20movies%20scrape/code/
+  - name: nigeria_nmis_facility_database
+    citation: >-
+      Nigeria NMIS facility database (2014), the Office of the Senior Special
+      Assistant to the President on the Millennium Development Goals
+      (OSSAP-MDGs) & Columbia University
+    details: >-
+      Nigeria - NMIS health facility data (2014) The Nigeria MDG (Millennium
+      Development Goals) Information System – NMIS health facility data is
+      collected by the Office of the Senior Special Assistant to the President
+      on the Millennium Development Goals (OSSAP-MDGs) in partner with the
+      Sustainable Engineering Lab at Columbia University. A rigorous,
+      geo-referenced baseline facility inventory across Nigeria is created
+      spanning from 2009 to 2011 with an additional survey effort to increase
+      coverage in 2014, to build Nigeria’s first nation-wide inventory of health
+      facility. The database includes 34,139 health facilities info in Nigeria.
+
+
+      The goal of this database is to make the data collected available to
+      planners, government officials, and the public, to be used to make
+      strategic decisions for planning relevant interventions.
+
+
+      For data inquiry, please contact Ms. Funlola Osinupebi, Performance
+      Monitoring & Communications, Advisory Power Team, Office of the Vice
+      President at funlola.osinupebi@aptovp.org
+
+
+      To learn more, please visit
+      http://csd.columbia.edu/2014/03/10/the-nigeria-mdg-information-system-nmis-takes-open-data-further/
+    files:
+      - - healthmopupandbaselinenmisfacility.csv
+    license: ''
+    size: 0
+    urls:
+      - >-
+        https://energydata.info/dataset/f85d1796-e7f2-4630-be84-79420174e3bd/resource/6e640a13-cab4-457b-b9e6-0336051bac27/download/
+  - name: olivetti_faces
+    citation: >-
+      Ferdinando Samaria and Andy Harter, Parameterisation of a Stochastic Model
+      for Human Face Identification. Proceedings of 2nd IEEE Workshop on
+      Applications of Computer Vision, Sarasota FL, December 1994
+    details: >-
+      Olivetti Research Labs Face data base, acquired between December 1992 and
+      December 1994 in the Olivetti Research Lab, Cambridge (which later became
+      AT&T Laboratories, Cambridge). When using these images please give credit
+      to AT&T Laboratories, Cambridge.
+    files:
+      - - att_faces.zip
+      - - olivettifaces.mat
+    license: null
+    size: 8561331
+    urls:
+      - 'https://github.com/lawrennd/datasets_mirror/raw/main/olivetti_faces/'
+      - 'http://www.cs.nyu.edu/~roweis/data/'
+  - name: olivetti_glasses
+    citation: Information recorded in olivetti_faces entry. Should be used from there.
+    details: Information recorded in olivetti_faces entry. Should be used from there.
+    files:
+      - - has_glasses.np
+      - - olivettifaces.mat
+    license: null
+    size: 4261047
+    urls:
+      - 'https://github.com/lawrennd/datasets_mirror/raw/main/olivetti_faces/'
+      - 'http://www.cs.nyu.edu/~roweis/data/'
+  - name: olympic_marathon_men
+    citation: null
+    details: >-
+      Olympic mens' marathon gold medal winning times from 1896 to 2012. Time
+      given in pace (minutes per kilometer). Data is originally downloaded and
+      collated from Wikipedia, we are not responsible for errors in the data
+    files:
+      - - olympicMarathonTimes.csv
+    license: null
+    size: 584
+    urls:
+      - >-
+        https://github.com/lawrennd/datasets_mirror/raw/main/olympic_marathon_men/
+  - name: osu_accad
+    citation: >-
+      The Open Motion Data Project by The Ohio State University Advanced
+      Computing Center for the Arts and Design, originally found at
+      http://accad.osu.edu/research/mocap/mocap_data.htm.
+    details: >-
+      Motion capture data of different motions from the Open Motion Data Project
+      at Ohio State University.
+    files:
+      - - swagger1TXT.ZIP
+        - handspring1TXT.ZIP
+        - quickwalkTXT.ZIP
+        - run1TXT.ZIP
+        - sprintTXT.ZIP
+        - dogwalkTXT.ZIP
+        - camper_04TXT.ZIP
+        - dance_KB3_TXT.ZIP
+        - per20_TXT.ZIP
+        - perTWO07_TXT.ZIP
+        - perTWO13_TXT.ZIP
+        - perTWO14_TXT.ZIP
+        - perTWO15_TXT.ZIP
+        - perTWO16_TXT.ZIP
+      - - connections.txt
+    license: >-
+      Data is licensed under a Creative Commons
+      Attribution-NonCommercial-ShareAlike 3.0 Unported License
+      (http://creativecommons.org/licenses/by-nc-sa/3.0/).
+    size: 15922790
+    urls:
+      - 'https://github.com/lawrennd/datasets_mirror/raw/main/osu_accad/'
+      - 'https://github.com/lawrennd/datasets_mirror/raw/main/stick/'
+  - name: osu_run1
+    citation: >
+      The Open Motion Data Project by The Ohio State University Advanced
+      Computing Center for the Arts and Design, originally found at
+      http://accad.osu.edu/research/mocap/mocap_data.htm.
+    details: >-
+      Motion capture data of a stick man running from the Open Motion Data
+      Project at Ohio State University.
+    files:
+      - - run1TXT.ZIP
+      - - connections.txt
+    license: >-
+      Data is licensed under a Creative Commons
+      Attribution-NonCommercial-ShareAlike 3.0 Unported License
+      (http://creativecommons.org/licenses/by-nc-sa/3.0/).
+    size: 338103
+    urls:
+      - 'https://github.com/lawrennd/datasets_mirror/raw/main/osu_accad/'
+      - 'https://github.com/lawrennd/datasets_mirror/raw/main/stick/'
+  - name: nigerian_administrative_zones
+    citation: >-
+      Nigeria - Subnational Administrative Boundaries. February 23, 2017. Office
+      for the Surveyor General of the Federation of Nigeria (OSGOF), Ehealth,
+      United Nations Cartographic Section (UNCS)
+    details: >-
+      The dataset represents the Common Operational Data (COD) for
+      administrative boundaries of Nigeria. Each administrative unit contains
+      the p-code and name. Admin COD datasets (Admin 0 – 2) for Nigeria are
+      endorsed by the Office of the Surveyor General of the Federal Republic of
+      Nigeria (OSGOF) and the IMWG Feb 2017. See metadata for description of
+      methodology for admin level 3 and the cleaning and processing performed by
+      ITOS. Levels 0 - 3 are polygonal administrative units, Level 3 only covers
+      Adamawa, Borno and Yobe States and are for operational purposes only.
+
+       A senatorial district shapefile is also included. Senatorial districts respect administrative level 1 (state) but are not reflected in the gazetteer, geodatabase, or live services.
+
+       Vetting and live service provision by [Information Technology Outreach Services (ITOS)](https://cviog.uga.edu/international-center/) with funding from USAID.
+
+       The administrative level 0-2 and senatorial district boundaries are suitable for database or GIS linkage to the [Nigeria 2016 Population Data tables](https://data.humdata.org/dataset/nigeria-2016-population-data).
+
+       A topojson generalized version of administrative level 3 is also provided.
+
+       REVISION HISTORY 14 February 2020: Topojson generalized administrative level 3 resource added
+    files:
+      - - nga_admbnda_osgof_eha_itos.gdb.zip
+    license: This data is licensed for Humanitarian use only.
+    size: 6706778
+    urls:
+      - >-
+        https://data.humdata.org/dataset/81ac1d38-f603-4a98-804d-325c658599a3/resource/0bc2f7bb-9ff6-40db-a569-1989b8ffd3bc/download/
+  - name: nigerian_covid
+    citation: >-
+      Coronavirus COVID-19 (2019-nCoV) Data Repository for Africa. Vukosi
+      Marivarte, Elaine Nsoesie and Consortium for African COVID-19 Data.
+      Available on: <https://github.com/dsfsi/covid19africa>.
+    details: >-
+      The purpose of this repository is to collate data on the ongoing
+      coronavirus pandemic in Africa. Our goal is to record detailed information
+      on each reported case in every African country. We want to build a line
+      list – a table summarizing information about people who are infected,
+      dead, or recovered. The table for each African country would include
+      demographic, location, and symptom (where available) information for each
+      reported case. The data will be obtained from official sources (e.g., WHO,
+      departments of health, CDC etc.) and unofficial sources (e.g., news). Such
+      a dataset has many uses, including studying the spread of COVID-19 across
+      Africa and assessing similarities and differences to what’s being observed
+      in other regions of the world.
+
+
+      Data is taken from:
+
+
+      * [WHO Situational
+      Reports](https://www.who.int/emergencies/diseases/novel-coronavirus-2019/situation-reports)
+
+      * [WHO Africa
+      Dashboard](https://www.afro.who.int/health-topics/coronavirus-covid-19)
+
+      *
+      [beoutbreakprepared/nCoV2019](https://github.com/beoutbreakprepared/nCoV2019/tree/master/bulletins_sitreps)
+
+      * [JHU
+      CSE](https://data.humdata.org/dataset/novel-coronavirus-2019-ncov-cases)
+
+      * Nigeria Center for Disease Control [Main
+      Site](http://covid19.ncdc.gov.ng/), [Twitter](https://twitter.com/NCDCgov)
+
+      * Twitter: [@Chikwe_I](https://twitter.com/Chikwe_I),
+      [@NCDCgov](https://twitter.com/NCDCgov),
+      [@Fmohnigeria](https://twitter.com/Fmohnigeria)
+    files:
+      - - line-list-nigeria.csv
+    license: null
+    size: 650294
+    urls:
+      - >-
+        https://raw.githubusercontent.com/dsfsi/covid19africa/master/data/line_lists/
+  - name: nigeria_nmis
+    citation: ' Nigeria NMIS facility database (2014), the Office of the Senior Special Assistant to the President on the Millennium Development Goals (OSSAP-MDGs) & Columbia University'
+    details: >-
+      The Nigeria MDG (Millennium Development Goals) Information System – NMIS
+      health facility data is collected by the Office of the Senior Special
+      Assistant to the President on the Millennium Development Goals
+      (OSSAP-MDGs) in partner with the Sustainable Engineering Lab at Columbia
+      University. A rigorous, geo-referenced baseline facility inventory across
+      Nigeria is created spanning from 2009 to 2011 with an additional survey
+      effort to increase coverage in 2014, to build Nigeria’s first nation-wide
+      inventory of health facility. The database includes 34,139 health
+      facilities info in Nigeria.
+
+       The goal of this database is to make the data collected available to planners, government officials, and the public, to be used to make strategic decisions for planning relevant interventions.
+
+       For data inquiry, please contact Ms. Funlola Osinupebi, Performance Monitoring & Communications, Advisory Power Team, Office of the Vice President at funlola.osinupebi@aptovp.org
+
+       To learn more, please visit <http://csd.columbia.edu/2014/03/10/the-nigeria-mdg-information-system-nmis-takes-open-data-further/>
+    files:
+      - - healthmopupandbaselinenmisfacility.csv
+    license: null
+    size: 11136562
+    urls:
+      - >-
+        https://energydata.info/dataset/f85d1796-e7f2-4630-be84-79420174e3bd/resource/6e640a13-cab4-457b-b9e6-0336051bac27/download/
+  - name: nigerian_population
+    citation: >-
+      Nigeria - Subnational Population Statistics by administrative level 1 and
+      2. A projection based on the 2006 Census conducted by the National
+      Population Commission of Nigeria. Available from The Humanitarian Data
+      Exchange http://data.humdata.org
+    details: >-
+      Projection of administrative level 1 population statistics in Nigeria
+      based on 2006 Census conducted by the National Population Commission (NPC)
+      of Nigeria. Available from
+      https://data.humdata.org/dataset/nigeria-2016-population-data
+    files:
+      - - nga_admpop_adm1_2020.csv
+    license: null
+    size: 73592
+    urls:
+      - >-
+        https://data.humdata.org/dataset/a7c3de5e-ff27-4746-99cd-05f2ad9b1066/resource/d9fc551a-b5e4-4bed-9d0d-b047b6961817/download/
+  - name: pmlr
+    citation: >-
+      Proceedings of Machine Learning Research hosted at
+      http://proceedings.mlr.press
+    details: >-
+      Abstracts from the volumes of the Proceedings of Machine Learning research
+      along with author information and PDF links. When using this data please
+      credit the Proceedings of Machine Learning Research.
+    files:
+      - - proceedings.yaml
+    license: null
+    size: 9393
+    urls:
+      - 'http://proceedings.mlr.press/'
+  - name: pumadyn-32nm
+    citation: >-
+      Created by Zoubin Ghahramani using the Matlab Robotics Toolbox of Peter
+      Corke. Corke, P. I. (1996). A Robotics Toolbox for MATLAB. IEEE Robotics
+      and Automation Magazine, 3 (1): 24-32.
+    details: >-
+      Pumadyn non linear 32 input data set with moderate noise. See
+      http://www.cs.utoronto.ca/~delve/data/pumadyn/desc.html for details.
+    files:
+      - - pumadyn-32nm.tar.gz
+    license: Data is made available by the Delve system at the University of Toronto
+    size: 5861646
+    urls:
+      - 'ftp://ftp.cs.toronto.edu/pub/neuron/delve/data/tarfiles/pumadyn-family/'
+  - name: ripley_prnn_data
+    citation: >-
+      Pattern Recognition and Neural Networks by B.D. Ripley (1996) Cambridge
+      University Press ISBN 0 521 46986 7
+    details: >
+      Data sets from Brian Ripley's Pattern Recognition and Neural Networks
+    files:
+      - - Cushings.dat
+        - README
+        - crabs.dat
+        - fglass.dat
+        - fglass.grp
+        - synth.te
+        - synth.tr
+        - viruses.dat
+        - virus3.dat
+    license: null
+    size: 93565
+    urls:
+      - 'http://www.stats.ox.ac.uk/pub/PRNN/'
+  - name: robot_wireless
+    citation: >-
+      WiFi-SLAM using Gaussian Process Latent Variable Models by Brian Ferris,
+      Dieter Fox and Neil Lawrence in IJCAI'07 Proceedings pages 2480-2485. Data
+      used in A Unifying Probabilistic Perspective for Spectral Dimensionality
+      Reduction: Insights and New Models by Neil D. Lawrence, JMLR 13 pg
+      1609--1638, 2012.
+    details: >-
+      Data created by Brian Ferris and Dieter Fox. Consists of WiFi access point
+      strengths taken during a circuit of the Paul Allen building at the
+      University of Washington.
+    files:
+      - - uw-floor.txt
+    license: null
+    size: 284390
+    urls:
+      - 'https://github.com/lawrennd/datasets_mirror/raw/main/robot_wireless/'
+  - name: rogers_girolami_data
+    citation: >-
+      A First Course in Machine Learning. Simon Rogers and Mark Girolami:
+      Chapman & Hall/CRC, ISBN-13: 978-1439824146
+    details: >-
+      Data from the textbook 'A First Course in Machine Learning'. Available
+      from http://www.dcs.gla.ac.uk/~srogers/firstcourseml/.
+    files:
+      - - firstcoursemldata.tar.gz
+    license: null
+    size: 21949154
+    suffices:
+      - '[?dl=1'
+    urls:
+      - 'http://www.dcs.gla.ac.uk/~srogers/firstcourseml/'
+  - name: guo_qpcr_2010
+    citation: >-
+      Guoji Guo, Mikael Huss, Guo Qing Tong, Chaoyang Wang, Li Li Sun, Neil D.
+      Clarke, Paul Robson, Resolution of Cell Fate Decisions Revealed by
+      Single-Cell Gene Expression Analysis from Zygote to Blastocyst,
+      Developmental Cell, Volume 18, Issue 4, 20 April 2010, Pages 675-685, ISSN
+      1534-5807, http://dx.doi.org/10.1016/j.devcel.2010.02.012.
+      (http://www.sciencedirect.com/science/article/pii/S1534580710001103)
+      Keywords: DEVBIO
+    details: >-
+      qPCR TaqMan array single cell experiment in mouse. The data is taken from
+      the early stages of development when the Blastocyst is forming. At the 32
+      cell stage the data is already separated into the trophectoderm (TE) which
+      goes onto form the placenta and the inner cellular mass (ICM). The ICM
+      further differentiates into the epiblast (EPI)---which gives rise to the
+      endoderm, mesoderm and ectoderm---and the primitive endoderm (PE) which
+      develops into the amniotic sack. Guo et al selected 48 genes for
+      expression measurement. They labelled the resulting cells and their labels
+      are included as an aide to visualization. Normalization was done as
+      described in the publication's methods section.
+    normalization: >-
+      "All Ct values (Tables S4 and S5) obtained from the BioMark System were
+      con- verted into relative expression levels by subtracting the values from
+      the assumed baseline value of 28. Cells with low or absent endogenous
+      control gene expression levels were removed from analysis ( 10%). The
+      resulting values were at times normalized to the endogenous control by
+      subtracting, for each cell, the average of its Actb and Gapdh expression
+      levels. As the Ct scale is logarithmic (a difference of one Ct corresponds
+      to a doubling of measured transcript), a subtraction of the average of two
+      genes on this scale corresponds to taking the geometric mean on a linear
+      scale. Data shown in Figures 1A–1C, 2A, 3A, 3B, 4A, 5A, and 5D have been
+      normalized against endogenous controls". We additionally standardize the
+      data gene-by-gene N(0, 1) for each gene across cells.
+    files:
+      - - guo_qpcr.csv
+    license: >-
+      ScienceDirect:
+      http://www.elsevier.com/locate/termsandconditions?utm_source=sciencedirect&utm_medium=link&utm_campaign=terms
+    size: 233.1
+    urls:
+      - 'https://raw.githubusercontent.com/sods/ods/master/datasets/'
+  - name: sod1_mouse
+    citation: >-
+      Transcriptomic indices of fast and slow disease progression in two mouse
+      models of amyotrophic lateral sclerosis' Nardo G1, Iennaco R, Fusi N,
+      Heath PR, Marino M, Trolese MC, Ferraiuolo L, Lawrence N, Shaw PJ,
+      Bendotti C Brain. 2013 Nov;136(Pt 11):3305-32. doi: 10.1093/brain/awt250.
+      Epub 2013 Sep 24.
+    details: >-
+      Gene expression data from two separate strains of mice: C57 and 129Sv in
+      wild type and SOD1 mutant strains.
+    files:
+      - - sod1_C57_129_exprs.csv
+        - sod1_C57_129_se.csv
+    license: null
+    size: 0
+    urls:
+      - 'https://github.com/lawrennd/datasets_mirror/raw/main/sod1_mouse/'
+  - name: swiss_roll
+    citation: >-
+      A Global Geometric Framework for Nonlinear Dimensionality Reduction, J. B.
+      Tenenbaum, V. de Silva and J. C. Langford, Science 290 (5500): 2319-2323,
+      22 December 2000
+    details: >-
+      Swiss roll data made available by Tenenbaum, de Silva and Langford to
+      demonstrate isomap, available from
+      http://isomap.stanford.edu/datasets.html.
+    files:
+      - - swiss_roll_data.mat
+    license: null
+    size: 800256
+    urls:
+      - 'https://github.com/SheffieldML/GPmat/raw/master/datasets/data/'
+  - name: three_phase_oil_flow
+    citation: >-
+      Bishop, C. M. and G. D. James (1993). Analysis of multiphase flows using
+      dual-energy gamma densitometry and neural networks. Nuclear Instruments
+      and Methods in Physics Research A327, 580-593
+    details: >-
+      The three phase oil data used initially for demonstrating the Generative
+      Topographic mapping.
+    files:
+      - - DataTrnLbls.txt
+        - DataTrn.txt
+        - DataTst.txt
+        - DataTstLbls.txt
+        - DataVdn.txt
+        - DataVdnLbls.txt
+    license: null
+    size: 712796
+    urls:
+      - >-
+        https://github.com/lawrennd/datasets_mirror/raw/main/three_phase_oil_flow/
+  - name: xw_pen
+    citation: >-
+      Michael E. Tipping and Neil D. Lawrence. Variational inference for
+      Student-t models: Robust Bayesian interpolation and generalised component
+      analysis. Neurocomputing, 69:123--141, 2005
+    details: Accelerometer pen data used for robust regression by Tipping and Lawrence.
+    files:
+      - - xw_pen_15.csv
+    license: null
+    size: 3410
+    urls:
+      - 'https://github.com/lawrennd/datasets_mirror/raw/main/xw_pen/'
+  - name: leukemia
+    citation: >-
+      Henderson, R., Shimakura, S., and Gorst, D. (2002).  Modeling spatial
+      variation in leukemia survival data. Journal of the American Statistical
+      Association, 97:965–972
+    details: |-
+      Dataset of leukemia survivals, data consists of:
+       'time', 'censoring', 'xcoord', 'ycoord', 'age', 'sex', 'white blood cell count', 'townsend deprivation index', 'district'
+    files:
+      - - leuk.dat
+    license: null
+    size: 65354
+    urls:
+      - 'https://github.com/lawrennd/datasets_mirror/raw/main/leukemia_survival/'
+  - name: mcycle
+    citation: >-
+      Some Aspects of the Spline Smoothing Approach to Non-Parametric Regression
+      Curve Fitting Journal of the Royal Statistical Society. Series B
+      (Methodological), Vol. 47, No. 1. (1985), pp. 1-52, doi:10.2307/2345542 by
+      B. W. Silverman
+    details: >-
+      Data from a Simulated Motorcycle Accident,
+      http://www-personal.umich.edu/~jizhu/jizhu/wuke/Silverman-JRSSB85.pdf
+    files:
+      - - motor.csv
+    license: null
+    size: 1984
+    urls:
+      - 'http://vincentarelbundock.github.io/Rdatasets/csv/boot'
+  - name: elevators
+    citation: ''
+    details: >-
+      Experiments of Rui Camacho, obtained from the task of controlling a F16
+      aircraft, although the target variable and attributes are different from
+      the ailerons domain. In this case the goal variable is related to an
+      action taken on the elevators of the aircraft
+    files:
+      - - elevators.tgz
+    license: null
+    size: 327496
+    urls:
+      - 'http://www.dcc.fc.up.pt/~ltorgo/Regression/'
+  - name: politics_twitter
+    citation: >-
+      Saul, A., Hensman, J., Vehtai, A., & Lawrence, N. D. (2016).  Chained
+      Gaussian processes. Proceedings Of the Nineteenth International Conference
+      on Artificial Intelligence and Statistics
+    details: >-
+      The data holds a large number of tweet id numbers for tweets posted during
+      the run up to the UK general election 2015, and derived sentiment.
+    files:
+      - - labour_raw_ids.csv
+        - conservative_raw_ids.csv
+        - greens_raw_ids.csv
+        - ukip_raw_ids.csv
+    license: null
+    size: 7518372
+    urls:
+      - 'https://github.com/lawrennd/datasets_mirror/raw/main/twitter_data/'
+  - name: kepler_telescope_base
+    citation: ''
+    details: >
+      The Kepler spacecraft was launched into an earth trailing orbit and stared
+      at a 100 sq. degree patch of sky near Cygnus in order to measure the
+      brightness variations of about 200,000 stars.  It's primary mission was to
+      find exoplanets transiting these stars and to determine the prevalence of
+      exoplanets in the Galaxy.  The Kepler spacecraft rotated by 90 degrees
+      every 90 days in order to keep the solar panels pointing at the sun and
+      thus the Kepler data is divided into 90-day quarters. Kepler only
+      downloaded the pixels surrounding selected stars of interest at either a
+      30-minute or 1-minute cadence. The mission produced a flux time series for
+      each star and searched these light curves for the presence of a transiting
+      exoplanet.  In addition to discovering exoplanets, Kepler data has been
+      used to study the variability of stars and eclipsing binaries.
+    files: - - ""
+    license: null
+    size: null
+    urls:
+      - 'https://archive.stsci.edu/missions/kepler/lightcurves/'

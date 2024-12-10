@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "pods"
-version = "0.1.13"
+version = "0.1.17"
 description = "Python software for Open Data Science"
 authors = ["Neil D. Lawrence <lawrennd@gmail.com>"]
 readme = "README.md"

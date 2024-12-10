@@ -320,26 +320,56 @@ def pmlr(volumes="all", data_set="pmlr", refresh_data=False):
             Y += yaml.load(volume_file, Loader=yaml.FullLoader)
     Y = pd.DataFrame(Y)
     Y["published"] = pd.to_datetime(Y["published"])
-    # Y.columns.values[4] = util.json_object('authors')
-    # Y.columns.values[7] = util.json_object('editors')
-    try:
-        Y["issued"] = Y["issued"].apply(
-            lambda x: np.datetime64(datetime.datetime(*x["date-parts"]))
-        )
-    except TypeError:
-        raise TypeError("Type error for entry\n" + Y["issued"]) from e
+    # Y.columns.values[4] = json_object('authors')
+    # Y.columns.values[7] = json_object('editors')
+    def convert_date(x, row):
+        if x is None:
+            print(f"Warning: Found None value in issued field at index {row.name}")
+            print("Entry:\n", row)
+            return None
+        try:
+            return np.datetime64(datetime.datetime(*x["date-parts"]))
+        except (TypeError, KeyError) as e:
+            print(f"Warning: Could not convert date value at index {row.name}: {x}")
+            print("Entry:\n", row)
+            return None    
 
-    def full_name(person):
-        order = ["given", "prefix", "family", "suffix"]
-        names = [str(person[key]) for key in order if key in person and person[key] is not None]
-        return " ".join(names)
+    def process_people(x, row):
+        if x is None:
+            print(f"Warning: Found None value in people field at index {row.name}")
+            print("Entry:\n", row)
+            return []
+        try:
+            names = []
+            for person in x:
+                if not isinstance(person, dict):
+                    continue
+                given = str(person.get("given", ""))
+                family = str(person.get("family", ""))
+                prefix = str(person.get("prefix", ""))
+                suffix = str(person.get("suffix", ""))
 
-    Y["author"] = Y["author"].apply(
-        lambda x: ', '.join([full_name(author) for author in x])
-    )
-    Y["editor"] = Y["editor"].apply(
-        lambda x: ', '.join([full_name(editor) for editor in x])
-    )
+                name_parts = []
+                if given: name_parts.append(given)
+                if prefix: name_parts.append(prefix)
+                if family: name_parts.append(family)
+                if suffix: name_parts.append(suffix)
+
+                full_name = " ".join(name_parts).strip()
+                if full_name:
+                    names.append(full_name)
+            return names
+        except Exception as e:
+            print(f"Warning: Error processing people entry at index {row.name}: {x}")
+            print(f"Error was: {str(e)}")
+            print("Entry:\n", row)
+            return []
+
+    # Apply the functions passing the entire row
+    Y["issued"] = Y.apply(lambda row: convert_date(row["issued"], row), axis=1)
+    Y["author"] = Y.apply(lambda row: ", ".join(process_people(row["author"], row)), axis=1)
+    Y["editor"] = Y.apply(lambda row: ", ".join(process_people(row["editor"], row)), axis=1)
+
     columns = list(Y.columns)
     columns[14] = util.datetime64_("published")
     columns[11] = util.datetime64_("issued")
